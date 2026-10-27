@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="CiudadInteligente.API/CiudadInteligente.API.csproj" />
+  <Project Path="CiudadInteligente.Application/CiudadInteligente.Application.csproj" />
+  <Project Path="CiudadInteligente.Domain/CiudadInteligente.Domain.csproj" />
+  <Project Path="CiudadInteligente.Infrastructure/CiudadInteligente.Infrastructure.csproj" />
+</Solution>

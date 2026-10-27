@@ -1,0 +1,6 @@
+@EstacionamientoInteligente.API_HostAddress = http://localhost:5141
+
+GET {{EstacionamientoInteligente.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

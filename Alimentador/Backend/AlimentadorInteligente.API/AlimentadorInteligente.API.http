@@ -1,0 +1,6 @@
+@AlimentadorInteligente.API_HostAddress = http://localhost:5126
+
+GET {{AlimentadorInteligente.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

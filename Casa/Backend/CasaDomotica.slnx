@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="CasaDomotica.API/CasaDomotica.API.csproj" />
+  <Project Path="CasaDomotica.Application/CasaDomotica.Application.csproj" />
+  <Project Path="CasaDomotica.Domain/CasaDomotica.Domain.csproj" />
+  <Project Path="CasaDomotica.Infrastructure/CasaDomotica.Infrastructure.csproj" />
+</Solution>

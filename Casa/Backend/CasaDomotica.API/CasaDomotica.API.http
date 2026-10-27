@@ -1,0 +1,6 @@
+@CasaDomotica.API_HostAddress = http://localhost:5131
+
+GET {{CasaDomotica.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

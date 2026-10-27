@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="EstacionamientoInteligente.API/EstacionamientoInteligente.API.csproj" />
+  <Project Path="EstacionamientoInteligente.Application/EstacionamientoInteligente.Application.csproj" />
+  <Project Path="EstacionamientoInteligente.Domain/EstacionamientoInteligente.Domain.csproj" />
+  <Project Path="EstacionamientoInteligente.Infrastructure/EstacionamientoInteligente.Infrastructure.csproj" />
+</Solution>

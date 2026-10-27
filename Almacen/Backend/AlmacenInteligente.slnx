@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="AlmacenInteligente.API/AlmacenInteligente.API.csproj" />
+  <Project Path="AlmacenInteligente.Application/AlmacenInteligente.Application.csproj" />
+  <Project Path="AlmacenInteligente.Domain/AlmacenInteligente.Domain.csproj" />
+  <Project Path="AlmacenInteligente.Infrastructure/AlmacenInteligente.Infrastructure.csproj" />
+</Solution>

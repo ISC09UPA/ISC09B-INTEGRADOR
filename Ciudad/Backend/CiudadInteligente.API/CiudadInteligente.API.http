@@ -1,0 +1,6 @@
+@CiudadInteligente.API_HostAddress = http://localhost:5240
+
+GET {{CiudadInteligente.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
