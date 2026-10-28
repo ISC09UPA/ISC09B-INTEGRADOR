@@ -1,0 +1,4 @@
+<resources>
+    <string name="hcekey_service_desc">Llave NFC</string>
+    <string name="hcekey_aid_desc">Llave NFC</string>
+</resources>
