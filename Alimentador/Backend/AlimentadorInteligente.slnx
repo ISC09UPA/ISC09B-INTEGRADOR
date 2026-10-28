@@ -1,6 +1,0 @@
-<Solution>
-  <Project Path="AlimentadorInteligente.API/AlimentadorInteligente.API.csproj" />
-  <Project Path="AlimentadorInteligente.Application/AlimentadorInteligente.Application.csproj" />
-  <Project Path="AlimentadorInteligente.Domain/AlimentadorInteligente.Domain.csproj" />
-  <Project Path="AlimentadorInteligente.Infrastructure/AlimentadorInteligente.Infrastructure.csproj" />
-</Solution>
