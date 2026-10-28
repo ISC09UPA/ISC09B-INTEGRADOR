@@ -1,6 +1,129 @@
-@EstacionamientoInteligente.API_HostAddress = http://localhost:5141
+@base = http://localhost:5141/api
+@token = token-de-ejemplo.administrador
 
-GET {{EstacionamientoInteligente.API_HostAddress}}/weatherforecast/
-Accept: application/json
+### ---------- Auth ----------
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{ "correo": "vane@correo.com", "contrasena": "12345678", "rol": "Usuario" }
 
 ###
+POST {{base}}/auth/registro
+Content-Type: application/json
+
+{ "nombre": "Vane", "correo": "vane@correo.com", "contrasena": "12345678" }
+
+###
+GET {{base}}/auth/yo
+Authorization: Bearer {{token}}
+
+### ---------- Cajones ----------
+GET {{base}}/cajones
+Authorization: Bearer {{token}}
+
+###
+GET {{base}}/cajones/3
+Authorization: Bearer {{token}}
+
+### ---------- Historial (usuario) ----------
+GET {{base}}/historial?periodo=Semana
+Authorization: Bearer {{token}}
+
+###
+GET {{base}}/historial/actual
+Authorization: Bearer {{token}}
+
+###
+GET {{base}}/historial/resumen?mes=2026-10
+Authorization: Bearer {{token}}
+
+### ---------- Estadísticas (admin) ----------
+GET {{base}}/estadisticas/panel?fecha=2026-10-27
+Authorization: Bearer {{token}}
+
+###
+GET {{base}}/estadisticas/ocupacion-por-hora?fecha=2026-10-27
+Authorization: Bearer {{token}}
+
+###
+GET {{base}}/estadisticas/uso-por-cajon?desde=2026-10-01&hasta=2026-10-31
+Authorization: Bearer {{token}}
+
+### ---------- Vehículos (admin) ----------
+GET {{base}}/vehiculos?placa=ABC&filtro=Dentro
+Authorization: Bearer {{token}}
+
+###
+POST {{base}}/vehiculos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "placa": "ABC-123-A", "tipo": "Carro", "correoUsuario": "vane@correo.com" }
+
+###
+PATCH {{base}}/vehiculos/44444444-4444-4444-4444-444444444444/baja
+Authorization: Bearer {{token}}
+
+###
+PATCH {{base}}/vehiculos/77777777-7777-7777-7777-777777777777/reactivar
+Authorization: Bearer {{token}}
+
+###
+PATCH {{base}}/vehiculos/33333333-3333-3333-3333-333333333333/placa
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "placa": "DEF-456-B" }
+
+### ---------- Escáner y pluma (admin) ----------
+# La foto se manda como multipart; cambia la ruta por una imagen tuya.
+POST {{base}}/escaner/analizar
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=limite
+
+--limite
+Content-Disposition: form-data; name="foto"; filename="placa.jpg"
+Content-Type: image/jpeg
+
+< ./placa.jpg
+--limite--
+
+###
+POST {{base}}/escaner/registrar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "placa": "ABC-123-A", "tipo": "Carro", "fotoBlob": "escaner/2026/10/27/ejemplo.jpg" }
+
+###
+POST {{base}}/pluma/abrir
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "motivo": "Apertura manual de prueba" }
+
+###
+GET {{base}}/pluma/estado
+Authorization: Bearer {{token}}
+
+### ---------- Alertas (admin) ----------
+GET {{base}}/alertas?pendientes=true
+Authorization: Bearer {{token}}
+
+###
+PATCH {{base}}/alertas/88888888-8888-8888-8888-888888888888/atender
+Authorization: Bearer {{token}}
+
+### ---------- Simulación (solo Development) ----------
+POST {{base}}/simulacion/vehiculo-en-pluma
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "placa": "ABC-123-A", "tipo": "Carro" }
+
+###
+POST {{base}}/simulacion/cajon
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "numero": 3, "ocupado": true }

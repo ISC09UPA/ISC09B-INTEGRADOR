@@ -1,0 +1,8 @@
+bin/
+obj/
+.vs/
+*.user
+
+# Llaves locales: nunca se suben
+.env
+appsettings.*.local.json
