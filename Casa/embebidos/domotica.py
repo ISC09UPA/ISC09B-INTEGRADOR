@@ -12,6 +12,9 @@ import sys
 import time
 import threading
 from collections import deque
+#-------------------------------------------------------------------- custom vision
+from custom_vision import rostro_autorizado
+
 
 # ------------------------------------------------------------------ constantes
 TIEMPO_CHAPA_MS = 5000
@@ -283,6 +286,8 @@ def tarea_acceso(now):
             tomar_edge(B_OK)
             tomar_edge(B_NO)
             uart_puts("Visitante detectado. Pulsa FACE_OK o FACE_NO (5 s)...\r\n")
+            #---------------------------------------------------------- custom vision
+            threading.Thread(target=reconocer_visitante, daemon=True).start()
             acc = ACC_ESPERA
             acc_t0 = now
 
@@ -321,6 +326,19 @@ def tarea_acceso(now):
         CHAPA_OFF()
         LED_OK(0)
         chapa_hasta = 0
+
+#------------------------------------------------------------------- custom vision
+def reconocer_visitante():
+    try:
+        autorizado, nombre, prob = rostro_autorizado()
+        uart_puts("Custom Vision: %s %.1f%%\r\n" % (nombre, prob * 100))
+    except Exception as e:
+        uart_puts("Error Custom Vision: %s\r\n" % e)
+        return
+    pin = "PA7" if autorizado else "PC0"
+    ENTRADAS[pin] = False
+    time.sleep(0.2)
+    ENTRADAS[pin] = True
 
 
 # ------------------------------------------------------------------ luces
