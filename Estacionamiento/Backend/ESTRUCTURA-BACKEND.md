@@ -10,8 +10,9 @@ Propuesta de estructura y endpoints del backend en .NET 10 con arquitectura limp
 | Estructura de carpetas según el profesor | ✅ Hecho |
 | Contrato de la API (controllers + DTOs) | ✅ Hecho, con **datos de ejemplo** (`API/Ejemplos/DatosEjemplo.cs`) |
 | Configuración para las llaves de Azure | ✅ `appsettings.json` (vacío) + `.env.example`; las llena Carlos |
-| Application (servicios e interfaces) | ⏳ Pendiente |
 | Domain/DAOs (interfaces de acceso a datos + `IUnidadDeTrabajo`) | ✅ Hecho |
+| Application/Interfaces (9 servicios + `IProcesadorPasoPluma` + puertos en `Externos/`) | ✅ Hecho |
+| Application/Services | ⏳ Pendiente |
 | Infrastructure (DAOs, SQL, Azure, JWT) | ⏳ Pendiente |
 | Login real con JWT y roles, SignalR | ⏳ Pendiente |
 
