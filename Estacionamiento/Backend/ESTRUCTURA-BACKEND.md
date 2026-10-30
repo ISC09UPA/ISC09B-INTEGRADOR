@@ -11,7 +11,8 @@ Propuesta de estructura y endpoints del backend en .NET 10 con arquitectura limp
 | Contrato de la API (controllers + DTOs) | ✅ Hecho, con **datos de ejemplo** (`API/Ejemplos/DatosEjemplo.cs`) |
 | Configuración para las llaves de Azure | ✅ `appsettings.json` (vacío) + `.env.example`; las llena Carlos |
 | Application (servicios e interfaces) | ⏳ Pendiente |
-| Domain/DAOs (interfaces) + Infrastructure (DAOs, SQL, Azure, JWT) | ⏳ Pendiente |
+| Domain/DAOs (interfaces de acceso a datos + `IUnidadDeTrabajo`) | ✅ Hecho |
+| Infrastructure (DAOs, SQL, Azure, JWT) | ⏳ Pendiente |
 | Login real con JWT y roles, SignalR | ⏳ Pendiente |
 
 **Para el front:** con la API corriendo (`dotnet run --project EstacionamientoInteligente.API`), la documentación interactiva está en `http://localhost:5141/scalar` y el JSON de OpenAPI en `/openapi/v1.json`. Los enums viajan como texto (`"Libre"`, `"Carro"`). Las fechas reales se devolverán en UTC (terminan en `Z`), así que la app debe pasarlas a hora local. Por ahora el login devuelve un token de ejemplo y ningún endpoint lo valida.
