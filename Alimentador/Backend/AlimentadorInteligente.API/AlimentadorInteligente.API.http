@@ -1,6 +1,58 @@
-@AlimentadorInteligente.API_HostAddress = http://localhost:5126
+@host = http://localhost:5126
+@token = <pega aquí el accessToken del login>
 
-GET {{AlimentadorInteligente.API_HostAddress}}/weatherforecast/
-Accept: application/json
+### Salud (lo usa la Raspberry Pi)
+GET {{host}}/health
 
-###
+### Registro
+POST {{host}}/api/auth/registro
+Content-Type: application/json
+
+{ "nombre": "Diego", "email": "diego@example.com", "password": "contrasena123" }
+
+### Login
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{ "email": "diego@example.com", "password": "contrasena123" }
+
+### Mis alimentadores
+GET {{host}}/api/alimentadores
+Authorization: Bearer {{token}}
+
+### Crear alimentador
+POST {{host}}/api/alimentadores
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "codigo": "feeder01", "nombre": "Cocina", "kcalPorGramo": 3.6, "gatewayDeviceId": null }
+
+### Registrar mascota
+POST {{host}}/api/alimentadores/1/mascotas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "nombre": "Michi", "especie": "Gato", "pesoKg": 4.2, "edadMeses": 36, "nivelActividad": "Moderado", "esterilizado": true, "comidasPorDia": 3, "etiquetaRfid": null }
+
+### Dispensado manual
+POST {{host}}/api/alimentadores/1/dispensar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "gramos": 20, "mascotaId": 1 }
+
+### [Pi] Configuración
+GET {{host}}/api/device/config?version=0
+X-Device-Id: pi-casa
+X-Device-Key: <clave del gateway>
+
+### [Pi] Lote de visitas
+POST {{host}}/api/device/visits
+X-Device-Id: pi-casa
+X-Device-Key: <clave del gateway>
+Content-Type: application/json
+
+[
+  { "feederId": "feeder01", "eventId": "boot42-0007", "petId": 1, "class": "gato", "confidence": 0.93,
+    "startedAt": 1761832800, "endedAt": 1761833100, "plateBeforeG": 3.1, "dispensedG": 31.2, "plateAfterG": 5.0 }
+]
