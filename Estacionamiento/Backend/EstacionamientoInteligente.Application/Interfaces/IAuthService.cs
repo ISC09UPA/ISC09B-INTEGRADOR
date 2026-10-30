@@ -11,7 +11,7 @@ public interface IAuthService
     /// </summary>
     Task<TokenResponse> IniciarSesionAsync(LoginRequest request);
 
-    /// <summary>Crea una cuenta con rol Usuario y la deja con sesión iniciada.</summary>
+    /// <summary>Crea una cuenta con rol Usuario y la deja con sesión iniciada. Si el correo ya existe lanza <c>ExcepcionConflicto</c>.</summary>
     Task<TokenResponse> RegistrarAsync(RegistroRequest request);
 
     /// <param name="usuarioId">El id que viene en el token del usuario que consulta.</param>

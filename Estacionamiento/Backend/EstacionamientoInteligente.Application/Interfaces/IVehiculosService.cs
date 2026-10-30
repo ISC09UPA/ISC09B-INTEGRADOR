@@ -4,7 +4,8 @@ namespace EstacionamientoInteligente.Application.Interfaces;
 
 /// <summary>
 /// Gestión de vehículos, pantalla 6 (CU-12 a CU-16).
-/// Si el id no existe lanzan <c>ExcepcionNoEncontrado</c>; si se rompe una regla, <c>ExcepcionDominio</c>.
+/// Si el id no existe lanzan <c>ExcepcionNoEncontrado</c> (404); si la placa no es válida, <c>ExcepcionDominio</c> (400);
+/// si la placa ya está registrada o el vehículo ya tenía ese estado, <c>ExcepcionConflicto</c> (409).
 /// </summary>
 public interface IVehiculosService
 {
