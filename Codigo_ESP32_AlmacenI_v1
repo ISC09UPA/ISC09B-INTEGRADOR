@@ -1,0 +1,35 @@
+const int PIN_LED_VERDE = 14;
+const int PIN_LED_ROJO  = 17;
+const int PIN_BUZZER    = 22;
+const int PIN_SENSOR_IR = 27;
+
+void setup() {
+  Serial.begin(115200);
+
+  pinMode(PIN_LED_VERDE, OUTPUT);
+  pinMode(PIN_LED_ROJO, OUTPUT);
+  pinMode(PIN_BUZZER, OUTPUT);
+  pinMode(PIN_SENSOR_IR, INPUT);
+
+  digitalWrite(PIN_LED_VERDE, HIGH);
+  digitalWrite(PIN_LED_ROJO, LOW);
+  digitalWrite(PIN_BUZZER, LOW);
+}
+
+void loop() {
+  int lecturasensor = digitalRead(PIN_SENSOR_IR);
+
+  if (lecturasensor == LOW) {
+    digitalWrite(PIN_LED_VERDE, LOW);
+    digitalWrite(PIN_LED_ROJO, HIGH);
+    digitalWrite(PIN_BUZZER, HIGH);
+    Serial.println("¡Alerta! Objeto detectado.");
+  } else {
+    digitalWrite(PIN_LED_VERDE, HIGH);
+    digitalWrite(PIN_LED_ROJO, LOW);
+    digitalWrite(PIN_BUZZER, LOW);
+    Serial.println("Estado normal");
+  }
+
+  delay(100);
+}
