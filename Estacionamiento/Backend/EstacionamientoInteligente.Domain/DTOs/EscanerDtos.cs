@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using EstacionamientoInteligente.Domain.Enums;
 
-namespace EstacionamientoInteligente.Application.Escaner;
+namespace EstacionamientoInteligente.Domain.DTOs;
 
 /// <summary>
 /// Resultado de analizar la foto que toma el administrador (pantalla 7).

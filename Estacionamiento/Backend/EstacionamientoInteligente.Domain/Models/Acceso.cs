@@ -1,7 +1,7 @@
 using EstacionamientoInteligente.Domain.Comun;
 using EstacionamientoInteligente.Domain.Enums;
 
-namespace EstacionamientoInteligente.Domain.Entidades;
+namespace EstacionamientoInteligente.Domain.Models;
 
 /// <summary>
 /// Una estancia: va de la entrada a la salida de un vehículo.

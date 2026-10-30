@@ -1,4 +1,4 @@
-namespace EstacionamientoInteligente.Application.Estadisticas;
+namespace EstacionamientoInteligente.Domain.DTOs;
 
 /// <summary>Tarjetas superiores de la pantalla 5.</summary>
 public sealed record PanelDto(

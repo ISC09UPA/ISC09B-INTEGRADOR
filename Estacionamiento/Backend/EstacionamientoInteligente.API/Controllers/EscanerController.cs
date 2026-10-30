@@ -1,5 +1,5 @@
 using EstacionamientoInteligente.API.Ejemplos;
-using EstacionamientoInteligente.Application.Escaner;
+using EstacionamientoInteligente.Domain.DTOs;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EstacionamientoInteligente.API.Controllers;

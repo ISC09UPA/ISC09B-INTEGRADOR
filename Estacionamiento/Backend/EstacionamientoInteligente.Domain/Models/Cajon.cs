@@ -1,7 +1,7 @@
 using EstacionamientoInteligente.Domain.Comun;
 using EstacionamientoInteligente.Domain.Enums;
 
-namespace EstacionamientoInteligente.Domain.Entidades;
+namespace EstacionamientoInteligente.Domain.Models;
 
 /// <summary>
 /// Un lugar de la maqueta. Su estado lo decide únicamente el sensor IR del cajón.

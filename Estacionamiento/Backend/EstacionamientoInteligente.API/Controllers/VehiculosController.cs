@@ -1,5 +1,5 @@
 using EstacionamientoInteligente.API.Ejemplos;
-using EstacionamientoInteligente.Application.Vehiculos;
+using EstacionamientoInteligente.Domain.DTOs;
 using EstacionamientoInteligente.Domain.Enums;
 using Microsoft.AspNetCore.Mvc;
 

@@ -1,4 +1,4 @@
-namespace EstacionamientoInteligente.Application.Historial;
+namespace EstacionamientoInteligente.Domain.DTOs;
 
 public enum PeriodoHistorial
 {

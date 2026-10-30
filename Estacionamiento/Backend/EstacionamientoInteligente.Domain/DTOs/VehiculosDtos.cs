@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using EstacionamientoInteligente.Domain.Enums;
 
-namespace EstacionamientoInteligente.Application.Vehiculos;
+namespace EstacionamientoInteligente.Domain.DTOs;
 
 /// <summary>Chips de la pantalla 6.</summary>
 public enum FiltroVehiculos

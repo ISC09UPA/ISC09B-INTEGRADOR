@@ -1,6 +1,6 @@
 using EstacionamientoInteligente.Domain.Enums;
 
-namespace EstacionamientoInteligente.Application.Alertas;
+namespace EstacionamientoInteligente.Domain.DTOs;
 
 /// <summary>Aviso amarillo de la pantalla 5 ("Entrada negada · 11:05").</summary>
 /// <param name="VehiculoId">Para ir directo a corregir la placa desde la alerta.</param>

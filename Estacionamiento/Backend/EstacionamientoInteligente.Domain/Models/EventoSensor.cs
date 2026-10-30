@@ -1,7 +1,7 @@
 using EstacionamientoInteligente.Domain.Comun;
 using EstacionamientoInteligente.Domain.Enums;
 
-namespace EstacionamientoInteligente.Domain.Entidades;
+namespace EstacionamientoInteligente.Domain.Models;
 
 /// <summary>
 /// Bitácora de lo que reporta la maqueta. Sirve para auditoría y para saber

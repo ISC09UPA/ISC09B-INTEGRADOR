@@ -1,7 +1,7 @@
 using EstacionamientoInteligente.Domain.Comun;
 using EstacionamientoInteligente.Domain.Enums;
 
-namespace EstacionamientoInteligente.Domain.Entidades;
+namespace EstacionamientoInteligente.Domain.Models;
 
 public class Usuario : EntidadBase
 {

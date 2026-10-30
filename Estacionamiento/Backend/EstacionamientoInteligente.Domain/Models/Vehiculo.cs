@@ -2,7 +2,7 @@ using EstacionamientoInteligente.Domain.Comun;
 using EstacionamientoInteligente.Domain.Enums;
 using EstacionamientoInteligente.Domain.ValueObjects;
 
-namespace EstacionamientoInteligente.Domain.Entidades;
+namespace EstacionamientoInteligente.Domain.Models;
 
 /// <summary>
 /// Vehículo registrado, ya sea porque el administrador lo dio de alta

@@ -1,4 +1,4 @@
-using EstacionamientoInteligente.Domain.Entidades;
+using EstacionamientoInteligente.Domain.Models;
 using EstacionamientoInteligente.Domain.Enums;
 
 namespace EstacionamientoInteligente.Domain.Servicios;

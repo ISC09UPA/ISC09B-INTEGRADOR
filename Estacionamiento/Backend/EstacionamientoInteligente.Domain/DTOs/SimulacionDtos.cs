@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using EstacionamientoInteligente.Domain.Enums;
 
-namespace EstacionamientoInteligente.Application.Simulacion;
+namespace EstacionamientoInteligente.Domain.DTOs;
 
 /// <summary>Simula que un auto llegó a la pluma, sin cámara ni Service Bus.</summary>
 /// <param name="Placa">Null simula una placa no legible.</param>

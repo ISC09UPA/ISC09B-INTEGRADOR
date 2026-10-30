@@ -6,31 +6,36 @@ Propuesta de estructura y endpoints del backend en .NET 10 con arquitectura limp
 
 | Parte | Estado |
 |---|---|
-| Domain (entidades, `Placa`, `ReglasAcceso`) | ✅ Hecho |
+| Domain (modelos, DTOs, `Placa`, `ReglasAcceso`) | ✅ Hecho |
+| Estructura de carpetas según el profesor | ✅ Hecho |
 | Contrato de la API (controllers + DTOs) | ✅ Hecho, con **datos de ejemplo** (`API/Ejemplos/DatosEjemplo.cs`) |
 | Configuración para las llaves de Azure | ✅ `appsettings.json` (vacío) + `.env.example`; las llena Carlos |
 | Application (servicios e interfaces) | ⏳ Pendiente |
-| Infrastructure (Azure SQL, Azure, JWT) | ⏳ Pendiente |
+| Domain/DAOs (interfaces) + Infrastructure (DAOs, SQL, Azure, JWT) | ⏳ Pendiente |
 | Login real con JWT y roles, SignalR | ⏳ Pendiente |
 
 **Para el front:** con la API corriendo (`dotnet run --project EstacionamientoInteligente.API`), la documentación interactiva está en `http://localhost:5141/scalar` y el JSON de OpenAPI en `/openapi/v1.json`. Los enums viajan como texto (`"Libre"`, `"Carro"`). Las fechas reales se devolverán en UTC (terminan en `Z`), así que la app debe pasarlas a hora local. Por ahora el login devuelve un token de ejemplo y ningún endpoint lo valida.
 
-**Dónde va cada cosa:** endpoints en `EstacionamientoInteligente.API/Controllers/`, DTOs en `EstacionamientoInteligente.Application/<Módulo>/<Módulo>Dtos.cs`.
+**Dónde va cada cosa:** endpoints en `EstacionamientoInteligente.API/Controllers/`, DTOs en `EstacionamientoInteligente.Domain/DTOs/<Módulo>Dtos.cs`, modelos en `EstacionamientoInteligente.Domain/Models/`.
 
 ---
 
 ## 1. Capas y dependencias
 
+Basada en la estructura que pidió el profesor de back (API → Controllers, Application → Services/Interfaces, Domain → Models/DTOs/DAOs, Infrastructure → SQL y Azure), respetando la arquitectura limpia.
+
 ```
 API  ──►  Application  ──►  Domain
- │             ▲
- └──►  Infrastructure
+ │                            ▲
+ └──►  Infrastructure ────────┘
 ```
 
-- **Domain**: no depende de nada.
-- **Application**: depende solo de Domain y define las interfaces (puertos).
-- **Infrastructure**: implementa esas interfaces (EF Core, Azure, JWT).
-- **API**: expone HTTP y SignalR. Usa Infrastructure solo para registrar dependencias.
+- **Domain**: no depende de nada. Tiene los modelos, los DTOs y las *interfaces* de los DAOs.
+- **Application**: depende solo de Domain. Define las interfaces de los servicios y las implementa.
+- **Infrastructure**: implementa los DAOs (queries a Azure SQL) y lo que se conecta con Azure.
+- **API**: expone los endpoints y SignalR. Usa Infrastructure solo para registrar dependencias.
+
+Flujo de una petición: `Controller → IXxxService → XxxService → IXxxDao → XxxDao → Azure SQL`.
 
 ---
 
@@ -38,67 +43,45 @@ API  ──►  Application  ──►  Domain
 
 ```
 Backend/
+├─ EstacionamientoInteligente.API/             ← endpoints
+│  ├─ Controllers/          Auth, Cajones, Historial, Estadisticas, Vehiculos,
+│  │                        Escaner, Pluma, Alertas, Simulacion
+│  ├─ Ejemplos/             DatosEjemplo (temporal: se borra cuando existan los Services)
+│  ├─ Hubs/                 EstacionamientoHub (SignalR)
+│  ├─ Program.cs
+│  ├─ appsettings.json
+│  └─ EstacionamientoInteligente.API.http   pruebas de todos los endpoints
+│
+├─ EstacionamientoInteligente.Application/     ← casos de uso
+│  ├─ Interfaces/           IAuthService, ICajonesService, IHistorialService,
+│  │                        IEstadisticasService, IVehiculosService, IEscanerService,
+│  │                        IPlumaService, IAlertasService, ISimulacionService
+│  │                        + las de servicios externos: IAlmacenFotos (Blob),
+│  │                        ILectorPlacas (Vision), IComandosMaqueta (Service Bus),
+│  │                        INotificadorTiempoReal (SignalR), IGeneradorToken, IHasherContrasenas
+│  ├─ Services/             AuthService, CajonesService, … (uno por interfaz)
+│  │                        ProcesarPasoPlumaService (lógica principal de entrada y salida)
+│  └─ DependencyInjection.cs
+│
 ├─ EstacionamientoInteligente.Domain/          ← reglas del negocio, sin dependencias
-│  ├─ Entidades/      Usuario, Vehiculo, Cajon, Acceso, Alerta, EventoSensor
+│  ├─ Models/         Usuario, Vehiculo, Cajon, Acceso, Alerta, EventoSensor
+│  ├─ DTOs/           AuthDtos, CajonesDtos, HistorialDtos, … (lo que entra y sale de la API)
+│  ├─ DAOs/           IUsuarioDao, IVehiculoDao, ICajonDao, IAccesoDao,
+│  │                  IAlertaDao, IEventoSensorDao (solo interfaces)
 │  ├─ Enums/          RolUsuario, TipoVehiculo, EstadoVehiculo, EstadoCajon,
 │  │                  TipoPaso (Entrada/Salida), AccionPluma (Abrir/Negar), TipoAlerta
 │  ├─ ValueObjects/   Placa (normaliza "abc 123a" → "ABC-123-A" y la valida)
 │  ├─ Servicios/      ReglasAcceso (¿entrada o salida?, ¿hay cupo?, lecturas repetidas en 10 s)
 │  └─ Comun/          EntidadBase, ExcepcionDominio
 │
-├─ EstacionamientoInteligente.Application/     ← casos de uso y puertos (interfaces)
-│  ├─ Abstracciones/
-│  │  ├─ Persistencia/  IUsuarioRepositorio, IVehiculoRepositorio, ICajonRepositorio,
-│  │  │                 IAccesoRepositorio, IAlertaRepositorio, IEventoSensorRepositorio,
-│  │  │                 IUnidadDeTrabajo
-│  │  ├─ Azure/         IAlmacenFotos (Blob), ILectorPlacas (Computer Vision),
-│  │  │                 IClasificadorVehiculos (Custom Vision), IComandosMaqueta (Service Bus),
-│  │  │                 INotificadorTiempoReal (SignalR), IMetricas (Azure Monitor)
-│  │  └─ Seguridad/     IGeneradorToken, IHasherContrasenas, IUsuarioActual, IReloj
-│  ├─ Comun/            Resultado<T>, Errores, Paginacion
-│  ├─ Auth/             AuthServicio + DTOs (LoginRequest, RegistroRequest, TokenResponse)
-│  ├─ Cajones/          CajonesServicio (mapa, detalle) + DTOs
-│  ├─ Accesos/          ProcesarPasoPlumaServicio (lógica principal de entrada y salida)
-│  │                    ActualizarCajonServicio (cuando cambia un sensor)
-│  ├─ Historial/        HistorialServicio (mi historial, resumen del mes, acceso actual)
-│  ├─ Vehiculos/        VehiculosServicio (alta, baja, reactivar, corregir placa, búsqueda)
-│  ├─ Estadisticas/     EstadisticasServicio (panel del administrador)
-│  ├─ Escaner/          EscanerServicio (analizar foto desde el celular, registrar paso)
-│  ├─ Pluma/            PlumaServicio (apertura manual, estado)
-│  ├─ Alertas/          AlertasServicio
+├─ EstacionamientoInteligente.Infrastructure/  ← SQL y todo lo que se conecta con Azure
+│  ├─ Data/                 EstacionamientoDbContext (conexión a Azure SQL), semilla de datos
+│  ├─ DAOs/                 UsuarioDao, VehiculoDao, CajonDao, … (implementan Domain/DAOs con los queries)
+│  ├─ Scripts/              archivos .sql (crear tablas, datos iniciales)
+│  ├─ Azure/                Blob, Computer Vision, Service Bus, Monitor
 │  └─ DependencyInjection.cs
 │
-├─ EstacionamientoInteligente.Infrastructure/  ← implementaciones concretas
-│  ├─ Persistencia/
-│  │  ├─ EstacionamientoDbContext.cs
-│  │  ├─ Configuraciones/   Fluent API, una por entidad
-│  │  ├─ Repositorios/      uno por interfaz
-│  │  ├─ Migraciones/
-│  │  └─ SemillaDatos.cs    4 cajones + usuario administrador inicial
-│  ├─ Azure/
-│  │  ├─ Blob/              AlmacenFotosBlob (+ AlmacenFotosLocal, para usar sin Azure)
-│  │  ├─ ComputerVision/    LectorPlacasComputerVision
-│  │  ├─ CustomVision/      ClasificadorVehiculosCustomVision (HTTP)
-│  │  ├─ ServiceBus/        ComandosMaquetaServiceBus,
-│  │  │                     ConsumidorEventosMaqueta (BackgroundService),
-│  │  │                     MensajesMaqueta.cs (contratos JSON con la Raspberry)
-│  │  └─ Monitor/           MetricasEstacionamiento (OpenTelemetry → Azure Monitor)
-│  ├─ Seguridad/            GeneradorTokenJwt, HasherBCrypt, RelojSistema
-│  ├─ Opciones/             AzureBlobOpciones, ServiceBusOpciones, VisionOpciones, JwtOpciones…
-│  └─ DependencyInjection.cs
-│
-├─ EstacionamientoInteligente.API/             ← presentación HTTP + tiempo real
-│  ├─ Controllers/          Auth, Cajones, Historial, Estadisticas, Vehiculos,
-│  │                        Escaner, Pluma, Alertas, Simulacion
-│  ├─ Hubs/                 EstacionamientoHub + NotificadorSignalR (implementa INotificadorTiempoReal)
-│  ├─ Middleware/           ManejoErroresMiddleware (Resultado/errores → ProblemDetails)
-│  ├─ Seguridad/            UsuarioActualHttp (lee el usuario del JWT)
-│  ├─ Program.cs
-│  ├─ appsettings.json
-│  ├─ appsettings.Development.json
-│  └─ EstacionamientoInteligente.API.http   pruebas de todos los endpoints
-│
-├─ README.md            ← cómo correr el proyecto y configurar Azure
+├─ ESTRUCTURA-BACKEND.md
 └─ .gitignore           ← bin/ y obj/ (solo de esta carpeta)
 ```
 

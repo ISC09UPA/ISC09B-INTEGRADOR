@@ -1,11 +1,4 @@
-using EstacionamientoInteligente.Application.Alertas;
-using EstacionamientoInteligente.Application.Auth;
-using EstacionamientoInteligente.Application.Cajones;
-using EstacionamientoInteligente.Application.Escaner;
-using EstacionamientoInteligente.Application.Estadisticas;
-using EstacionamientoInteligente.Application.Historial;
-using EstacionamientoInteligente.Application.Pluma;
-using EstacionamientoInteligente.Application.Vehiculos;
+using EstacionamientoInteligente.Domain.DTOs;
 using EstacionamientoInteligente.Domain.Enums;
 
 namespace EstacionamientoInteligente.API.Ejemplos;

@@ -1,6 +1,6 @@
 using EstacionamientoInteligente.Domain.Enums;
 
-namespace EstacionamientoInteligente.Application.Cajones;
+namespace EstacionamientoInteligente.Domain.DTOs;
 
 /// <summary>Pantalla 2: mapa del estacionamiento.</summary>
 public sealed record MapaCajonesDto(

@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using EstacionamientoInteligente.Domain.Enums;
 
-namespace EstacionamientoInteligente.Application.Auth;
+namespace EstacionamientoInteligente.Domain.DTOs;
 
 /// <param name="Rol">El rol que eligió en el selector del login. Debe coincidir con el de su cuenta.</param>
 public sealed record LoginRequest(
