@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\elise\\ISC09A-INTEGRADOR\\Invernadero\\Backend\\InvernaderoInteligente.Domain\\InvernaderoInteligente.Domain.csproj": {}
+    "C:\\Users\\Usuario\\Downloads\\Front_Estacionamiento\\ISC09B-INTEGRADOR\\Invernadero\\Backend\\InvernaderoInteligente.Domain\\InvernaderoInteligente.Domain.csproj": {}
   },
   "projects": {
-    "C:\\Users\\elise\\ISC09A-INTEGRADOR\\Invernadero\\Backend\\InvernaderoInteligente.Domain\\InvernaderoInteligente.Domain.csproj": {
+    "C:\\Users\\Usuario\\Downloads\\Front_Estacionamiento\\ISC09B-INTEGRADOR\\Invernadero\\Backend\\InvernaderoInteligente.Domain\\InvernaderoInteligente.Domain.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\elise\\ISC09A-INTEGRADOR\\Invernadero\\Backend\\InvernaderoInteligente.Domain\\InvernaderoInteligente.Domain.csproj",
+        "projectUniqueName": "C:\\Users\\Usuario\\Downloads\\Front_Estacionamiento\\ISC09B-INTEGRADOR\\Invernadero\\Backend\\InvernaderoInteligente.Domain\\InvernaderoInteligente.Domain.csproj",
         "projectName": "InvernaderoInteligente.Domain",
-        "projectPath": "C:\\Users\\elise\\ISC09A-INTEGRADOR\\Invernadero\\Backend\\InvernaderoInteligente.Domain\\InvernaderoInteligente.Domain.csproj",
-        "packagesPath": "C:\\Users\\elise\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\elise\\ISC09A-INTEGRADOR\\Invernadero\\Backend\\InvernaderoInteligente.Domain\\obj\\",
+        "projectPath": "C:\\Users\\Usuario\\Downloads\\Front_Estacionamiento\\ISC09B-INTEGRADOR\\Invernadero\\Backend\\InvernaderoInteligente.Domain\\InvernaderoInteligente.Domain.csproj",
+        "packagesPath": "C:\\Users\\Usuario\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Usuario\\Downloads\\Front_Estacionamiento\\ISC09B-INTEGRADOR\\Invernadero\\Backend\\InvernaderoInteligente.Domain\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\elise\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\Usuario\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -26,6 +26,7 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -45,7 +46,7 @@
           "auditLevel": "low",
           "auditMode": "all"
         },
-        "SdkAnalysisLevel": "10.0.300"
+        "SdkAnalysisLevel": "10.0.400"
       },
       "frameworks": {
         "net10.0": {
@@ -67,7 +68,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.301/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.401/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.CSharp": "(,4.7.32767]",
             "Microsoft.VisualBasic": "(,10.4.32767]",

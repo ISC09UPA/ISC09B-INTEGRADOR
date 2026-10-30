@@ -1,20 +1,20 @@
 {
   "version": 2,
-  "dgSpecHash": "USoBFvkjzFY=",
+  "dgSpecHash": "fugfjbcsXww=",
   "success": true,
-  "projectFilePath": "C:\\Users\\elise\\ISC09A-INTEGRADOR\\Casa\\Backend\\CasaDomotica.API\\CasaDomotica.API.csproj",
+  "projectFilePath": "C:\\Users\\Usuario\\Downloads\\Front_Estacionamiento\\ISC09B-INTEGRADOR\\Casa\\Backend\\CasaDomotica.API\\CasaDomotica.API.csproj",
   "expectedPackageFiles": [
-    "C:\\Users\\elise\\.nuget\\packages\\microsoft.aspnetcore.openapi\\10.0.9\\microsoft.aspnetcore.openapi.10.0.9.nupkg.sha512",
-    "C:\\Users\\elise\\.nuget\\packages\\microsoft.openapi\\2.0.0\\microsoft.openapi.2.0.0.nupkg.sha512"
+    "C:\\Users\\Usuario\\.nuget\\packages\\microsoft.aspnetcore.openapi\\10.0.9\\microsoft.aspnetcore.openapi.10.0.9.nupkg.sha512",
+    "C:\\Users\\Usuario\\.nuget\\packages\\microsoft.openapi\\2.0.0\\microsoft.openapi.2.0.0.nupkg.sha512"
   ],
   "logs": [
     {
       "code": "NU1903",
       "level": "Warning",
       "message": "Package 'Microsoft.OpenApi' 2.0.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-v5pm-xwqc-g5wc",
-      "projectPath": "C:\\Users\\elise\\ISC09A-INTEGRADOR\\Casa\\Backend\\CasaDomotica.API\\CasaDomotica.API.csproj",
+      "projectPath": "C:\\Users\\Usuario\\Downloads\\Front_Estacionamiento\\ISC09B-INTEGRADOR\\Casa\\Backend\\CasaDomotica.API\\CasaDomotica.API.csproj",
       "warningLevel": 1,
-      "filePath": "C:\\Users\\elise\\ISC09A-INTEGRADOR\\Casa\\Backend\\CasaDomotica.API\\CasaDomotica.API.csproj",
+      "filePath": "C:\\Users\\Usuario\\Downloads\\Front_Estacionamiento\\ISC09B-INTEGRADOR\\Casa\\Backend\\CasaDomotica.API\\CasaDomotica.API.csproj",
       "libraryId": "Microsoft.OpenApi",
       "targetGraphs": [
         "net10.0"

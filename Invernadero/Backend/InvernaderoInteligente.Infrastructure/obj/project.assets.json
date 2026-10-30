@@ -1,30 +1,68 @@
 {
   "version": 4,
   "targets": {
-    "net10.0": {}
+    "net10.0": {
+      "InvernaderoInteligente.Application/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v10.0",
+        "dependencies": {
+          "InvernaderoInteligente.Domain": "1.0.0"
+        },
+        "compile": {
+          "bin/placeholder/InvernaderoInteligente.Application.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/InvernaderoInteligente.Application.dll": {}
+        }
+      },
+      "InvernaderoInteligente.Domain/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v10.0",
+        "compile": {
+          "bin/placeholder/InvernaderoInteligente.Domain.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/InvernaderoInteligente.Domain.dll": {}
+        }
+      }
+    }
   },
-  "libraries": {},
+  "libraries": {
+    "InvernaderoInteligente.Application/1.0.0": {
+      "type": "project",
+      "path": "../InvernaderoInteligente.Application/InvernaderoInteligente.Application.csproj",
+      "msbuildProject": "../InvernaderoInteligente.Application/InvernaderoInteligente.Application.csproj"
+    },
+    "InvernaderoInteligente.Domain/1.0.0": {
+      "type": "project",
+      "path": "../InvernaderoInteligente.Domain/InvernaderoInteligente.Domain.csproj",
+      "msbuildProject": "../InvernaderoInteligente.Domain/InvernaderoInteligente.Domain.csproj"
+    }
+  },
   "projectFileDependencyGroups": {
-    "net10.0": []
+    "net10.0": [
+      "InvernaderoInteligente.Application >= 1.0.0",
+      "InvernaderoInteligente.Domain >= 1.0.0"
+    ]
   },
   "packageFolders": {
-    "C:\\Users\\elise\\.nuget\\packages\\": {},
+    "C:\\Users\\Usuario\\.nuget\\packages\\": {},
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\elise\\ISC09A-INTEGRADOR\\Invernadero\\Backend\\InvernaderoInteligente.Infrastructure\\InvernaderoInteligente.Infrastructure.csproj",
+      "projectUniqueName": "C:\\Users\\Usuario\\Downloads\\Front_Estacionamiento\\ISC09B-INTEGRADOR\\Invernadero\\Backend\\InvernaderoInteligente.Infrastructure\\InvernaderoInteligente.Infrastructure.csproj",
       "projectName": "InvernaderoInteligente.Infrastructure",
-      "projectPath": "C:\\Users\\elise\\ISC09A-INTEGRADOR\\Invernadero\\Backend\\InvernaderoInteligente.Infrastructure\\InvernaderoInteligente.Infrastructure.csproj",
-      "packagesPath": "C:\\Users\\elise\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\elise\\ISC09A-INTEGRADOR\\Invernadero\\Backend\\InvernaderoInteligente.Infrastructure\\obj\\",
+      "projectPath": "C:\\Users\\Usuario\\Downloads\\Front_Estacionamiento\\ISC09B-INTEGRADOR\\Invernadero\\Backend\\InvernaderoInteligente.Infrastructure\\InvernaderoInteligente.Infrastructure.csproj",
+      "packagesPath": "C:\\Users\\Usuario\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\Usuario\\Downloads\\Front_Estacionamiento\\ISC09B-INTEGRADOR\\Invernadero\\Backend\\InvernaderoInteligente.Infrastructure\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\elise\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\Usuario\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
@@ -33,13 +71,21 @@
       ],
       "sources": {
         "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+        "C:\\Program Files\\dotnet\\library-packs": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
         "net10.0": {
           "framework": "net10.0",
           "targetAlias": "net10.0",
-          "projectReferences": {}
+          "projectReferences": {
+            "C:\\Users\\Usuario\\Downloads\\Front_Estacionamiento\\ISC09B-INTEGRADOR\\Invernadero\\Backend\\InvernaderoInteligente.Application\\InvernaderoInteligente.Application.csproj": {
+              "projectPath": "C:\\Users\\Usuario\\Downloads\\Front_Estacionamiento\\ISC09B-INTEGRADOR\\Invernadero\\Backend\\InvernaderoInteligente.Application\\InvernaderoInteligente.Application.csproj"
+            },
+            "C:\\Users\\Usuario\\Downloads\\Front_Estacionamiento\\ISC09B-INTEGRADOR\\Invernadero\\Backend\\InvernaderoInteligente.Domain\\InvernaderoInteligente.Domain.csproj": {
+              "projectPath": "C:\\Users\\Usuario\\Downloads\\Front_Estacionamiento\\ISC09B-INTEGRADOR\\Invernadero\\Backend\\InvernaderoInteligente.Domain\\InvernaderoInteligente.Domain.csproj"
+            }
+          }
         }
       },
       "warningProperties": {
@@ -52,7 +98,7 @@
         "auditLevel": "low",
         "auditMode": "all"
       },
-      "SdkAnalysisLevel": "10.0.300"
+      "SdkAnalysisLevel": "10.0.400"
     },
     "frameworks": {
       "net10.0": {
@@ -74,7 +120,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.301/PortableRuntimeIdentifierGraph.json",
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.401/PortableRuntimeIdentifierGraph.json",
         "packagesToPrune": {
           "Microsoft.CSharp": "(,4.7.32767]",
           "Microsoft.VisualBasic": "(,10.4.32767]",
