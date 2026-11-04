@@ -1,0 +1,9 @@
+# Solo aplica a Almacen/Backend
+bin/
+obj/
+.vs/
+*.user
+*.suo
+# Configuración local con secretos (nunca subir)
+appsettings.*.local.json
+local.settings.json
