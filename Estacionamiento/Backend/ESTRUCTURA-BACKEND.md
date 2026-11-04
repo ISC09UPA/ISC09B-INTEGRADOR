@@ -12,8 +12,9 @@ Propuesta de estructura y endpoints del backend en .NET 10 con arquitectura limp
 | Configuración para las llaves de Azure | ✅ `appsettings.json` (vacío) + `.env.example`; las llena Carlos |
 | Domain/DAOs (interfaces de acceso a datos + `IUnidadDeTrabajo`) | ✅ Hecho |
 | Application/Interfaces (9 servicios + `IProcesadorPasoPluma` + puertos en `Externos/`) | ✅ Hecho |
+| Base de datos: tablas y datos iniciales (`Infrastructure/Scripts/`) | ✅ Hecho, alineado con el diagrama ER |
 | Application/Services | ⏳ Pendiente |
-| Infrastructure (DAOs, SQL, Azure, JWT) | ⏳ Pendiente |
+| Infrastructure (DbContext, DAOs, Azure, JWT) | ⏳ Pendiente |
 | Login real con JWT y roles, SignalR | ⏳ Pendiente |
 
 **Para el front:** con la API corriendo (`dotnet run --project EstacionamientoInteligente.API`), la documentación interactiva está en `http://localhost:5141/scalar` y el JSON de OpenAPI en `/openapi/v1.json`. Los enums viajan como texto (`"Libre"`, `"Carro"`). Las fechas reales se devolverán en UTC (terminan en `Z`), así que la app debe pasarlas a hora local. Por ahora el login devuelve un token de ejemplo y ningún endpoint lo valida.
@@ -91,16 +92,27 @@ Backend/
 
 ## 3. Modelo de datos
 
-| Entidad | Campos principales | Para qué sirve |
-|---|---|---|
-| **Usuario** | Id, Nombre, Correo, ContrasenaHash, Rol (Administrador o Usuario), FechaRegistro | Login y permisos |
-| **Vehiculo** | Id, Placa (puede ser "no legible"), Tipo (Carro, Camioneta, Moto, Camion, Desconocido), UsuarioId?, Estado (Alta o Baja), FechaAlta | Registro de placas |
-| **Cajon** | Id, Numero (1–4), Estado (Libre u Ocupado), UltimoCambio | Mapa en tiempo real |
-| **Acceso** | Id, VehiculoId, CajonId?, Estacionado, HoraEntrada, HoraSalida?, FotoEntrada, FotoSalida?, ConfianzaOcr, Origen (Maqueta o Escaner) | Historial, estancias y estadísticas |
-| **Alerta** | Id, Tipo (EntradaNegada, PlacaNoLegible, CajonSinSalida), Mensaje, Placa?, Foto?, Fecha, Atendida | Avisos al administrador |
-| **EventoSensor** | Id, Dispositivo, Tipo (Cajon, Pluma), Valor, Fecha | Auditoría de la maqueta y estado de la pluma |
+La definición oficial de la base está en `Infrastructure/Scripts/`:
+`01_CrearTablas.sql` (tablas, llaves e índices) y `02_DatosIniciales.sql` (los 4 cajones). Se corren en ese orden.
 
-La duración de una estancia no se guarda: se calcula como `HoraSalida - HoraEntrada`, o con la hora actual si el auto sigue dentro.
+| Tabla (modelo) | Columnas | Para qué sirve |
+|---|---|---|
+| **Usuarios** (`Usuario`) | id, nombre, correo (UK), contrasena_hash, rol, fecha_registro | Login y permisos |
+| **Vehiculos** (`Vehiculo`) | id, placa?, placa_clave? (UK si no es null), tipo_vehiculo, id_usuario? (FK), estado, fecha_alta, fecha_baja? | Registro de placas |
+| **Cajones** (`Cajon`) | id, numero (UK), estado, ultimo_cambio | Mapa en tiempo real |
+| **Accesos** (`Acceso`) | id, id_vehiculo (FK), id_cajon? (FK), estacionado, sin_cajon_desde?, hora_entrada, hora_salida?, foto_entrada, foto_salida?, confianza_ocr, origen | Historial, estancias y estadísticas |
+| **Alertas** (`Alerta`) | id, tipo, mensaje, placa?, foto?, id_vehiculo? (FK), fecha, atendida, fecha_atencion?, id_usuario_atiende? (FK) | Avisos al administrador |
+| **EventosSensor** (`EventoSensor`) | id, dispositivo, tipo, valor, detalle?, fecha | Auditoría de la maqueta y estado de la pluma |
+
+Reglas de la base:
+- **Ids `UNIQUEIDENTIFIER` (Guid).** El backend genera el id al crear la entidad, así un paso por la pluma (acceso + alerta + evento) se guarda en una sola transacción, y la API ya usa Guid en sus rutas y DTOs.
+- **Fechas `DATETIME2` en UTC.**
+- **Enums como texto** (`'Libre'`, `'Carro'`, `'Administrador'`), con `CHECK` que limita los valores válidos.
+- **Placa:** `placa` es el texto que se muestra (`ABC-123-A`) y `placa_clave` solo letras y números (`ABC123A`); la clave es la que se compara y es única. Ambas son `NULL` cuando la placa no fue legible.
+- **Nada se borra:** los vehículos se dan de baja y las alertas se atienden, por eso las FKs no tienen cascada.
+- **Diferencias con el primer diagrama ER:** se cambiaron los ids `INT` por Guid, la placa ahora acepta `NULL` y se agregaron las columnas que pide el dominio (fechas de alta, baja y atención, `estacionado`, `sin_cajon_desde`, `confianza_ocr`, `origen`, `placa`/`foto` en alertas y `detalle` en eventos). Se quitó `id_cajon` de Alertas y EventosSensor: el cajón del evento ya va en `dispositivo` (`cajon-3`).
+
+La duración de una estancia no se guarda: se calcula como `hora_salida - hora_entrada`, o con la hora actual si el auto sigue dentro.
 
 ---
 
@@ -182,14 +194,14 @@ El hub está en `/hubs/estacionamiento` y pide JWT (por query string `access_tok
 
 ## 6. Raspberry ↔ backend (Service Bus)
 
-La Raspberry no usa la API HTTP. Sube la foto a Blob Storage y manda por Service Bus solo el nombre del archivo.
+La Raspberry no usa la API HTTP. Sube la foto a Blob Storage (contenedor `fotos-placas`) y manda por Service Bus solo el nombre del archivo.
 
 | Cola | Dirección | Mensaje (`Subject`) | Contenido |
 |---|---|---|---|
-| `maqueta-eventos` | Pi → backend | `cajon.cambio` | `{cajon, ocupado, fecha}` |
+| `eventos-maqueta` | Pi → backend | `cajon.cambio` | `{cajon, ocupado, fecha}` |
 | | | `pluma.vehiculo` | `{solicitudId, fotoBlob, fecha}` |
 | | | `pluma.estado` | `{abierta, fecha}` |
-| `maqueta-comandos` | backend → Pi | `pluma.respuesta` | `{solicitudId, accion: abrir\|negar, tipo: entrada\|salida, placa}` |
+| `comandos-maqueta` | backend → Pi | `pluma.respuesta` | `{solicitudId, accion: abrir\|negar, tipo: entrada\|salida, placa}` |
 | | | `pluma.abrir` | `{motivo}` (apertura manual) |
 
 `solicitudId` viaja también como `CorrelationId`. Así la Pi sabe a qué foto corresponde cada respuesta.
@@ -214,7 +226,7 @@ La Raspberry no usa la API HTTP. Sube la foto a Blob Storage y manda por Service
 
 | Servicio | Dónde se usa | Si no está configurado |
 |---|---|---|
-| Azure SQL Database | `Persistencia/` (EF Core) | Se usa LocalDB en desarrollo. |
+| Azure SQL Database | `Data/` (EF Core) y `Scripts/` (tablas) | Se usa LocalDB en desarrollo. |
 | Blob Storage | `Azure/Blob/` | Las fotos se guardan en una carpeta local. |
 | Computer Vision (Read/OCR) | `Azure/ComputerVision/` | La placa se marca como "no legible". |
 | Custom Vision | `Azure/CustomVision/`, por HTTP (el SDK está obsoleto) | El tipo queda como `Desconocido`. |
@@ -228,7 +240,7 @@ La Raspberry no usa la API HTTP. Sube la foto a Blob Storage y manda por Service
 
 ## 9. Decisiones por confirmar
 
-1. Azure SQL + EF Core (LocalDB en desarrollo).
+1. ✅ Azure SQL + EF Core (LocalDB en desarrollo), ids Guid y tablas definidas en `Infrastructure/Scripts/`.
 2. Login con JWT propio y contraseñas con BCrypt.
 3. Estadísticas calculadas desde la base de datos; las métricas también se mandan a Azure Monitor.
 4. Implementaciones simuladas cuando falta la configuración de Azure.

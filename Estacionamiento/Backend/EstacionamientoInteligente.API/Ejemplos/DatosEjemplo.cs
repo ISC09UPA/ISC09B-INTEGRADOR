@@ -16,7 +16,7 @@ internal static class DatosEjemplo
     public static readonly Guid AccesoActualId = Guid.Parse("22222222-2222-2222-2222-222222222222");
     public static readonly Guid VehiculoNoLegibleId = Guid.Parse("33333333-3333-3333-3333-333333333333");
 
-    private const string FotoUrl = "https://ejemplo.blob.core.windows.net/fotos-vehiculos/entradas/abc-123-a.jpg";
+    private const string FotoUrl = "https://ejemplo.blob.core.windows.net/fotos-placas/entradas/abc-123-a.jpg";
 
     // --- Auth ---
     public static UsuarioDto Usuario(RolUsuario rol = RolUsuario.Usuario) =>
