@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="ProyectoInteligente.API/ProyectoInteligente.API.csproj" />
+  <Project Path="ProyectoInteligente.Application/ProyectoInteligente.Application.csproj" />
+  <Project Path="ProyectoInteligente.Domain/ProyectoInteligente.Domain.csproj" />
+  <Project Path="ProyectoInteligente.Infrastructure/ProyectoInteligente.Infrastructure.csproj" />
+</Solution>
