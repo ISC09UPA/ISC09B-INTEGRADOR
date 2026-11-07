@@ -29,4 +29,4 @@ Dependencias entre proyectos
 API → Application, Infrastructure
 Infrastructure → Application, Domain
 Application → Domain
-Domain → (ninguno)
+Domain → (ninguno).
