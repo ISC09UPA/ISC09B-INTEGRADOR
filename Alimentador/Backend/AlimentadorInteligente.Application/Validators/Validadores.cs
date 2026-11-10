@@ -100,6 +100,11 @@ public class CrearGatewayValidator : AbstractValidator<CrearGatewayRequest>
         => RuleFor(x => x.DeviceId).NotEmpty().MaximumLength(50).Matches("^[a-zA-Z0-9_-]+$");
 }
 
+public class LigarGatewayValidator : AbstractValidator<LigarGatewayRequest>
+{
+    public LigarGatewayValidator() => RuleFor(x => x.GatewayId).GreaterThan(0);
+}
+
 public class LoteVisitasValidator : AbstractValidator<List<VisitaDispositivoDto>>
 {
     public LoteVisitasValidator() => RuleFor(x => x.Count).LessThanOrEqualTo(Constantes.MaxLote);

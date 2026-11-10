@@ -29,6 +29,18 @@ public class AlimentadoresController(IAlimentadorService alimentadores, IComando
     public async Task<ActionResult<AlimentadorDto>> Actualizar(int id, ActualizarAlimentadorRequest request, CancellationToken ct)
         => Ok(await alimentadores.ActualizarAsync(id, request, ct));
 
+    // --- Raspberry Pi ---
+
+    /// <summary>Liga el alimentador a una Pi propia. Solo el dueño del alimentador que además registró la Pi.</summary>
+    [HttpPut("{id:int}/gateway")]
+    public async Task<ActionResult<AlimentadorDto>> LigarGateway(int id, LigarGatewayRequest request, CancellationToken ct)
+        => Ok(await alimentadores.LigarGatewayAsync(id, request, ct));
+
+    /// <summary>Quita la Pi del alimentador; deja de recibir su configuración y comandos.</summary>
+    [HttpDelete("{id:int}/gateway")]
+    public async Task<ActionResult<AlimentadorDto>> DesligarGateway(int id, CancellationToken ct)
+        => Ok(await alimentadores.DesligarGatewayAsync(id, ct));
+
     // --- Usuarios y roles (RF-19) ---
 
     [HttpGet("{id:int}/miembros")]

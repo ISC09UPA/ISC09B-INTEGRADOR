@@ -63,6 +63,41 @@ public class AlimentadorService(IAppDbContext db, IUsuarioActual usuario, IAcces
         return ADto(alimentador, RolAlimentador.Dueno);
     }
 
+    public async Task<AlimentadorDto> LigarGatewayAsync(int id, LigarGatewayRequest request, CancellationToken ct = default)
+    {
+        await acceso.RequerirDuenoAsync(id, ct);
+        var alimentador = await CargarAsync(id, ct);
+        var gateway = await db.Gateways.FirstOrDefaultAsync(g => g.Id == request.GatewayId, ct)
+            ?? throw new NoEncontradoException("Gateway", request.GatewayId);
+        if (gateway.PropietarioId != usuario.Id)
+            throw new ProhibidoException("Esa Raspberry Pi pertenece a otro usuario.");
+
+        if (alimentador.GatewayId != gateway.Id)
+        {
+            alimentador.Gateway = gateway;
+            // La Pi nueva debe recibir la configuración aunque ya tenga una versión igual o mayor
+            alimentador.VersionConfiguracion++;
+            await db.SaveChangesAsync(ct);
+        }
+        return ADto(alimentador, RolAlimentador.Dueno);
+    }
+
+    public async Task<AlimentadorDto> DesligarGatewayAsync(int id, CancellationToken ct = default)
+    {
+        await acceso.RequerirDuenoAsync(id, ct);
+        var alimentador = await CargarAsync(id, ct);
+        if (alimentador.GatewayId is not null)
+        {
+            alimentador.Gateway = null;
+            alimentador.GatewayId = null;
+            // Sin Pi no hay forma de saber si el ESP32 sigue conectado
+            alimentador.EnLinea = false;
+            alimentador.VersionConfiguracion++;
+            await db.SaveChangesAsync(ct);
+        }
+        return ADto(alimentador, RolAlimentador.Dueno);
+    }
+
     public async Task<IReadOnlyList<MiembroDto>> ListarMiembrosAsync(int id, CancellationToken ct = default)
     {
         await acceso.RequerirAccesoAsync(id, ct);
@@ -133,5 +168,6 @@ public class AlimentadorService(IAppDbContext db, IUsuarioActual usuario, IAcces
     }
 
     private static AlimentadorDto ADto(Alimentador a, RolAlimentador rol) => new(
-        a.Id, a.Codigo, a.Nombre, a.KcalPorGramo, a.IntervaloMinimoHoras, a.ZonaHoraria, rol, a.Estado());
+        a.Id, a.Codigo, a.Nombre, a.KcalPorGramo, a.IntervaloMinimoHoras, a.ZonaHoraria, rol, a.Estado(),
+        a.Gateway?.Id ?? a.GatewayId, a.Gateway?.DeviceId);
 }

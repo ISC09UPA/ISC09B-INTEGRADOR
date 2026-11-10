@@ -35,6 +35,10 @@ public interface IAlimentadorService
     Task<AlimentadorDto> ObtenerAsync(int id, CancellationToken ct = default);
     Task<AlimentadorDto> CrearAsync(CrearAlimentadorRequest request, CancellationToken ct = default);
     Task<AlimentadorDto> ActualizarAsync(int id, ActualizarAlimentadorRequest request, CancellationToken ct = default);
+    /// <summary>Liga el alimentador a una Raspberry Pi. Dueño del alimentador y propietario de la Pi.</summary>
+    Task<AlimentadorDto> LigarGatewayAsync(int id, LigarGatewayRequest request, CancellationToken ct = default);
+    /// <summary>Quita la Raspberry Pi del alimentador. Solo el dueño.</summary>
+    Task<AlimentadorDto> DesligarGatewayAsync(int id, CancellationToken ct = default);
     Task<IReadOnlyList<MiembroDto>> ListarMiembrosAsync(int id, CancellationToken ct = default);
     Task<MiembroDto> AgregarMiembroAsync(int id, AgregarMiembroRequest request, CancellationToken ct = default);
     Task CambiarRolAsync(int id, int usuarioId, CambiarRolRequest request, CancellationToken ct = default);

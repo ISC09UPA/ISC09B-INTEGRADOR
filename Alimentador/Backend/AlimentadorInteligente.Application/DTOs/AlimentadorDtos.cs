@@ -4,7 +4,8 @@ namespace AlimentadorInteligente.Application.DTOs;
 
 public record AlimentadorDto(
     int Id, string Codigo, string Nombre, double KcalPorGramo, int IntervaloMinimoHoras,
-    string ZonaHoraria, RolAlimentador MiRol, EstadoAlimentadorDto Estado);
+    string ZonaHoraria, RolAlimentador MiRol, EstadoAlimentadorDto Estado,
+    int? GatewayId = null, string? GatewayDeviceId = null);
 
 public record EstadoAlimentadorDto(
     bool EnLinea, bool GatewayEnLinea,
@@ -20,6 +21,7 @@ public record ActualizarAlimentadorRequest(
 
 public record GatewayDto(int Id, string DeviceId, DateTimeOffset? UltimoHeartbeat, bool Sincronizando);
 public record CrearGatewayRequest(string DeviceId);
+public record LigarGatewayRequest(int GatewayId);
 /// <summary>La clave se muestra una sola vez; en la BD solo queda su hash.</summary>
 public record GatewayClaveResponse(int Id, string DeviceId, string Clave);
 
