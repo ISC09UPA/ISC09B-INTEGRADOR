@@ -1,0 +1,48 @@
+# Configuración del gateway. Copia este archivo a /etc/alimentador/config.toml
+# (permisos 600, dueño alimentador) y llena los valores. config.toml NO va en git.
+
+[backend]
+# URL base del backend, sin "/" al final
+url = "https://alimentador-api.azurewebsites.net"
+# Valores que devuelve POST /api/gateways (la clave solo se muestra una vez)
+device_id = "pi-casa"
+device_key = "PEGA-AQUI-LA-CLAVE"
+timeout = 15.0                 # segundos por petición
+health_interval = 15           # cada cuánto se consulta GET /health
+heartbeat_interval = 60
+config_interval = 30           # poll de config?version=N
+config_full_refresh = 3600     # cada cuánto se pide config?version=0 completa
+commands_interval = 5          # poll de comandos pendientes
+batch_size = 50                # registros por lote de visits/events
+backoff_base = 2.0             # reintentos: base * 2^n segundos...
+backoff_max = 300.0            # ...hasta este máximo
+
+[mqtt]
+host = "127.0.0.1"
+port = 1883
+username = "gateway"
+password = "PEGA-AQUI-LA-CLAVE-MQTT"
+client_id = "alimentador-gateway"
+keepalive = 30
+time_interval = 60             # publicación de gateway/time
+
+[lan]
+bind = "0.0.0.0"
+port = 8080
+# IP o nombre con el que los ESP32 alcanzan a la Pi (para las URL de OTA).
+# Vacío = se detecta sola.
+public_host = ""
+max_photo_bytes = 2097152      # 2 MiB
+
+[paths]
+data_dir = "/var/lib/alimentador"          # aquí vive gateway.db
+ota_dir = "/var/lib/alimentador/ota"
+photos_dir = "/var/lib/alimentador/fotos"  # fotos en espera de subirse
+
+[commands]
+dispense_timeout = 90          # s para esperar cmd/result de un dispensado
+dispense_max_age = 120         # s; un dispensado más viejo ya no se ejecuta (backend: 2 min)
+ota_timeout = 900              # s para esperar cmd/result de una OTA (backend: 30 min)
+
+[log]
+level = "INFO"
