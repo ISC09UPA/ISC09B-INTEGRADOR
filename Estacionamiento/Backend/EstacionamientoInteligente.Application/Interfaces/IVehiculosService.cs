@@ -20,5 +20,6 @@ public interface IVehiculosService
     Task<VehiculoDto> ReactivarAsync(Guid id);
 
     /// <summary>Corrige una "placa no legible" y atiende su alerta pendiente.</summary>
-    Task<VehiculoDto> CorregirPlacaAsync(Guid id, CorregirPlacaRequest request);
+    /// <param name="administradorId">El id que viene en el token; queda como quien atendió la alerta.</param>
+    Task<VehiculoDto> CorregirPlacaAsync(Guid id, CorregirPlacaRequest request, Guid administradorId);
 }
