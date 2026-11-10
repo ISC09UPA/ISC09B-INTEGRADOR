@@ -8,7 +8,10 @@ public interface IAlertasService
     /// <summary>De la más reciente a la más antigua.</summary>
     Task<IReadOnlyList<AlertaDto>> ListarAsync(bool soloPendientes);
 
-    /// <summary>Lanza <c>ExcepcionNoEncontrado</c> si la alerta no existe.</summary>
+    /// <summary>
+    /// Lanza <c>ExcepcionNoEncontrado</c> si la alerta no existe
+    /// y <c>ExcepcionConflicto</c> si ya estaba atendida.
+    /// </summary>
     /// <param name="administradorId">Quién la atendió (id del token).</param>
     Task AtenderAsync(Guid id, Guid administradorId);
 
