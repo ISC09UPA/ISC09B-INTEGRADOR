@@ -1,8 +1,8 @@
 /**
- * Pantalla de Crear cuenta (avance 1, solo interfaz).
- * Validaciones visuales en vivo (correo, contraseña ≥ 8 caracteres,
- * confirmación idéntica), botón deshabilitado hasta que el formulario
- * sea válido, spinner al «enviar» y estado de error en recuadro rosa.
+ * Pantalla 14: Crear cuenta.
+ * Valida correo, contraseña (mínimo 8 caracteres) y confirmación idéntica.
+ * El botón queda deshabilitado hasta que el formulario sea válido (sugerido)
+ * y muestra spinner mientras se envía.
  */
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
@@ -11,17 +11,20 @@ import AuthLayout from './AuthLayout';
 import ErrorBanner from '../../components/ui/ErrorBanner';
 import PrimaryButton from '../../components/ui/PrimaryButton';
 import TextField from '../../components/ui/TextField';
+import { useApp } from '../../context/AppContext';
 import { colors, spacing, typography } from '../../theme';
 
 const esCorreoValido = (correo) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo);
 const LONGITUD_MINIMA = 8;
 
-export default function RegisterScreen({ onIrALogin = null }) {
+export default function RegisterScreen({ navigation }) {
+  const { registrar } = useApp();
+
   const [email, setEmail] = useState('');
   const [contrasena, setContrasena] = useState('');
   const [confirmacion, setConfirmacion] = useState('');
   const [visitados, setVisitados] = useState({}); // Campos que ya se tocaron
-  const [errorGeneral, setErrorGeneral] = useState(null); // Banner rosa
+  const [errorGeneral, setErrorGeneral] = useState(null);
   const [enviando, setEnviando] = useState(false);
 
   /** Errores calculados en vivo para cada campo. */
@@ -53,20 +56,23 @@ export default function RegisterScreen({ onIrALogin = null }) {
 
   const limpiarBanner = () => setErrorGeneral(null);
 
-  const onSubmit = () => {
+  const onSubmit = async () => {
     if (!formularioValido) return;
-    // DEMO: no hay backend. Se simula el envío con el spinner y se
-    // muestra el estado de error «correo ya registrado» del mockup.
     setEnviando(true);
-    setTimeout(() => {
+    try {
+      // Al crear la cuenta la sesión inicia sola y RootNavigator
+      // muestra automáticamente las pestañas principales.
+      await registrar({ email: email.trim(), contrasena });
+    } catch (error) {
+      // «Este correo ya está registrado.» y fallos de red.
+      setErrorGeneral(error.message);
+    } finally {
       setEnviando(false);
-      setErrorGeneral('Este correo ya está registrado.');
-    }, 900);
+    }
   };
 
   return (
     <AuthLayout>
-      {/* Cabecera verde oscuro: la barra de estado debe ser clara */}
       <StatusBar style="light" />
 
       <Text style={styles.titulo}>Crea tu cuenta</Text>
@@ -86,6 +92,7 @@ export default function RegisterScreen({ onIrALogin = null }) {
         keyboardType="email-address"
         autoCapitalize="none"
         autoComplete="email"
+        textContentType="emailAddress"
         error={errorDe('email')}
         returnKeyType="next"
       />
@@ -102,6 +109,7 @@ export default function RegisterScreen({ onIrALogin = null }) {
         secureTextEntry
         autoCapitalize="none"
         autoComplete="password-new"
+        textContentType="newPassword"
         error={errorDe('contrasena')}
         returnKeyType="next"
       />
@@ -118,6 +126,7 @@ export default function RegisterScreen({ onIrALogin = null }) {
         secureTextEntry
         autoCapitalize="none"
         autoComplete="password-new"
+        textContentType="newPassword"
         error={errorDe('confirmacion')}
         helper="Mínimo 8 caracteres"
         returnKeyType="done"
@@ -132,19 +141,15 @@ export default function RegisterScreen({ onIrALogin = null }) {
         style={styles.boton}
       />
 
-      {/* Solo visible en el avance 2, cuando el stack pasa el enlace */}
-      {onIrALogin ? (
-        <Pressable
-          accessibilityRole="button"
-          onPress={onIrALogin}
-          style={styles.pie}
-        >
-          <Text style={styles.pieTexto}>
-            ¿Ya tienes una cuenta?{' '}
-            <Text style={styles.pieEnlace}>Inicia sesión</Text>
-          </Text>
-        </Pressable>
-      ) : null}
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => navigation.navigate('Login')}
+        style={styles.iniciarSesion}
+      >
+        <Text style={styles.iniciarSesionTexto}>
+          ¿Ya tienes cuenta? <Text style={styles.iniciarSesionEnlace}>Iniciar sesión</Text>
+        </Text>
+      </Pressable>
     </AuthLayout>
   );
 }
@@ -166,16 +171,16 @@ const styles = StyleSheet.create({
   boton: {
     marginTop: spacing.xl,
   },
-  pie: {
-    marginTop: spacing.xxl,
+  iniciarSesion: {
     alignItems: 'center',
+    marginTop: spacing.xl,
   },
-  pieTexto: {
+  iniciarSesionTexto: {
     ...typography.body,
     color: colors.textSecondary,
   },
-  pieEnlace: {
-    fontWeight: '700',
+  iniciarSesionEnlace: {
     color: colors.primary,
+    fontWeight: '700',
   },
 });
