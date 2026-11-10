@@ -22,6 +22,7 @@ public static class DependencyInjection
         services.AddScoped<IHistorialService, HistorialService>();
         services.AddScoped<IAlertaService, AlertaService>();
         services.AddScoped<IComandoService, ComandoService>();
+        services.AddScoped<IOtaService, OtaService>();
         services.AddScoped<IDispositivoService, DispositivoService>();
         services.AddScoped<IMonitoreoService, MonitoreoService>();
         return services;

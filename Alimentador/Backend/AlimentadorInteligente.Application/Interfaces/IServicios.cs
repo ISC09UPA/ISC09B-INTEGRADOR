@@ -81,6 +81,15 @@ public interface IComandoService
     Task<ComandoDto> LanzarOtaAsync(int alimentadorId, LanzarOtaRequest request, CancellationToken ct = default);
 }
 
+/// <summary>Publicación de firmware y modelos para OTA (RF-15). Solo administradores (Ota:Administradores).</summary>
+public interface IOtaService
+{
+    /// <summary>Sube el archivo al contenedor "ota", calcula SHA-256 y tamaño y registra el artefacto.</summary>
+    Task<ArtefactoOtaDto> PublicarAsync(PublicarArtefactoRequest request, Stream contenido, CancellationToken ct = default);
+    /// <summary>Borra un artefacto que ningún comando haya usado.</summary>
+    Task EliminarAsync(int id, CancellationToken ct = default);
+}
+
 /// <summary>Endpoints que consume la Raspberry Pi (sección 8.2).</summary>
 public interface IDispositivoService
 {

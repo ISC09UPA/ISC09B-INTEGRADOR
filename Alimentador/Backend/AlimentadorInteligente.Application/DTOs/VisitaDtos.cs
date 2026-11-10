@@ -23,3 +23,5 @@ public record DispensarRequest(double Gramos, int? MascotaId, int? Tolva = null)
 
 public record ArtefactoOtaDto(int Id, TipoArtefactoOta Tipo, string Version, string Sha256, long TamanoBytes, DateTimeOffset CreadoEn);
 public record LanzarOtaRequest(int ArtefactoId);
+/// <summary>Datos de un artefacto a publicar; el archivo viaja aparte (multipart). Tipo: "firmware" o "modelo".</summary>
+public record PublicarArtefactoRequest(string Tipo, string Version, string NombreArchivo);

@@ -15,4 +15,6 @@ public static class Constantes
 
     public const string ContenedorFotos = "fotos-dudosas";
     public const string ContenedorOta = "ota";
+    /// <summary>Tamaño máximo de un firmware o modelo publicado (la flash del ESP32-S3 es de 8 a 16 MB).</summary>
+    public const long MaxTamanoArtefactoOta = 32L * 1024 * 1024;
 }
