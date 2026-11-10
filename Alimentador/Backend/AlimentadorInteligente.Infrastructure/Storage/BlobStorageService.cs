@@ -1,5 +1,6 @@
 using AlimentadorInteligente.Application.Abstractions;
 using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 using Azure.Storage.Sas;
 
 namespace AlimentadorInteligente.Infrastructure.Storage;
@@ -12,6 +13,22 @@ public class BlobStorageService(BlobServiceClient cliente) : IAlmacenamientoArch
 
     public Uri GenerarUrlDescarga(string contenedor, string blobNombre, TimeSpan vigencia)
         => GenerarSas(contenedor, blobNombre, vigencia, BlobSasPermissions.Read);
+
+    public async Task SubirAsync(string contenedor, string blobNombre, Stream contenido, CancellationToken ct = default)
+    {
+        var blob = cliente.GetBlobContainerClient(contenedor).GetBlobClient(blobNombre);
+        var opciones = new BlobUploadOptions
+        {
+            HttpHeaders = new BlobHttpHeaders { ContentType = "application/octet-stream" }
+        };
+        await blob.UploadAsync(contenido, opciones, ct);
+    }
+
+    public async Task EliminarAsync(string contenedor, string blobNombre, CancellationToken ct = default)
+    {
+        var blob = cliente.GetBlobContainerClient(contenedor).GetBlobClient(blobNombre);
+        await blob.DeleteIfExistsAsync(cancellationToken: ct);
+    }
 
     private Uri GenerarSas(string contenedor, string blobNombre, TimeSpan vigencia, BlobSasPermissions permisos)
     {

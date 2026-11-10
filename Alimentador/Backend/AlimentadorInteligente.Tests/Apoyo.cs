@@ -24,8 +24,24 @@ internal sealed class PushFalso : IPushService
 
 internal sealed class ArchivosFalsos : IAlmacenamientoArchivos
 {
+    /// <summary>Blobs subidos, por "contenedor/nombre".</summary>
+    public Dictionary<string, byte[]> Blobs { get; } = [];
+
     public Uri GenerarUrlSubida(string contenedor, string blobNombre, TimeSpan vigencia) => new("https://prueba.local/subida");
     public Uri GenerarUrlDescarga(string contenedor, string blobNombre, TimeSpan vigencia) => new("https://prueba.local/descarga");
+
+    public async Task SubirAsync(string contenedor, string blobNombre, Stream contenido, CancellationToken ct = default)
+    {
+        using var copia = new MemoryStream();
+        await contenido.CopyToAsync(copia, ct);
+        Blobs[$"{contenedor}/{blobNombre}"] = copia.ToArray();
+    }
+
+    public Task EliminarAsync(string contenedor, string blobNombre, CancellationToken ct = default)
+    {
+        Blobs.Remove($"{contenedor}/{blobNombre}");
+        return Task.CompletedTask;
+    }
 }
 
 internal sealed class UsuarioFalso(int id) : IUsuarioActual

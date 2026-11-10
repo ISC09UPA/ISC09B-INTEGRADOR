@@ -22,4 +22,8 @@ public interface IAlmacenamientoArchivos
 {
     Uri GenerarUrlSubida(string contenedor, string blobNombre, TimeSpan vigencia);
     Uri GenerarUrlDescarga(string contenedor, string blobNombre, TimeSpan vigencia);
+    /// <summary>Sube el contenido desde el backend; reemplaza el blob si ya existía.</summary>
+    Task SubirAsync(string contenedor, string blobNombre, Stream contenido, CancellationToken ct = default);
+    /// <summary>Borra el blob; no falla si ya no existe.</summary>
+    Task EliminarAsync(string contenedor, string blobNombre, CancellationToken ct = default);
 }
