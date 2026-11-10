@@ -10,8 +10,8 @@ public interface ICajonesService
 
     /// <summary>
     /// Un usuario solo ve los datos del vehículo si el auto es suyo; el administrador ve todos.
-    /// Lanza <c>ExcepcionNoEncontrado</c> si el cajón no existe y <c>ExcepcionAccesoDenegado</c>
-    /// si un usuario pide un cajón ocupado por un auto que no es suyo.
+    /// Si un usuario pide un cajón ocupado por un auto ajeno, recibe el cajón con <c>Vehiculo = null</c>.
+    /// Lanza <c>ExcepcionNoEncontrado</c> si el cajón no existe.
     /// </summary>
     Task<DetalleCajonDto> ObtenerDetalleAsync(int numero, Guid usuarioId, bool esAdministrador);
 
