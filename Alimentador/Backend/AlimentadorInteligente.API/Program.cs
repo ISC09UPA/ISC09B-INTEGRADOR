@@ -34,6 +34,11 @@ builder.Services.AddExceptionHandler<ManejadorErrores>();
 builder.Services.AddOpenApi();
 builder.Services.AddHealthChecks();
 
+// CORS solo para pruebas desde el navegador; la app nativa no lo necesita
+var origenes = builder.Configuration.GetSection("Cors:Origenes").Get<string[]>() ?? [];
+builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
+    p.WithOrigins(origenes).AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
+
 // --- Autenticación: JWT para la app, clave de dispositivo para la Raspberry Pi ---
 var jwt = builder.Configuration.GetSection(JwtOptions.Seccion).Get<JwtOptions>() ?? new JwtOptions();
 if (string.IsNullOrWhiteSpace(jwt.Key) || jwt.Key.Length < 32)
@@ -79,6 +84,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -88,3 +94,5 @@ app.MapHub<AlimentadorHub>("/hubs/alimentador");
 app.MapHealthChecks("/health");
 
 app.Run();
+
+public partial class Program;   // para pruebas de integración

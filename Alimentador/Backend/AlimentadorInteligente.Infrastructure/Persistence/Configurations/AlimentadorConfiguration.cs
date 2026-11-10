@@ -11,6 +11,7 @@ public class GatewayConfiguration : IEntityTypeConfiguration<Gateway>
         b.Property(g => g.DeviceId).HasMaxLength(50).IsRequired();
         b.HasIndex(g => g.DeviceId).IsUnique();
         b.Property(g => g.DeviceKeyHash).HasMaxLength(64).IsRequired();
+        b.HasOne(g => g.Propietario).WithMany().HasForeignKey(g => g.PropietarioId).OnDelete(DeleteBehavior.SetNull);
     }
 }
 
@@ -21,6 +22,7 @@ public class AlimentadorConfiguration : IEntityTypeConfiguration<Alimentador>
         b.Property(a => a.Codigo).HasMaxLength(50).IsRequired();
         b.HasIndex(a => a.Codigo).IsUnique();
         b.Property(a => a.Nombre).HasMaxLength(100).IsRequired();
+        b.Property(a => a.ZonaHoraria).HasMaxLength(64).IsRequired();
         b.Property(a => a.VersionFirmware).HasMaxLength(30);
         b.Property(a => a.VersionModelo).HasMaxLength(30);
         b.HasOne(a => a.Gateway).WithMany(g => g.Alimentadores)

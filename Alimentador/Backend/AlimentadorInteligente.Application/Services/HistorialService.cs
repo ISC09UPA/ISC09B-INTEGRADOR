@@ -32,9 +32,9 @@ public class HistorialService(IAppDbContext db, IAccesoAlimentador acceso) : IHi
             ?? throw new NoEncontradoException("Mascota", mascotaId);
         await acceso.RequerirAccesoAsync(mascota.AlimentadorId, ct);
 
-        // TODO: agrupar por día en la zona horaria del alimentador; por ahora se usa UTC.
-        var inicio = new DateTimeOffset(desde.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero);
-        var fin = new DateTimeOffset(hasta.AddDays(1).ToDateTime(TimeOnly.MinValue), TimeSpan.Zero);
+        var zona = mascota.Alimentador.ZonaHoraria;
+        var inicio = CalendarioLocal.InicioDe(desde, zona);
+        var fin = CalendarioLocal.InicioDe(hasta.AddDays(1), zona);
         var visitas = await db.Visitas.AsNoTracking()
             .Where(v => v.MascotaId == mascotaId && v.IniciadaEn >= inicio && v.IniciadaEn < fin)
             .Select(v => new { v.IniciadaEn, v.DispensadoG, v.ConsumidoG })
@@ -42,7 +42,7 @@ public class HistorialService(IAppDbContext db, IAccesoAlimentador acceso) : IHi
 
         // TODO: guardar la ración recomendada de cada día; hoy se usa la actual para todo el rango.
         var recomendado = Math.Round(CalculadoraRacion.GramosPorDia(mascota, mascota.Alimentador.KcalPorGramo), 1);
-        var porDia = visitas.GroupBy(v => DateOnly.FromDateTime(v.IniciadaEn.UtcDateTime))
+        var porDia = visitas.GroupBy(v => CalendarioLocal.DiaDe(v.IniciadaEn, zona))
             .ToDictionary(g => g.Key, g => g.ToList());
 
         var resultado = new List<ConsumoDiarioDto>();

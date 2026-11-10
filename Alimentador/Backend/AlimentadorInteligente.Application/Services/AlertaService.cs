@@ -4,6 +4,7 @@ using AlimentadorInteligente.Application.Exceptions;
 using AlimentadorInteligente.Application.Interfaces;
 using AlimentadorInteligente.Domain.Entities;
 using AlimentadorInteligente.Domain.Enums;
+using AlimentadorInteligente.Domain.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace AlimentadorInteligente.Application.Services;
@@ -50,9 +51,12 @@ public class AlertaService(
             .ToListAsync(ct);
 
         // Las alertas que llegan atrasadas se marcan con la hora en que ocurrieron (sección 8.3)
-        var cuerpo = DateTimeOffset.UtcNow - ocurridaEn > TimeSpan.FromMinutes(5)
-            ? $"{mensaje} (ocurrió a las {ocurridaEn:HH:mm})"
-            : mensaje;
+        var cuerpo = mensaje;
+        if (DateTimeOffset.UtcNow - ocurridaEn > TimeSpan.FromMinutes(5))
+        {
+            var zona = await db.Alimentadores.Where(a => a.Id == alimentadorId).Select(a => a.ZonaHoraria).FirstAsync(ct);
+            cuerpo = $"{mensaje} (ocurrió a las {CalendarioLocal.Hora(ocurridaEn, zona)})";
+        }
         await push.EnviarAsync(tokens, TituloDe(tipo), cuerpo, ct);
     }
 
@@ -65,7 +69,6 @@ public class AlertaService(
         TipoAlerta.AlimentadorSinConexion => "Alimentador sin conexión",
         TipoAlerta.GatewaySinConexion => "Raspberry Pi sin conexión",
         TipoAlerta.ConexionRestablecida => "Conexión restablecida",
-        TipoAlerta.PalomasFrecuentes => "Palomas frecuentes",
         _ => "Alimentador"
     };
 }

@@ -3,4 +3,5 @@
   <Project Path="AlimentadorInteligente.Application/AlimentadorInteligente.Application.csproj" />
   <Project Path="AlimentadorInteligente.Domain/AlimentadorInteligente.Domain.csproj" />
   <Project Path="AlimentadorInteligente.Infrastructure/AlimentadorInteligente.Infrastructure.csproj" />
+  <Project Path="AlimentadorInteligente.Tests/AlimentadorInteligente.Tests.csproj" />
 </Solution>

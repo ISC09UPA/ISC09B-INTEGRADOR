@@ -13,6 +13,23 @@ public class Gateway : EntidadBase
     /// <summary>Inicio del periodo sin conexión reportado por la Pi; null si está conectada.</summary>
     public DateTimeOffset? SinConexionDesde { get; set; }
     public bool AlertaSinConexionEnviada { get; set; }
+    /// <summary>Inicio del vaciado de la cola de la Pi; null si no hay datos atrasados en camino (RF-26).</summary>
+    public DateTimeOffset? SincronizandoDesde { get; set; }
+    public int VisitasSincronizadas { get; set; }
+
+    /// <summary>Usuario que dio de alta la Pi; solo él puede ligarle alimentadores.</summary>
+    public int? PropietarioId { get; set; }
+    public Usuario? Propietario { get; set; }
 
     public ICollection<Alimentador> Alimentadores { get; set; } = [];
+
+    /// <summary>Cierra la sincronización. Indica si hay que avisar y cuántas visitas llegaron.</summary>
+    public (bool avisar, int visitas) TerminarSincronizacion()
+    {
+        var resultado = (AlertaSinConexionEnviada, VisitasSincronizadas);
+        SincronizandoDesde = null;
+        VisitasSincronizadas = 0;
+        AlertaSinConexionEnviada = false;
+        return resultado;
+    }
 }

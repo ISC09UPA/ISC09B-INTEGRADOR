@@ -1,0 +1,16 @@
+# PostgreSQL para desarrollo. Coincide con ConnectionStrings:Postgres de appsettings.Development.json.
+services:
+  db:
+    image: postgres:17
+    container_name: alimentador-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: alimentador
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

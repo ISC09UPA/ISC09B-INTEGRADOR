@@ -7,12 +7,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AlimentadorInteligente.Application.Services;
 
-public class MonitoreoService(IAppDbContext db, IAlertaService alertas, TimeProvider reloj) : IMonitoreoService
+public class MonitoreoService(
+    IAppDbContext db, IAlertaService alertas, INotificadorTiempoReal notificador, TimeProvider reloj) : IMonitoreoService
 {
     public async Task RevisarConexionesAsync(CancellationToken ct = default)
     {
         var ahora = reloj.GetUtcNow();
         var limite = ahora - Constantes.LimiteSinConexion;
+        await CerrarSincronizacionesVencidasAsync(ahora, ct);
 
         // Raspberry Pi sin heartbeat en 30 min: una sola alerta hasta que vuelva
         var gatewaysCaidos = await db.Gateways.Include(g => g.Alimentadores)
@@ -44,12 +46,48 @@ public class MonitoreoService(IAppDbContext db, IAlertaService alertas, TimeProv
                 $"El alimentador {a.Nombre} no ha reportado su estado en 30 minutos.", ahora, ct);
     }
 
+    public async Task RevisarComandosAsync(CancellationToken ct = default)
+    {
+        var ahora = reloj.GetUtcNow();
+        var abiertos = await db.Comandos
+            .Where(c => c.Estado == EstadoComando.Pendiente || c.Estado == EstadoComando.Entregado)
+            .ToListAsync(ct);
+
+        var cerrados = new List<Comando>();
+        foreach (var c in abiertos)
+        {
+            if (c.Estado == EstadoComando.Pendiente && c.EstaVencido(ahora))
+            {
+                c.Estado = EstadoComando.Vencido;
+            }
+            else if (c.SinResultado(ahora))
+            {
+                c.Estado = EstadoComando.Fallido;
+                c.Error = "El alimentador no respondió.";
+            }
+            else continue;
+
+            c.CompletadoEn = ahora;
+            cerrados.Add(c);
+        }
+        await db.SaveChangesAsync(ct);
+
+        foreach (var c in cerrados)
+            await notificador.ComandoActualizadoAsync(c.AlimentadorId, c.ADto(), ct);
+    }
+
     public async Task DetectarAnomaliasAsync(CancellationToken ct = default)
     {
         var ahora = reloj.GetUtcNow();
-        // RF-26: no se evalúa mientras la Pi está sin conexión; al volver, las visitas traen su hora real
+        var ultimoHeartbeatValido = ahora - Constantes.ToleranciaHeartbeat;
+
+        // RF-26: sin datos al día no se puede saber si comió. Se espera a que la Pi reporte
+        // y a que termine de vaciar su cola; las visitas atrasadas traen su hora real.
         var mascotas = await db.Mascotas.Include(m => m.Alimentador).ThenInclude(a => a.Gateway)
-            .Where(m => m.Alimentador.Gateway != null && m.Alimentador.Gateway.SinConexionDesde == null)
+            .Where(m => m.Activa && m.Alimentador.Gateway != null
+                        && m.Alimentador.Gateway.SinConexionDesde == null
+                        && m.Alimentador.Gateway.SincronizandoDesde == null
+                        && m.Alimentador.Gateway.UltimoHeartbeat >= ultimoHeartbeatValido)
             .ToListAsync(ct);
 
         foreach (var m in mascotas)
@@ -57,27 +95,30 @@ public class MonitoreoService(IAppDbContext db, IAlertaService alertas, TimeProv
             await RevisarNoHaComidoAsync(m, ahora, ct);
             await RevisarBajaApetitoAsync(m, ahora, ct);
         }
-
-        await RevisarPalomasAsync(ahora, ct);
     }
 
     public async Task AjustarRacionesAsync(CancellationToken ct = default)
     {
-        // TODO: usar la zona horaria del alimentador para definir "día"; por ahora UTC.
-        var hoy = DateOnly.FromDateTime(reloj.GetUtcNow().UtcDateTime);
-        var ultimoDia = hoy.AddDays(-1);
-        var finVentana = Inicio(hoy);
-        var inicioVentana = Inicio(hoy.AddDays(-3));
-
+        var ahora = reloj.GetUtcNow();
         var mascotas = await db.Mascotas.Include(m => m.Alimentador).ThenInclude(a => a.Gateway)
-            .Where(m => !m.Ajustes.Any(a => a.Dia == ultimoDia))
+            .Where(m => m.Activa)
             .ToListAsync(ct);
 
         foreach (var m in mascotas)
         {
+            var zona = m.Alimentador.ZonaHoraria;
+            var hoy = CalendarioLocal.DiaDe(ahora, zona);
+            var ultimoDia = hoy.AddDays(-1);
+            if (await db.AjustesRacion.AnyAsync(a => a.MascotaId == m.Id && a.Dia == ultimoDia, ct))
+                continue;
+
+            var finVentana = CalendarioLocal.InicioDe(hoy, zona);
+            var inicioVentana = CalendarioLocal.InicioDe(hoy.AddDays(-3), zona);
+
             // Solo días con datos completos: la Pi debe haber reportado después de que terminó la ventana
             var gateway = m.Alimentador.Gateway;
-            if (gateway is null || gateway.SinConexionDesde is not null || gateway.UltimoHeartbeat < finVentana)
+            if (gateway is null || gateway.SinConexionDesde is not null || gateway.SincronizandoDesde is not null
+                || gateway.UltimoHeartbeat is null || gateway.UltimoHeartbeat < finVentana)
                 continue;
 
             var visitas = await db.Visitas.AsNoTracking()
@@ -89,7 +130,7 @@ public class MonitoreoService(IAppDbContext db, IAlertaService alertas, TimeProv
                 .Select(i => hoy.AddDays(-i))
                 .Select(d =>
                 {
-                    var delDia = visitas.Where(v => DateOnly.FromDateTime(v.IniciadaEn.UtcDateTime) == d).ToList();
+                    var delDia = visitas.Where(v => CalendarioLocal.DiaDe(v.IniciadaEn, zona) == d).ToList();
                     return (delDia.Sum(v => v.DispensadoG), delDia.Sum(v => v.ConsumidoG));
                 })
                 .ToList();
@@ -115,6 +156,27 @@ public class MonitoreoService(IAppDbContext db, IAlertaService alertas, TimeProv
         await db.SaveChangesAsync(ct);
     }
 
+    /// <summary>Por si la Pi se reinicia a media sincronización y nunca avisa que terminó.</summary>
+    private async Task CerrarSincronizacionesVencidasAsync(DateTimeOffset ahora, CancellationToken ct)
+    {
+        var limite = ahora - Constantes.LimiteSincronizacion;
+        var vencidas = await db.Gateways.Include(g => g.Alimentadores)
+            .Where(g => g.SincronizandoDesde != null && g.SincronizandoDesde < limite)
+            .ToListAsync(ct);
+
+        var avisos = new List<(int alimentadorId, int visitas)>();
+        foreach (var g in vencidas)
+        {
+            var (avisar, visitas) = g.TerminarSincronizacion();
+            if (avisar) avisos.AddRange(g.Alimentadores.Select(a => (a.Id, visitas)));
+        }
+        await db.SaveChangesAsync(ct);
+
+        foreach (var (alimentadorId, visitas) in avisos)
+            await alertas.CrearAsync(alimentadorId, null, TipoAlerta.ConexionRestablecida,
+                Mapeos.MensajeConexionRestablecida(visitas), ahora, ct);
+    }
+
     private async Task RevisarNoHaComidoAsync(Mascota m, DateTimeOffset ahora, CancellationToken ct)
     {
         var ultimaVisita = await db.Visitas.Where(v => v.MascotaId == m.Id && v.ConsumidoG > 0)
@@ -131,45 +193,27 @@ public class MonitoreoService(IAppDbContext db, IAlertaService alertas, TimeProv
 
     private async Task RevisarBajaApetitoAsync(Mascota m, DateTimeOffset ahora, CancellationToken ct)
     {
-        var hoy = DateOnly.FromDateTime(ahora.UtcDateTime);
-        var ayer = hoy.AddDays(-1);
+        var zona = m.Alimentador.ZonaHoraria;
+        var hoy = CalendarioLocal.DiaDe(ahora, zona);
+        var inicioHoy = CalendarioLocal.InicioDe(hoy, zona);
+        var inicioAyer = CalendarioLocal.InicioDe(hoy.AddDays(-1), zona);
+        var inicioVentana = CalendarioLocal.InicioDe(hoy.AddDays(-8), zona);
+
         if (await db.Alertas.AnyAsync(a => a.MascotaId == m.Id && a.Tipo == TipoAlerta.BajaApetito
-                                           && a.OcurridaEn >= Inicio(hoy), ct))
+                                           && a.OcurridaEn >= inicioHoy, ct))
             return;
 
         var visitas = await db.Visitas.AsNoTracking()
-            .Where(v => v.MascotaId == m.Id && v.IniciadaEn >= Inicio(hoy.AddDays(-8)) && v.IniciadaEn < Inicio(hoy))
+            .Where(v => v.MascotaId == m.Id && v.IniciadaEn >= inicioVentana && v.IniciadaEn < inicioHoy)
             .Select(v => new { v.IniciadaEn, v.ConsumidoG })
             .ToListAsync(ct);
         if (visitas.Count == 0) return;
 
-        double consumoAyer = visitas.Where(v => v.IniciadaEn >= Inicio(ayer)).Sum(v => v.ConsumidoG);
-        double promedio7 = visitas.Where(v => v.IniciadaEn < Inicio(ayer)).Sum(v => v.ConsumidoG) / 7;
+        double consumoAyer = visitas.Where(v => v.IniciadaEn >= inicioAyer).Sum(v => v.ConsumidoG);
+        double promedio7 = visitas.Where(v => v.IniciadaEn < inicioAyer).Sum(v => v.ConsumidoG) / 7;
         if (promedio7 <= 0 || consumoAyer >= promedio7 * Constantes.UmbralBajaApetito) return;
 
         await alertas.CrearAsync(m.AlimentadorId, m.Id, TipoAlerta.BajaApetito,
             $"{m.Nombre} comió ayer {consumoAyer:0} g, menos del 70 % de su promedio ({promedio7:0} g).", ahora, ct);
     }
-
-    private async Task RevisarPalomasAsync(DateTimeOffset ahora, CancellationToken ct)
-    {
-        var hoy = DateOnly.FromDateTime(ahora.UtcDateTime);
-        var conteos = await db.Eventos
-            .Where(e => e.Tipo == TipoEvento.Pigeon && e.OcurridoEn >= Inicio(hoy))
-            .GroupBy(e => e.AlimentadorId)
-            .Select(g => new { AlimentadorId = g.Key, Total = g.Count() })
-            .Where(g => g.Total > Constantes.MaxPalomasPorDia)
-            .ToListAsync(ct);
-
-        foreach (var c in conteos)
-        {
-            bool yaAlertado = await db.Alertas.AnyAsync(a => a.AlimentadorId == c.AlimentadorId
-                && a.Tipo == TipoAlerta.PalomasFrecuentes && a.OcurridaEn >= Inicio(hoy), ct);
-            if (!yaAlertado)
-                await alertas.CrearAsync(c.AlimentadorId, null, TipoAlerta.PalomasFrecuentes,
-                    $"Se detectaron {c.Total} palomas hoy en el alimentador.", ahora, ct);
-        }
-    }
-
-    private static DateTimeOffset Inicio(DateOnly dia) => new(dia.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero);
 }

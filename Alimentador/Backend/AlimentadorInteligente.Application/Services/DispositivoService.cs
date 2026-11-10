@@ -6,6 +6,7 @@ using AlimentadorInteligente.Domain.Entities;
 using AlimentadorInteligente.Domain.Enums;
 using AlimentadorInteligente.Domain.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace AlimentadorInteligente.Application.Services;
 
@@ -13,13 +14,14 @@ public class DispositivoService(
     IAppDbContext db,
     IAlertaService alertas,
     INotificadorTiempoReal notificador,
-    IAlmacenamientoArchivos archivos) : IDispositivoService
+    IAlmacenamientoArchivos archivos,
+    ILogger<DispositivoService> logger) : IDispositivoService
 {
     public async Task<ConfiguracionDispositivoDto?> ObtenerConfiguracionAsync(int gatewayId, int version, CancellationToken ct = default)
     {
         var alimentadores = await db.Alimentadores.AsNoTracking()
             .Where(a => a.GatewayId == gatewayId)
-            .Include(a => a.Mascotas)
+            .Include(a => a.Mascotas.Where(m => m.Activa))
             .Include(a => a.Horarios)
             .ToListAsync(ct);
 
@@ -30,8 +32,9 @@ public class DispositivoService(
             a.Codigo,
             a.VersionConfiguracion,
             a.IntervaloMinimoHoras,
+            a.ZonaHoraria,
             a.Mascotas.Select(m => new ConfigMascotaDto(
-                m.Id, m.Nombre, NombreEspecie(m.Especie), m.EtiquetaRfid,
+                m.Id, m.Nombre, NombreEspecie(m.Especie), m.Tolva, m.EtiquetaRfid,
                 Math.Round(CalculadoraRacion.GramosPorComida(m, a.KcalPorGramo), 1))).ToList(),
             a.Horarios.Where(h => h.Activo).OrderBy(h => h.Hora)
                 .Select(h => new ConfigHorarioDto(h.MascotaId, h.Hora.ToString("HH:mm"))).ToList()
@@ -44,10 +47,17 @@ public class DispositivoService(
         var gateway = await db.Gateways.Include(g => g.Alimentadores)
             .FirstAsync(g => g.Id == gatewayId, ct);
 
-        bool sePerdioConexion = gateway.AlertaSinConexionEnviada;
         gateway.UltimoHeartbeat = ahora;
         gateway.SinConexionDesde = null;
-        gateway.AlertaSinConexionEnviada = false;
+
+        // RF-26: mientras llega la cola atrasada no se evalúan anomalías; el aviso de
+        // "conexión restablecida" se manda al terminar, cuando ya se sabe cuántas visitas llegaron.
+        bool volvio = request.OfflineSince is not null || gateway.AlertaSinConexionEnviada;
+        if (volvio && gateway.SincronizandoDesde is null)
+        {
+            gateway.SincronizandoDesde = ahora;
+            gateway.VisitasSincronizadas = 0;
+        }
 
         var porCodigo = gateway.Alimentadores.ToDictionary(a => a.Codigo);
         foreach (var estado in request.Feeders)
@@ -57,8 +67,10 @@ public class DispositivoService(
             if (a.UltimoEstado is not null && reportadoEn <= a.UltimoEstado) continue;
 
             a.EnLinea = estado.Online;
-            a.NivelTolvaPorcentaje = estado.HopperPct;
-            a.PesoPlatoG = estado.PlateG;
+            a.NivelTolvaPerroPorcentaje = estado.HopperDogPct;
+            a.NivelTolvaGatoPorcentaje = estado.HopperCatPct;
+            a.PesoPlatoPerroG = estado.PlateDogG;
+            a.PesoPlatoGatoG = estado.PlateCatG;
             a.VersionFirmware = estado.Firmware ?? a.VersionFirmware;
             a.VersionModelo = estado.Model ?? a.VersionModelo;
             a.UltimoEstado = reportadoEn;
@@ -67,16 +79,21 @@ public class DispositivoService(
         await db.SaveChangesAsync(ct);
 
         foreach (var a in gateway.Alimentadores)
-        {
             await notificador.EstadoAlimentadorAsync(a.Id, a.Estado(), ct);
-            if (sePerdioConexion)
-            {
-                // TODO: incluir "se sincronizaron N visitas" cuando la Pi termine de vaciar su cola
-                await alertas.CrearAsync(a.Id, null, TipoAlerta.ConexionRestablecida,
-                    "La conexión se restableció; se están sincronizando los datos pendientes.", ahora, ct);
-            }
-        }
         return new HeartbeatResponse(ahora.ToUnixTimeSeconds());
+    }
+
+    public async Task TerminarSincronizacionAsync(int gatewayId, CancellationToken ct = default)
+    {
+        var gateway = await db.Gateways.Include(g => g.Alimentadores)
+            .FirstAsync(g => g.Id == gatewayId, ct);
+        var (avisar, visitas) = gateway.TerminarSincronizacion();
+        await db.SaveChangesAsync(ct);
+
+        if (!avisar) return;
+        foreach (var a in gateway.Alimentadores)
+            await alertas.CrearAsync(a.Id, null, TipoAlerta.ConexionRestablecida,
+                Mapeos.MensajeConexionRestablecida(visitas), DateTimeOffset.UtcNow, ct);
     }
 
     public async Task<LoteResponse> RegistrarVisitasAsync(int gatewayId, IReadOnlyList<VisitaDispositivoDto> visitas, CancellationToken ct = default)
@@ -95,10 +112,18 @@ public class DispositivoService(
             .ToListAsync(ct);
 
         var nuevas = new List<Visita>();
+        int rechazadas = 0;
         foreach (var v in visitas.OrderBy(v => v.StartedAt))
         {
-            var alimentador = alimentadores.GetValueOrDefault(v.FeederId)
-                ?? throw new ProhibidoException($"El alimentador '{v.FeederId}' no pertenece a este gateway.");
+            // Un registro malo no debe rechazar el lote: la Pi lo reintentaría para siempre
+            if (!alimentadores.TryGetValue(v.FeederId, out var alimentador) || !EventIdValido(v.EventId)
+                || !TryParsearClase(v.Class, out var clase))
+            {
+                rechazadas++;
+                logger.LogWarning("Visita rechazada: alimentador {Alimentador}, evento {Evento}, clase {Clase}",
+                    v.FeederId, v.EventId, v.Class);
+                continue;
+            }
             if (!vistos.Add((alimentador.Id, v.EventId))) continue;
 
             int? mascotaId = mascotas.Any(m => m.Id == v.PetId && m.AlimentadorId == alimentador.Id) ? v.PetId : null;
@@ -107,7 +132,7 @@ public class DispositivoService(
                 EventId = v.EventId,
                 AlimentadorId = alimentador.Id,
                 MascotaId = mascotaId,
-                Clase = ParsearClase(v.Class),
+                Clase = clase,
                 Confianza = v.Confidence,
                 IniciadaEn = DateTimeOffset.FromUnixTimeSeconds(v.StartedAt),
                 TerminadaEn = DateTimeOffset.FromUnixTimeSeconds(v.EndedAt),
@@ -119,12 +144,15 @@ public class DispositivoService(
         }
 
         db.Visitas.AddRange(nuevas);
+        var gateway = await db.Gateways.FirstAsync(g => g.Id == gatewayId, ct);
+        if (gateway.SincronizandoDesde is not null)
+            gateway.VisitasSincronizadas += nuevas.Count;
         await db.SaveChangesAsync(ct);
 
         foreach (var visita in nuevas)
             await notificador.VisitaRegistradaAsync(visita.AlimentadorId, visita.ADto(), ct);
 
-        return new LoteResponse(nuevas.Count, visitas.Count - nuevas.Count);
+        return new LoteResponse(nuevas.Count, visitas.Count - nuevas.Count - rechazadas, rechazadas);
     }
 
     public async Task<LoteResponse> RegistrarEventosAsync(int gatewayId, IReadOnlyList<EventoDispositivoDto> eventos, CancellationToken ct = default)
@@ -139,19 +167,27 @@ public class DispositivoService(
         var vistos = existentes.Select(e => (e.AlimentadorId, e.EventId)).ToHashSet();
 
         var nuevos = new List<EventoAlimentador>();
+        int rechazados = 0;
         foreach (var e in eventos.OrderBy(e => e.OccurredAt))
         {
-            var alimentador = alimentadores.GetValueOrDefault(e.FeederId)
-                ?? throw new ProhibidoException($"El alimentador '{e.FeederId}' no pertenece a este gateway.");
+            if (!alimentadores.TryGetValue(e.FeederId, out var alimentador) || !EventIdValido(e.EventId)
+                || !TryParsearEvento(e.Type, out var tipo))
+            {
+                rechazados++;
+                logger.LogWarning("Evento rechazado: alimentador {Alimentador}, evento {Evento}, tipo {Tipo}",
+                    e.FeederId, e.EventId, e.Type);
+                continue;
+            }
             if (!vistos.Add((alimentador.Id, e.EventId))) continue;
 
             nuevos.Add(new EventoAlimentador
             {
                 EventId = e.EventId,
                 AlimentadorId = alimentador.Id,
-                Tipo = ParsearEvento(e.Type),
+                Tipo = tipo,
+                Tolva = e.Hopper is Mascota.TolvaPerro or Mascota.TolvaGato ? e.Hopper : null,
                 OcurridoEn = DateTimeOffset.FromUnixTimeSeconds(e.OccurredAt),
-                Detalle = e.Detail
+                Detalle = e.Detail is { Length: > 500 } ? e.Detail[..500] : e.Detail
             });
         }
 
@@ -165,15 +201,15 @@ public class DispositivoService(
             {
                 case TipoEvento.Jam:
                     await alertas.CrearAsync(evento.AlimentadorId, null, TipoAlerta.Atasco,
-                        "El dispensador está atascado. Revisa la tolva y el tornillo.", evento.OcurridoEn, ct);
+                        $"El dispensador{DeTolva(evento.Tolva)} está atascado. Revisa la tolva y la paleta.", evento.OcurridoEn, ct);
                     break;
                 case TipoEvento.HopperLow:
                     await alertas.CrearAsync(evento.AlimentadorId, null, TipoAlerta.TolvaBaja,
-                        "La tolva tiene menos del 20 % de alimento.", evento.OcurridoEn, ct);
+                        $"La tolva{DeTolva(evento.Tolva)} tiene menos del 20 % de alimento.", evento.OcurridoEn, ct);
                     break;
             }
         }
-        return new LoteResponse(nuevos.Count, eventos.Count - nuevos.Count);
+        return new LoteResponse(nuevos.Count, eventos.Count - nuevos.Count - rechazados, rechazados);
     }
 
     public async Task<IReadOnlyList<ComandoDispositivoDto>> ObtenerComandosAsync(int gatewayId, CancellationToken ct = default)
@@ -202,7 +238,7 @@ public class DispositivoService(
                 : archivos.GenerarUrlDescarga(Constantes.ContenedorOta, c.ArtefactoOta.BlobNombre, TimeSpan.FromHours(1)).ToString();
             entregar.Add(new ComandoDispositivoDto(
                 c.Id, c.Alimentador.Codigo, c.Tipo == TipoComando.Dispensar ? "dispense" : "ota",
-                c.Gramos, c.MascotaId, url, c.ArtefactoOta?.Sha256));
+                c.Gramos, c.MascotaId, c.Tolva, url, c.ArtefactoOta?.Sha256));
         }
         await db.SaveChangesAsync(ct);
 
@@ -237,6 +273,8 @@ public class DispositivoService(
         var alimentadores = await AlimentadoresDeAsync(gatewayId, ct);
         var alimentador = alimentadores.GetValueOrDefault(request.FeederId)
             ?? throw new ProhibidoException($"El alimentador '{request.FeederId}' no pertenece a este gateway.");
+        if (!EventIdValido(request.EventId) || !TryParsearClase(request.Class, out var clase))
+            throw new ReglaNegocioException("La foto no tiene un evento o una clase válidos.");
 
         var foto = await db.FotosDudosas
             .FirstOrDefaultAsync(f => f.AlimentadorId == alimentador.Id && f.EventId == request.EventId, ct);
@@ -248,7 +286,7 @@ public class DispositivoService(
                 EventId = request.EventId,
                 AlimentadorId = alimentador.Id,
                 BlobNombre = $"{alimentador.Codigo}/{tomadaEn:yyyy/MM/dd}/{request.EventId}.jpg",
-                ClasePredicha = ParsearClase(request.Class),
+                ClasePredicha = clase,
                 Confianza = request.Confidence,
                 TomadaEn = tomadaEn
             };
@@ -256,9 +294,17 @@ public class DispositivoService(
             await db.SaveChangesAsync(ct);
         }
 
-        // TODO: marcar Subida = true cuando Blob Storage confirme (Event Grid o endpoint de confirmación)
         var url = archivos.GenerarUrlSubida(Constantes.ContenedorFotos, foto.BlobNombre, TimeSpan.FromMinutes(15));
         return new SolicitudFotoResponse(url.ToString(), foto.BlobNombre);
+    }
+
+    public async Task ConfirmarFotoAsync(int gatewayId, ConfirmarFotoRequest request, CancellationToken ct = default)
+    {
+        var foto = await db.FotosDudosas.FirstOrDefaultAsync(f => f.EventId == request.EventId
+                && f.Alimentador.Codigo == request.FeederId && f.Alimentador.GatewayId == gatewayId, ct)
+            ?? throw new NoEncontradoException("Foto", request.EventId);
+        foto.Subida = true;
+        await db.SaveChangesAsync(ct);
     }
 
     private async Task<Dictionary<string, Alimentador>> AlimentadoresDeAsync(int gatewayId, CancellationToken ct)
@@ -268,20 +314,38 @@ public class DispositivoService(
 
     private static string NombreEspecie(Especie e) => e == Especie.Perro ? "perro" : "gato";
 
-    private static ClaseDetectada ParsearClase(string clase) => clase.ToLowerInvariant() switch
+    private static bool EventIdValido(string eventId) => !string.IsNullOrWhiteSpace(eventId) && eventId.Length <= 64;
+
+    private static string DeTolva(int? tolva) => tolva switch
     {
-        "perro" => ClaseDetectada.Perro,
-        "gato" => ClaseDetectada.Gato,
-        "paloma" => ClaseDetectada.Paloma,
-        "nada" => ClaseDetectada.Nada,
-        _ => throw new ReglaNegocioException($"Clase desconocida: '{clase}'.")
+        Mascota.TolvaPerro => " del perro",
+        Mascota.TolvaGato => " del gato",
+        _ => string.Empty
     };
 
-    private static TipoEvento ParsearEvento(string tipo) => tipo.ToUpperInvariant() switch
+    private static bool TryParsearClase(string clase, out ClaseDetectada resultado)
     {
-        "JAM" => TipoEvento.Jam,
-        "HOPPER_LOW" => TipoEvento.HopperLow,
-        "PIGEON" => TipoEvento.Pigeon,
-        _ => throw new ReglaNegocioException($"Tipo de evento desconocido: '{tipo}'.")
-    };
+        ClaseDetectada? valor = clase.ToLowerInvariant() switch
+        {
+            "perro" => ClaseDetectada.Perro,
+            "gato" => ClaseDetectada.Gato,
+            "paloma" => ClaseDetectada.Paloma,
+            "nada" => ClaseDetectada.Nada,
+            _ => null
+        };
+        resultado = valor.GetValueOrDefault();
+        return valor is not null;
+    }
+
+    private static bool TryParsearEvento(string tipo, out TipoEvento resultado)
+    {
+        TipoEvento? valor = tipo.ToUpperInvariant() switch
+        {
+            "JAM" => TipoEvento.Jam,
+            "HOPPER_LOW" => TipoEvento.HopperLow,
+            _ => null
+        };
+        resultado = valor.GetValueOrDefault();
+        return valor is not null;
+    }
 }

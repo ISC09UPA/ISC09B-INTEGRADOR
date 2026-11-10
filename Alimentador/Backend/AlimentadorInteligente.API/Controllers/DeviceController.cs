@@ -28,6 +28,14 @@ public class DeviceController(IDispositivoService dispositivo) : ControllerBase
     public async Task<ActionResult<HeartbeatResponse>> Heartbeat(HeartbeatRequest request, CancellationToken ct)
         => Ok(await dispositivo.HeartbeatAsync(User.GatewayId(), request, ct));
 
+    /// <summary>La Pi terminó de vaciar su cola; se reanudan las alertas y se avisa cuántas visitas llegaron.</summary>
+    [HttpPost("sync-complete")]
+    public async Task<IActionResult> SincronizacionTerminada(CancellationToken ct)
+    {
+        await dispositivo.TerminarSincronizacionAsync(User.GatewayId(), ct);
+        return NoContent();
+    }
+
     /// <summary>Lote de visitas. Idempotente por eventId: reenviar un lote no duplica nada.</summary>
     [HttpPost("visits")]
     public async Task<ActionResult<LoteResponse>> Visitas(List<VisitaDispositivoDto> visitas, CancellationToken ct)
@@ -52,4 +60,12 @@ public class DeviceController(IDispositivoService dispositivo) : ControllerBase
     [HttpPost("photos")]
     public async Task<ActionResult<SolicitudFotoResponse>> SolicitarFoto(SolicitudFotoRequest request, CancellationToken ct)
         => Ok(await dispositivo.SolicitarSubidaFotoAsync(User.GatewayId(), request, ct));
+
+    /// <summary>La Pi confirma que la foto ya quedó en Blob Storage.</summary>
+    [HttpPost("photos/confirm")]
+    public async Task<IActionResult> ConfirmarFoto(ConfirmarFotoRequest request, CancellationToken ct)
+    {
+        await dispositivo.ConfirmarFotoAsync(User.GatewayId(), request, ct);
+        return NoContent();
+    }
 }

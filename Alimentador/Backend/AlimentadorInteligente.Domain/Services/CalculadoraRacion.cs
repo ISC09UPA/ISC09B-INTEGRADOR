@@ -46,7 +46,7 @@ public static class CalculadoraRacion
 
         if (totalDispensado > 0 && totalConsumido < totalDispensado * 0.85)
             nuevo -= PasoAjuste;
-        else if (dias.All(d => d.dispensado > 0 && d.consumido >= d.dispensado))
+        else if (dias.All(d => d.dispensado > 0 && d.consumido >= d.dispensado * 0.999))
             nuevo += PasoAjuste;
 
         return Math.Clamp(nuevo, -AjusteMaximo, AjusteMaximo);

@@ -3,7 +3,7 @@ using AlimentadorInteligente.Domain.Enums;
 namespace AlimentadorInteligente.Application.DTOs;
 
 public record MascotaDto(
-    int Id, int AlimentadorId, string Nombre, Especie Especie, double PesoKg, int EdadMeses,
+    int Id, int AlimentadorId, string Nombre, Especie Especie, int Tolva, double PesoKg, int EdadMeses,
     NivelActividad NivelActividad, bool Esterilizado, int ComidasPorDia, string? EtiquetaRfid,
     double AjustePorcentaje, double GramosPorDiaRecomendados, double GramosPorComida);
 

@@ -7,6 +7,8 @@ public class Comando : EntidadBase
 {
     /// <summary>Tiempo tras el cual un dispensado manual ya no se ejecuta (sección 8.3).</summary>
     public static readonly TimeSpan VigenciaDispensado = TimeSpan.FromMinutes(2);
+    /// <summary>Espera máxima del resultado de una actualización ya entregada.</summary>
+    public static readonly TimeSpan EsperaResultadoOta = TimeSpan.FromMinutes(30);
 
     public int AlimentadorId { get; set; }
     public Alimentador Alimentador { get; set; } = null!;
@@ -18,6 +20,7 @@ public class Comando : EntidadBase
 
     // Dispensar
     public int? MascotaId { get; set; }
+    public int? Tolva { get; set; }
     public double? Gramos { get; set; }
 
     // OTA
@@ -31,4 +34,9 @@ public class Comando : EntidadBase
 
     public bool EstaVencido(DateTimeOffset ahora)
         => Tipo == TipoComando.Dispensar && ahora - CreadoEn > VigenciaDispensado;
+
+    /// <summary>Se entregó, pero la Pi nunca reportó el resultado.</summary>
+    public bool SinResultado(DateTimeOffset ahora)
+        => Estado == EstadoComando.Entregado && EntregadoEn is { } entregado
+           && ahora - entregado > (Tipo == TipoComando.Dispensar ? VigenciaDispensado : EsperaResultadoOta);
 }

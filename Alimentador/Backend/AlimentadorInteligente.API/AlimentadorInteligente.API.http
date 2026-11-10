@@ -20,12 +20,19 @@ Content-Type: application/json
 GET {{host}}/api/alimentadores
 Authorization: Bearer {{token}}
 
+### Dar de alta la Raspberry Pi (la clave solo se muestra aquí)
+POST {{host}}/api/gateways
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "deviceId": "pi-casa" }
+
 ### Crear alimentador
 POST {{host}}/api/alimentadores
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
-{ "codigo": "feeder01", "nombre": "Cocina", "kcalPorGramo": 3.6, "gatewayDeviceId": null }
+{ "codigo": "feeder01", "nombre": "Cocina", "kcalPorGramo": 3.6, "gatewayDeviceId": "pi-casa", "zonaHoraria": "America/Mexico_City" }
 
 ### Registrar mascota
 POST {{host}}/api/alimentadores/1/mascotas
@@ -41,10 +48,27 @@ Content-Type: application/json
 
 { "gramos": 20, "mascotaId": 1 }
 
+### Dispensado manual sin elegir mascota (1 perro, 2 gato)
+POST {{host}}/api/alimentadores/1/dispensar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "gramos": 20, "tolva": 2 }
+
 ### [Pi] Configuración
 GET {{host}}/api/device/config?version=0
 X-Device-Id: pi-casa
 X-Device-Key: <clave del gateway>
+
+### [Pi] Heartbeat al recuperar internet (offlineSince solo en el primero)
+POST {{host}}/api/device/heartbeat
+X-Device-Id: pi-casa
+X-Device-Key: <clave del gateway>
+Content-Type: application/json
+
+{ "offlineSince": 1761832800, "feeders": [
+  { "feederId": "feeder01", "online": true, "hopperDogPct": 80, "hopperCatPct": 17, "plateDogG": 0, "plateCatG": 5,
+    "firmware": "1.0.0", "model": "1", "reportedAt": 1761833400 } ] }
 
 ### [Pi] Lote de visitas
 POST {{host}}/api/device/visits
@@ -56,3 +80,16 @@ Content-Type: application/json
   { "feederId": "feeder01", "eventId": "boot42-0007", "petId": 1, "class": "gato", "confidence": 0.93,
     "startedAt": 1761832800, "endedAt": 1761833100, "plateBeforeG": 3.1, "dispensedG": 31.2, "plateAfterG": 5.0 }
 ]
+
+### [Pi] Evento de tolva baja (hopper: 1 perro, 2 gato)
+POST {{host}}/api/device/events
+X-Device-Id: pi-casa
+X-Device-Key: <clave del gateway>
+Content-Type: application/json
+
+[ { "feederId": "feeder01", "eventId": "boot42-0009", "type": "HOPPER_LOW", "occurredAt": 1761833260, "detail": "17", "hopper": 2 } ]
+
+### [Pi] Terminó de vaciar la cola
+POST {{host}}/api/device/sync-complete
+X-Device-Id: pi-casa
+X-Device-Key: <clave del gateway>

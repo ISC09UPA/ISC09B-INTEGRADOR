@@ -13,7 +13,7 @@ public class MascotaService(IAppDbContext db, IAccesoAlimentador acceso) : IMasc
     {
         await acceso.RequerirAccesoAsync(alimentadorId, ct);
         var mascotas = await db.Mascotas.AsNoTracking().Include(m => m.Alimentador)
-            .Where(m => m.AlimentadorId == alimentadorId)
+            .Where(m => m.AlimentadorId == alimentadorId && m.Activa)
             .OrderBy(m => m.Nombre)
             .ToListAsync(ct);
         return mascotas.Select(m => m.ADto(m.Alimentador.KcalPorGramo)).ToList();
@@ -29,11 +29,11 @@ public class MascotaService(IAppDbContext db, IAccesoAlimentador acceso) : IMasc
     public async Task<MascotaDto> CrearAsync(int alimentadorId, GuardarMascotaRequest request, CancellationToken ct = default)
     {
         await acceso.RequerirDuenoAsync(alimentadorId, ct);
-        var alimentador = await db.Alimentadores.Include(a => a.Mascotas)
+        var alimentador = await db.Alimentadores.Include(a => a.Mascotas.Where(m => m.Activa))
             .FirstOrDefaultAsync(a => a.Id == alimentadorId, ct)
             ?? throw new NoEncontradoException("Alimentador", alimentadorId);
 
-        if (alimentador.Mascotas.Count >= Alimentador.MaxMascotas)
+        if (alimentador.Mascotas.Count(m => m.Activa) >= Alimentador.MaxMascotas)
             throw new ReglaNegocioException($"Un alimentador admite hasta {Alimentador.MaxMascotas} mascotas.");
 
         var mascota = new Mascota { AlimentadorId = alimentadorId, Alimentador = alimentador };
@@ -50,7 +50,7 @@ public class MascotaService(IAppDbContext db, IAccesoAlimentador acceso) : IMasc
     {
         var mascota = await CargarAsync(id, ct);
         await acceso.RequerirDuenoAsync(mascota.AlimentadorId, ct);
-        await db.Mascotas.Where(m => m.AlimentadorId == mascota.AlimentadorId).LoadAsync(ct);
+        await db.Mascotas.Where(m => m.AlimentadorId == mascota.AlimentadorId && m.Activa).LoadAsync(ct);
 
         Aplicar(mascota, request);
         ValidarRfid(mascota.Alimentador, mascota);
@@ -63,13 +63,17 @@ public class MascotaService(IAppDbContext db, IAccesoAlimentador acceso) : IMasc
     {
         var mascota = await CargarAsync(id, ct);
         await acceso.RequerirDuenoAsync(mascota.AlimentadorId, ct);
+
+        // Baja lógica: las visitas se conservan y la etiqueta queda libre para otra mascota
+        mascota.Activa = false;
+        mascota.EtiquetaRfid = null;
+        db.Horarios.RemoveRange(await db.Horarios.Where(h => h.MascotaId == id).ToListAsync(ct));
         mascota.Alimentador.VersionConfiguracion++;
-        db.Mascotas.Remove(mascota);
         await db.SaveChangesAsync(ct);
     }
 
     private async Task<Mascota> CargarAsync(int id, CancellationToken ct)
-        => await db.Mascotas.Include(m => m.Alimentador).FirstOrDefaultAsync(m => m.Id == id, ct)
+        => await db.Mascotas.Include(m => m.Alimentador).FirstOrDefaultAsync(m => m.Id == id && m.Activa, ct)
            ?? throw new NoEncontradoException("Mascota", id);
 
     private static void Aplicar(Mascota m, GuardarMascotaRequest r)
@@ -87,14 +91,12 @@ public class MascotaService(IAppDbContext db, IAccesoAlimentador acceso) : IMasc
     /// <summary>RF-04: con dos mascotas de la misma especie, ambas necesitan RFID para distinguirse.</summary>
     private static void ValidarRfid(Alimentador alimentador, Mascota mascota)
     {
-        var mismaEspecie = alimentador.Mascotas
-            .Where(m => m.Especie == mascota.Especie && m != mascota)
-            .ToList();
-        if (mismaEspecie.Count == 0) return;
-
-        if (mascota.EtiquetaRfid is null || mismaEspecie.Any(m => m.EtiquetaRfid is null))
-            throw new ReglaNegocioException("Con dos mascotas de la misma especie, cada una necesita etiqueta RFID.");
-        if (mismaEspecie.Any(m => m.EtiquetaRfid == mascota.EtiquetaRfid))
+        var otras = alimentador.Mascotas.Where(m => m.Activa && m != mascota).ToList();
+        if (mascota.EtiquetaRfid is not null && otras.Any(m => m.EtiquetaRfid == mascota.EtiquetaRfid))
             throw new ConflictoException("La etiqueta RFID ya está asignada a otra mascota.");
+
+        var mismaEspecie = otras.Where(m => m.Especie == mascota.Especie).ToList();
+        if (mismaEspecie.Count > 0 && (mascota.EtiquetaRfid is null || mismaEspecie.Any(m => m.EtiquetaRfid is null)))
+            throw new ReglaNegocioException("Con dos mascotas de la misma especie, cada una necesita etiqueta RFID.");
     }
 }

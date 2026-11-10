@@ -30,18 +30,16 @@ public class AlimentadorService(IAppDbContext db, IUsuarioActual usuario, IAcces
         if (await db.Alimentadores.AnyAsync(a => a.Codigo == request.Codigo, ct))
             throw new ConflictoException("Ese alimentador ya está registrado.");
 
-        Gateway? gateway = null;
-        if (!string.IsNullOrWhiteSpace(request.GatewayDeviceId))
-        {
-            gateway = await db.Gateways.FirstOrDefaultAsync(g => g.DeviceId == request.GatewayDeviceId, ct)
-                ?? throw new NoEncontradoException("Gateway", request.GatewayDeviceId);
-        }
+        Gateway? gateway = string.IsNullOrWhiteSpace(request.GatewayDeviceId)
+            ? null
+            : await BuscarGatewayPropioAsync(request.GatewayDeviceId, ct);
 
         var alimentador = new Alimentador
         {
             Codigo = request.Codigo,
             Nombre = request.Nombre,
             KcalPorGramo = request.KcalPorGramo,
+            ZonaHoraria = request.ZonaHoraria ?? Alimentador.ZonaPredeterminada,
             Gateway = gateway
         };
         alimentador.Miembros.Add(new MiembroAlimentador { UsuarioId = usuario.Id, Rol = RolAlimentador.Dueno });
@@ -57,6 +55,9 @@ public class AlimentadorService(IAppDbContext db, IUsuarioActual usuario, IAcces
         alimentador.Nombre = request.Nombre;
         alimentador.KcalPorGramo = request.KcalPorGramo;
         alimentador.IntervaloMinimoHoras = request.IntervaloMinimoHoras;
+        alimentador.ZonaHoraria = request.ZonaHoraria ?? alimentador.ZonaHoraria;
+        if (!string.IsNullOrWhiteSpace(request.GatewayDeviceId))
+            alimentador.Gateway = await BuscarGatewayPropioAsync(request.GatewayDeviceId, ct);
         alimentador.VersionConfiguracion++;
         await db.SaveChangesAsync(ct);
         return ADto(alimentador, RolAlimentador.Dueno);
@@ -105,6 +106,16 @@ public class AlimentadorService(IAppDbContext db, IUsuarioActual usuario, IAcces
         await db.SaveChangesAsync(ct);
     }
 
+    /// <summary>Evita que alguien ligue su alimentador a la Raspberry Pi de otro usuario.</summary>
+    private async Task<Gateway> BuscarGatewayPropioAsync(string deviceId, CancellationToken ct)
+    {
+        var gateway = await db.Gateways.FirstOrDefaultAsync(g => g.DeviceId == deviceId, ct)
+            ?? throw new NoEncontradoException("Gateway", deviceId);
+        if (gateway.PropietarioId != usuario.Id)
+            throw new ProhibidoException("Esa Raspberry Pi pertenece a otro usuario.");
+        return gateway;
+    }
+
     private async Task<Alimentador> CargarAsync(int id, CancellationToken ct)
         => await db.Alimentadores.Include(a => a.Gateway).FirstOrDefaultAsync(a => a.Id == id, ct)
            ?? throw new NoEncontradoException("Alimentador", id);
@@ -122,5 +133,5 @@ public class AlimentadorService(IAppDbContext db, IUsuarioActual usuario, IAcces
     }
 
     private static AlimentadorDto ADto(Alimentador a, RolAlimentador rol) => new(
-        a.Id, a.Codigo, a.Nombre, a.KcalPorGramo, a.IntervaloMinimoHoras, rol, a.Estado());
+        a.Id, a.Codigo, a.Nombre, a.KcalPorGramo, a.IntervaloMinimoHoras, a.ZonaHoraria, rol, a.Estado());
 }

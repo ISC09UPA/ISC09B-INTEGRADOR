@@ -29,14 +29,18 @@ public abstract class TareaPeriodica(IServiceScopeFactory scopes, ILogger logger
     }
 }
 
-/// <summary>Alertas de ESP32 / Raspberry Pi sin conexión.</summary>
+/// <summary>Alertas de ESP32 / Raspberry Pi sin conexión y comandos sin respuesta.</summary>
 public class MonitorConexionJob(IServiceScopeFactory scopes, ILogger<MonitorConexionJob> logger) : TareaPeriodica(scopes, logger)
 {
     protected override TimeSpan Intervalo => TimeSpan.FromMinutes(1);
-    protected override Task EjecutarAsync(IMonitoreoService m, CancellationToken ct) => m.RevisarConexionesAsync(ct);
+    protected override async Task EjecutarAsync(IMonitoreoService m, CancellationToken ct)
+    {
+        await m.RevisarConexionesAsync(ct);
+        await m.RevisarComandosAsync(ct);
+    }
 }
 
-/// <summary>No ha comido, baja de apetito y palomas frecuentes.</summary>
+/// <summary>No ha comido y baja de apetito.</summary>
 public class DeteccionAnomaliasJob(IServiceScopeFactory scopes, ILogger<DeteccionAnomaliasJob> logger) : TareaPeriodica(scopes, logger)
 {
     protected override TimeSpan Intervalo => TimeSpan.FromMinutes(15);

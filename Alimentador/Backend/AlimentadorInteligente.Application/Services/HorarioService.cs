@@ -69,7 +69,7 @@ public class HorarioService(IAppDbContext db, IAccesoAlimentador acceso) : IHora
     private async Task ValidarMascotaAsync(int alimentadorId, int? mascotaId, CancellationToken ct)
     {
         if (mascotaId is null) return;
-        if (!await db.Mascotas.AnyAsync(m => m.Id == mascotaId && m.AlimentadorId == alimentadorId, ct))
+        if (!await db.Mascotas.AnyAsync(m => m.Id == mascotaId && m.AlimentadorId == alimentadorId && m.Activa, ct))
             throw new NoEncontradoException("Mascota", mascotaId);
     }
 }

@@ -63,4 +63,9 @@ public class AlimentadoresController(IAlimentadorService alimentadores, IComando
     [HttpGet("{id:int}/comandos")]
     public async Task<ActionResult<IReadOnlyList<ComandoDto>>> ListarComandos(int id, CancellationToken ct)
         => Ok(await comandos.ListarAsync(id, ct));
+
+    /// <summary>Actualiza firmware o modelo (RF-15). Responde 202; el resultado llega por SignalR.</summary>
+    [HttpPost("{id:int}/ota")]
+    public async Task<ActionResult<ComandoDto>> LanzarOta(int id, LanzarOtaRequest request, CancellationToken ct)
+        => Accepted(await comandos.LanzarOtaAsync(id, request, ct));
 }

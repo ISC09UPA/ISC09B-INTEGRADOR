@@ -15,7 +15,11 @@ public record AlertaDto(
     DateTimeOffset OcurridaEn, DateTimeOffset CreadaEn, bool Leida);
 
 public record ComandoDto(
-    int Id, int AlimentadorId, TipoComando Tipo, EstadoComando Estado, int? MascotaId,
+    int Id, int AlimentadorId, TipoComando Tipo, EstadoComando Estado, int? MascotaId, int? Tolva,
     double? Gramos, double? DispensadoG, string? Error, DateTimeOffset CreadoEn);
 
-public record DispensarRequest(double Gramos, int? MascotaId);
+/// <summary>Con mascota, la tolva sale de su especie; sin mascota hay que indicar la tolva (1 perro, 2 gato).</summary>
+public record DispensarRequest(double Gramos, int? MascotaId, int? Tolva = null);
+
+public record ArtefactoOtaDto(int Id, TipoArtefactoOta Tipo, string Version, string Sha256, long TamanoBytes, DateTimeOffset CreadoEn);
+public record LanzarOtaRequest(int ArtefactoId);

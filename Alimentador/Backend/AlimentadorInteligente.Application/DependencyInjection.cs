@@ -15,6 +15,7 @@ public static class DependencyInjection
 
         services.AddScoped<IAccesoAlimentador, AccesoAlimentador>();
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IGatewayService, GatewayService>();
         services.AddScoped<IAlimentadorService, AlimentadorService>();
         services.AddScoped<IMascotaService, MascotaService>();
         services.AddScoped<IHorarioService, HorarioService>();

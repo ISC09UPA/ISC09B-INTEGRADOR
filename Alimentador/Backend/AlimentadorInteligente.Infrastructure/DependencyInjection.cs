@@ -27,9 +27,10 @@ public static class DependencyInjection
         services.AddSingleton<ITokenService, TokenService>();
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
 
+        // Sin esta configuración solo fallan las fotos y OTA, no el resto de los endpoints de la Pi
+        var blob = config.GetSection(BlobStorageOptions.Seccion)[nameof(BlobStorageOptions.ConnectionString)];
         services.AddSingleton(_ => new BlobServiceClient(
-            config.GetSection(BlobStorageOptions.Seccion)[nameof(BlobStorageOptions.ConnectionString)]
-            ?? "UseDevelopmentStorage=true"));
+            string.IsNullOrWhiteSpace(blob) ? "UseDevelopmentStorage=true" : blob));
         services.AddSingleton<IAlmacenamientoArchivos, BlobStorageService>();
 
         services.AddHttpClient<IPushService, ExpoPushService>();

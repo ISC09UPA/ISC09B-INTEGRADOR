@@ -131,7 +131,10 @@ namespace AlimentadorInteligente.Infrastructure.Persistence.Migrations
                     b.Property<double>("KcalPorGramo")
                         .HasColumnType("double precision");
 
-                    b.Property<double?>("NivelTolvaPorcentaje")
+                    b.Property<double?>("NivelTolvaGatoPorcentaje")
+                        .HasColumnType("double precision");
+
+                    b.Property<double?>("NivelTolvaPerroPorcentaje")
                         .HasColumnType("double precision");
 
                     b.Property<string>("Nombre")
@@ -139,7 +142,10 @@ namespace AlimentadorInteligente.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<double?>("PesoPlatoG")
+                    b.Property<double?>("PesoPlatoGatoG")
+                        .HasColumnType("double precision");
+
+                    b.Property<double?>("PesoPlatoPerroG")
                         .HasColumnType("double precision");
 
                     b.Property<DateTimeOffset?>("UltimoEstado")
@@ -155,6 +161,11 @@ namespace AlimentadorInteligente.Infrastructure.Persistence.Migrations
                     b.Property<string>("VersionModelo")
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
+
+                    b.Property<string>("ZonaHoraria")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
 
                     b.HasKey("Id");
 
@@ -257,6 +268,9 @@ namespace AlimentadorInteligente.Infrastructure.Persistence.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
 
+                    b.Property<int?>("Tolva")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ArtefactoOtaId");
@@ -298,6 +312,9 @@ namespace AlimentadorInteligente.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
+
+                    b.Property<int?>("Tolva")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -381,16 +398,27 @@ namespace AlimentadorInteligente.Infrastructure.Persistence.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
+                    b.Property<int?>("PropietarioId")
+                        .HasColumnType("integer");
+
                     b.Property<DateTimeOffset?>("SinConexionDesde")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("SincronizandoDesde")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTimeOffset?>("UltimoHeartbeat")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("VisitasSincronizadas")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("DeviceId")
                         .IsUnique();
+
+                    b.HasIndex("PropietarioId");
 
                     b.ToTable("Gateways");
                 });
@@ -434,6 +462,9 @@ namespace AlimentadorInteligente.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Activa")
+                        .HasColumnType("boolean");
 
                     b.Property<double>("AjustePorcentaje")
                         .HasColumnType("double precision");
@@ -717,6 +748,16 @@ namespace AlimentadorInteligente.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Alimentador");
+                });
+
+            modelBuilder.Entity("AlimentadorInteligente.Domain.Entities.Gateway", b =>
+                {
+                    b.HasOne("AlimentadorInteligente.Domain.Entities.Usuario", "Propietario")
+                        .WithMany()
+                        .HasForeignKey("PropietarioId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Propietario");
                 });
 
             modelBuilder.Entity("AlimentadorInteligente.Domain.Entities.Horario", b =>

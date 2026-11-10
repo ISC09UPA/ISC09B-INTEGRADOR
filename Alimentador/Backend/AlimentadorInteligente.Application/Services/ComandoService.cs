@@ -22,9 +22,15 @@ public class ComandoService(
         if (!alimentador.Estado().DispensadoRemotoDisponible)
             throw new ReglaNegocioException("El alimentador está sin conexión; el dispensado remoto no está disponible.");
 
-        if (request.MascotaId is not null &&
-            !await db.Mascotas.AnyAsync(m => m.Id == request.MascotaId && m.AlimentadorId == alimentadorId, ct))
-            throw new NoEncontradoException("Mascota", request.MascotaId);
+        // El validador garantiza que venga la mascota o la tolva
+        int? tolva = request.Tolva;
+        if (request.MascotaId is not null)
+        {
+            var mascota = await db.Mascotas.AsNoTracking()
+                .FirstOrDefaultAsync(m => m.Id == request.MascotaId && m.AlimentadorId == alimentadorId && m.Activa, ct)
+                ?? throw new NoEncontradoException("Mascota", request.MascotaId);
+            tolva = mascota.Tolva;
+        }
 
         var comando = new Comando
         {
@@ -32,7 +38,8 @@ public class ComandoService(
             SolicitadoPorId = usuario.Id,
             Tipo = TipoComando.Dispensar,
             Gramos = request.Gramos,
-            MascotaId = request.MascotaId
+            MascotaId = request.MascotaId,
+            Tolva = tolva
         };
         db.Comandos.Add(comando);
         await db.SaveChangesAsync(ct);
@@ -51,5 +58,33 @@ public class ComandoService(
             .Take(50)
             .ToListAsync(ct);
         return comandos.Select(c => c.ADto()).ToList();
+    }
+
+    public async Task<IReadOnlyList<ArtefactoOtaDto>> ListarArtefactosAsync(CancellationToken ct = default)
+        => await db.ArtefactosOta.AsNoTracking()
+            .OrderByDescending(a => a.CreadoEn)
+            .Select(a => new ArtefactoOtaDto(a.Id, a.Tipo, a.Version, a.Sha256, a.TamanoBytes, a.CreadoEn))
+            .ToListAsync(ct);
+
+    public async Task<ComandoDto> LanzarOtaAsync(int alimentadorId, LanzarOtaRequest request, CancellationToken ct = default)
+    {
+        await acceso.RequerirDuenoAsync(alimentadorId, ct);
+        if (!await db.ArtefactosOta.AnyAsync(a => a.Id == request.ArtefactoId, ct))
+            throw new NoEncontradoException("Artefacto OTA", request.ArtefactoId);
+
+        // Sin vigencia: si el alimentador está sin conexión, se aplica cuando vuelva
+        var comando = new Comando
+        {
+            AlimentadorId = alimentadorId,
+            SolicitadoPorId = usuario.Id,
+            Tipo = TipoComando.Ota,
+            ArtefactoOtaId = request.ArtefactoId
+        };
+        db.Comandos.Add(comando);
+        await db.SaveChangesAsync(ct);
+
+        var dto = comando.ADto();
+        await notificador.ComandoActualizadoAsync(alimentadorId, dto, ct);
+        return dto;
     }
 }

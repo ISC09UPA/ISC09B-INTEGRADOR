@@ -15,6 +15,9 @@ public class AccesoAlimentador(IAppDbContext db, IUsuarioActual usuario) : IAcce
         return miembro?.Rol ?? throw new ProhibidoException();
     }
 
+    public Task<bool> EsMiembroAsync(int alimentadorId, int usuarioId, CancellationToken ct = default)
+        => db.MiembrosAlimentador.AnyAsync(m => m.AlimentadorId == alimentadorId && m.UsuarioId == usuarioId, ct);
+
     public async Task RequerirDuenoAsync(int alimentadorId, CancellationToken ct = default)
     {
         if (await RequerirAccesoAsync(alimentadorId, ct) != RolAlimentador.Dueno)

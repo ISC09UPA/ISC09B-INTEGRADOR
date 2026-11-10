@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using AlimentadorInteligente.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
@@ -16,7 +17,11 @@ public class AlimentadorHub(IAccesoAlimentador acceso) : Hub
 
     public async Task UnirseAlimentador(int alimentadorId)
     {
-        await acceso.RequerirAccesoAsync(alimentadorId);
+        // En un hub el usuario sale de la conexión; IHttpContextAccessor no es confiable aquí
+        var sub = Context.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+        if (!int.TryParse(sub, out var usuarioId) || !await acceso.EsMiembroAsync(alimentadorId, usuarioId))
+            throw new HubException("No tienes acceso a este alimentador.");
+
         await Groups.AddToGroupAsync(Context.ConnectionId, Grupo(alimentadorId));
     }
 
