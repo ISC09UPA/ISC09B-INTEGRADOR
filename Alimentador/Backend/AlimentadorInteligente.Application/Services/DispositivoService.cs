@@ -236,9 +236,11 @@ public class DispositivoService(
             c.EntregadoEn = ahora;
             string? url = c.ArtefactoOta is null ? null
                 : archivos.GenerarUrlDescarga(Constantes.ContenedorOta, c.ArtefactoOta.BlobNombre, TimeSpan.FromHours(1)).ToString();
+            string? target = c.ArtefactoOta is null ? null
+                : c.ArtefactoOta.Tipo == TipoArtefactoOta.Firmware ? "firmware" : "model";
             entregar.Add(new ComandoDispositivoDto(
                 c.Id, c.Alimentador.Codigo, c.Tipo == TipoComando.Dispensar ? "dispense" : "ota",
-                c.Gramos, c.MascotaId, c.Tolva, url, c.ArtefactoOta?.Sha256));
+                c.Gramos, c.MascotaId, c.Tolva, url, c.ArtefactoOta?.Sha256, target, c.ArtefactoOta?.Version));
         }
         await db.SaveChangesAsync(ct);
 
@@ -250,22 +252,39 @@ public class DispositivoService(
 
     public async Task ReportarResultadoAsync(int gatewayId, int comandoId, ResultadoComandoRequest request, CancellationToken ct = default)
     {
-        var comando = await db.Comandos.Include(c => c.Alimentador)
+        var comando = await db.Comandos
+            .Include(c => c.Alimentador).ThenInclude(a => a.Gateway)
+            .Include(c => c.ArtefactoOta)
             .FirstOrDefaultAsync(c => c.Id == comandoId && c.Alimentador.GatewayId == gatewayId, ct)
             ?? throw new NoEncontradoException("Comando", comandoId);
 
-        if (comando.Estado is EstadoComando.Completado or EstadoComando.Fallido or EstadoComando.Vencido)
-            return; // resultado repetido por reintento de la Pi
+        // Resultado repetido por reintento de la Pi. Si se cerró solo por falta de respuesta,
+        // el resultado real que llega tarde (cola offline de la Pi) sí se aplica.
+        if ((comando.Estado is EstadoComando.Completado or EstadoComando.Fallido or EstadoComando.Vencido)
+            && !comando.CerradoSinRespuesta)
+            return;
 
         comando.CompletadoEn = DateTimeOffset.UtcNow;
         comando.DispensadoG = request.DispensedG;
-        comando.Error = request.Error;
+        comando.Error = request.Error is { Length: > 300 } ? request.Error[..300] : request.Error;
         comando.Estado = request.Ok ? EstadoComando.Completado
             : request.Error == "expired" ? EstadoComando.Vencido
             : EstadoComando.Fallido;
+
+        // La versión instalada se refleja de inmediato; el siguiente heartbeat la confirma
+        bool otaInstalada = request.Ok && comando.Tipo == TipoComando.Ota && comando.ArtefactoOta is not null;
+        if (otaInstalada)
+        {
+            if (comando.ArtefactoOta!.Tipo == TipoArtefactoOta.Firmware)
+                comando.Alimentador.VersionFirmware = comando.ArtefactoOta.Version;
+            else
+                comando.Alimentador.VersionModelo = comando.ArtefactoOta.Version;
+        }
         await db.SaveChangesAsync(ct);
 
         await notificador.ComandoActualizadoAsync(comando.AlimentadorId, comando.ADto(), ct);
+        if (otaInstalada)
+            await notificador.EstadoAlimentadorAsync(comando.AlimentadorId, comando.Alimentador.Estado(), ct);
     }
 
     public async Task<SolicitudFotoResponse> SolicitarSubidaFotoAsync(int gatewayId, SolicitudFotoRequest request, CancellationToken ct = default)

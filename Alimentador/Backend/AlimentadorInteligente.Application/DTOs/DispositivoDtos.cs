@@ -26,7 +26,10 @@ public record EventoDispositivoDto(string FeederId, string EventId, string Type,
 /// <summary>Rechazados: registros inválidos que no se reintentan para no bloquear la cola de la Pi.</summary>
 public record LoteResponse(int Recibidos, int Duplicados, int Rechazados);
 
-public record ComandoDispositivoDto(int Id, string FeederId, string Type, double? Grams, int? PetId, int? Hopper, string? Url, string? Sha256);
+/// <summary>En OTA, Target es "firmware" o "model" y Version la del artefacto, como los espera el ESP32 en feeder/{id}/cmd.</summary>
+public record ComandoDispositivoDto(
+    int Id, string FeederId, string Type, double? Grams, int? PetId, int? Hopper, string? Url, string? Sha256,
+    string? Target = null, string? Version = null);
 public record ResultadoComandoRequest(bool Ok, double? DispensedG, string? Error);
 
 public record SolicitudFotoRequest(string FeederId, string EventId, string Class, double Confidence, long TakenAt);

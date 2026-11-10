@@ -63,7 +63,7 @@ public class MonitoreoService(
             else if (c.SinResultado(ahora))
             {
                 c.Estado = EstadoComando.Fallido;
-                c.Error = "El alimentador no respondió.";
+                c.Error = Comando.ErrorSinRespuesta;
             }
             else continue;
 
