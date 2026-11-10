@@ -34,6 +34,17 @@ Content-Type: application/json
 
 { "codigo": "feeder01", "nombre": "Cocina", "kcalPorGramo": 3.6, "gatewayDeviceId": "pi-casa", "zonaHoraria": "America/Mexico_City" }
 
+### Ligar el alimentador a otra Pi propia (Dueño y propietario de la Pi)
+PUT {{host}}/api/alimentadores/1/gateway
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "gatewayId": 2 }
+
+### Quitar la Pi del alimentador
+DELETE {{host}}/api/alimentadores/1/gateway
+Authorization: Bearer {{token}}
+
 ### Registrar mascota
 POST {{host}}/api/alimentadores/1/mascotas
 Authorization: Bearer {{token}}
@@ -54,6 +65,41 @@ Authorization: Bearer {{token}}
 Content-Type: application/json
 
 { "gramos": 20, "tolva": 2 }
+
+### Artefactos OTA disponibles
+GET {{host}}/api/ota/artefactos
+Authorization: Bearer {{token}}
+
+### Publicar firmware (solo correos en Ota:Administradores; tipo: firmware | modelo)
+POST {{host}}/api/ota/artefactos
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=LimiteOta
+
+--LimiteOta
+Content-Disposition: form-data; name="tipo"
+
+firmware
+--LimiteOta
+Content-Disposition: form-data; name="version"
+
+1.3.0
+--LimiteOta
+Content-Disposition: form-data; name="archivo"; filename="alimentador.bin"
+Content-Type: application/octet-stream
+
+< ./ota/alimentador.bin
+--LimiteOta--
+
+### Borrar un artefacto que no se haya usado
+DELETE {{host}}/api/ota/artefactos/1
+Authorization: Bearer {{token}}
+
+### Lanzar la actualización en un alimentador (solo Dueño)
+POST {{host}}/api/alimentadores/1/ota
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "artefactoId": 1 }
 
 ### [Pi] Configuración
 GET {{host}}/api/device/config?version=0
@@ -93,3 +139,16 @@ Content-Type: application/json
 POST {{host}}/api/device/sync-complete
 X-Device-Id: pi-casa
 X-Device-Key: <clave del gateway>
+
+### [Pi] Comandos pendientes (OTA trae url, sha256, target y version)
+GET {{host}}/api/device/commands
+X-Device-Id: pi-casa
+X-Device-Key: <clave del gateway>
+
+### [Pi] Resultado de una OTA
+POST {{host}}/api/device/commands/1/result
+X-Device-Id: pi-casa
+X-Device-Key: <clave del gateway>
+Content-Type: application/json
+
+{ "ok": true, "dispensedG": null, "error": null }
