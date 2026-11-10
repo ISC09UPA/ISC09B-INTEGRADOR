@@ -1,3 +1,4 @@
+using AlimentadorInteligente.Application;
 using AlimentadorInteligente.Application.Abstractions;
 using AlimentadorInteligente.Application.DTOs;
 using AlimentadorInteligente.Application.Services;
@@ -56,6 +57,7 @@ internal sealed class Escenario : IDisposable
     public const string Feeder = "feeder01";
 
     public AppDbContext Db { get; }
+    public ArchivosFalsos Archivos { get; } = new();
     public Gateway Gateway { get; }
     public Alimentador Alimentador { get; }
 
@@ -96,12 +98,28 @@ internal sealed class Escenario : IDisposable
     private AlertaService Alertas() => new(Db, null!, new NotificadorFalso(), new PushFalso());
 
     public DispositivoService Dispositivo() => new(
-        Db, Alertas(), new NotificadorFalso(), new ArchivosFalsos(), NullLogger<DispositivoService>.Instance);
+        Db, Alertas(), new NotificadorFalso(), Archivos, NullLogger<DispositivoService>.Instance);
 
     public MonitoreoService Monitoreo() => new(Db, Alertas(), new NotificadorFalso(), TimeProvider.System);
 
     public MascotaService Mascotas()
         => new(Db, new AccesoAlimentador(Db, new UsuarioFalso(DuenoId)));
+
+    public OtaService Ota(params string[] administradores)
+        => new(Db, new UsuarioFalso(DuenoId), Archivos, new OtaOpciones { Administradores = administradores });
+
+    public AlimentadorService Alimentadores(int usuarioId = DuenoId)
+        => new(Db, new UsuarioFalso(usuarioId), new AccesoAlimentador(Db, new UsuarioFalso(usuarioId)));
+
+    public Usuario AgregarUsuario(int id, Domain.Enums.RolAlimentador? rol = null)
+    {
+        var usuario = new Usuario { Id = id, Nombre = $"Usuario {id}", Email = $"usuario{id}@example.com", PasswordHash = "x" };
+        Db.Usuarios.Add(usuario);
+        if (rol is not null)
+            Db.MiembrosAlimentador.Add(new MiembroAlimentador { AlimentadorId = Alimentador.Id, UsuarioId = id, Rol = rol.Value });
+        Db.SaveChanges();
+        return usuario;
+    }
 
     public void Dispose() => Db.Dispose();
 }
