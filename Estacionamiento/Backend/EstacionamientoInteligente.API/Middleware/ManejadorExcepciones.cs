@@ -8,6 +8,7 @@ namespace EstacionamientoInteligente.API.Middleware;
 /// Convierte las excepciones del dominio en respuestas HTTP con formato ProblemDetails:
 /// <list type="bullet">
 ///   <item><see cref="ExcepcionDominio"/> → 400</item>
+///   <item><see cref="ExcepcionNoAutenticado"/> → 401</item>
 ///   <item><see cref="ExcepcionAccesoDenegado"/> → 403</item>
 ///   <item><see cref="ExcepcionNoEncontrado"/> → 404</item>
 ///   <item><see cref="ExcepcionConflicto"/> → 409</item>
@@ -24,6 +25,7 @@ public class ManejadorExcepciones(
         (int estado, string titulo)? respuesta = exception switch
         {
             ExcepcionDominio        => (StatusCodes.Status400BadRequest, "Solicitud no válida"),
+            ExcepcionNoAutenticado  => (StatusCodes.Status401Unauthorized, "No autenticado"),
             ExcepcionAccesoDenegado => (StatusCodes.Status403Forbidden, "Acceso denegado"),
             ExcepcionNoEncontrado   => (StatusCodes.Status404NotFound, "No encontrado"),
             ExcepcionConflicto      => (StatusCodes.Status409Conflict, "Conflicto"),

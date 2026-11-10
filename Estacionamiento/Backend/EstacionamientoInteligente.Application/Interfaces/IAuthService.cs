@@ -7,7 +7,7 @@ public interface IAuthService
 {
     /// <summary>
     /// Verifica correo, contraseña y que el rol elegido sea el de la cuenta.
-    /// Si algo no coincide lanza <c>ExcepcionDominio</c> con el mismo mensaje en todos los casos.
+    /// Si algo no coincide lanza <c>ExcepcionNoAutenticado</c> (401) con el mismo mensaje en todos los casos.
     /// </summary>
     Task<TokenResponse> IniciarSesionAsync(LoginRequest request);
 
