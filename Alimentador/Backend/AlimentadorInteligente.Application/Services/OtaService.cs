@@ -123,7 +123,9 @@ public partial class OtaService(
     /// <summary>Solo el nombre, sin rutas, con caracteres seguros para la URL del blob.</summary>
     private static string NombreArchivoSeguro(string? nombre)
     {
-        var limpio = CaracteresNoSeguros().Replace(Path.GetFileName(nombre ?? string.Empty), "_").Trim('.', '_');
+        // Los navegadores en Windows pueden mandar la ruta completa con "\"
+        var soloNombre = Path.GetFileName((nombre ?? string.Empty).Replace('\\', '/'));
+        var limpio = CaracteresNoSeguros().Replace(soloNombre, "_").Trim('.', '_');
         if (limpio.Length > 100) limpio = limpio[^100..];
         return limpio.Length == 0 ? "artefacto.bin" : limpio;
     }
