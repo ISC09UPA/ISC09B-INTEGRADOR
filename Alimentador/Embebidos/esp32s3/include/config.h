@@ -91,7 +91,7 @@ constexpr bool USAR_PIR = true;
 // ---------------------------------------------------------------------------
 // Red, MQTT y HTTP
 // ---------------------------------------------------------------------------
-constexpr uint32_t WIFI_REINTENTO_MIN_MS = 2000;
+constexpr uint32_t WIFI_REINTENTO_MIN_MS = 5000;
 constexpr uint32_t WIFI_REINTENTO_MAX_MS = 60000;
 constexpr uint32_t MQTT_REINTENTO_MIN_MS = 2000;
 constexpr uint32_t MQTT_REINTENTO_MAX_MS = 30000;
@@ -146,6 +146,11 @@ constexpr const char* RUTA_MODELO_TMP = "/model.tmp";
 constexpr const char* RUTA_MODELO_RESPALDO = "/model.bak";
 constexpr const char* RUTA_MODELO_VERSION = "/model.ver";
 constexpr size_t TFLITE_ARENA_BYTES = 1536 * 1024;  // en PSRAM
+// Rango al que se lleva cada pixel (0..255) antes de cuantizar: 0..1 para modelos entrenados con
+// Rescaling(1/255), -1..1 para MobileNet. Debe coincidir con el entrenamiento.
+constexpr float MODELO_ENTRADA_MIN = 0.0f;
+constexpr float MODELO_ENTRADA_MAX = 1.0f;
+constexpr uint8_t CAMARA_CALIDAD_JPEG = 12;   // 0-63, menor = mejor calidad
 constexpr float UMBRAL_CONFIANZA = 0.70f;     // debajo de esto la foto se sube a la Pi
 constexpr uint8_t FOTOS_POR_VISITA = 3;       // se promedian las probabilidades
 constexpr uint32_t RFID_VIGENCIA_MS = 10000;  // una lectura RFID sirve para la visita actual
