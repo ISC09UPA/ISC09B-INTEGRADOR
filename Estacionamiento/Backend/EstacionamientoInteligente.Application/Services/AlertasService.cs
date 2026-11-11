@@ -1,3 +1,4 @@
+using EstacionamientoInteligente.Application.Comun;
 using EstacionamientoInteligente.Application.Interfaces;
 using EstacionamientoInteligente.Application.Interfaces.Externos;
 using EstacionamientoInteligente.Domain.Comun;
@@ -66,14 +67,5 @@ public class AlertasService(
             await notificador.AlertaCreadaAsync(ADto(alerta));
     }
 
-    private AlertaDto ADto(Alerta a) =>
-        new(
-            a.Id,
-            a.Tipo,
-            a.Mensaje,
-            a.Placa,
-            a.Foto is null ? null : fotos.ObtenerUrl(a.Foto),
-            a.VehiculoId,
-            a.Fecha,
-            a.Atendida);
+    private AlertaDto ADto(Alerta a) => Mapeos.AAlertaDto(a, fotos);
 }
