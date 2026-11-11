@@ -24,7 +24,7 @@ Raspberry Pi (gateway) ── HTTPS ──► Backend .NET  /api/device/*  (X-De
 | Tema | Dirección | Retained | Payload |
 | --- | --- | --- | --- |
 | `feeder/{id}/status` | ESP32 → Pi | sí | `{ "online": true, "hopperDogPct": 72.0, "hopperCatPct": 40.5, "plateDogG": 3.1, "plateCatG": 0.0, "firmware": "1.2.0", "model": "2026.11.1", "reportedAt": 1794350000 }` cada 60 s y en cada cambio relevante. LWT: `{ "online": false }` |
-| `feeder/{id}/visit` | ESP32 → Pi | no | `{ "eventId": "uuid", "petId": 3 \| null, "class": "Gato", "confidence": 0.93, "startedAt": s, "endedAt": s, "plateBeforeG": 3.1, "dispensedG": 31.2, "plateAfterG": 5.0 }`. `class` ∈ `Perro`, `Gato`, `Paloma`, `Nada` |
+| `feeder/{id}/visit` | ESP32 → Pi | no | `{ "eventId": "uuid", "petId": 3 \| null, "class": "Gato", "confidence": 0.93, "startedAt": s, "endedAt": s, "plateBeforeG": 3.1, "dispensedG": 31.2, "plateAfterG": 5.0 }`. `class` ∈ `Perro`, `Gato`, `Nada` |
 | `feeder/{id}/event` | ESP32 → Pi | no | `{ "eventId": "uuid", "type": "JAM" \| "HOPPER_LOW", "occurredAt": s, "detail": "texto" \| null, "hopper": 1 \| 2 }` |
 | `feeder/{id}/config` | Pi → ESP32 | sí | El `ConfigAlimentadorDto` del backend tal cual: `{ "feederId", "version", "minIntervalHours", "timeZone", "pets": [{ "id", "name", "species", "hopper", "rfid", "gramsPerMeal" }], "schedules": [{ "petId", "time": "HH:mm" }] }` |
 | `feeder/{id}/cmd` | Pi → ESP32 | no | `{ "id": 15, "type": "dispense", "grams": 30.0, "petId": 3, "hopper": 2 }` o `{ "id": 16, "type": "ota", "target": "firmware" \| "model", "url": "http://<ip-pi>:8080/ota/<archivo>", "sha256": "hex", "version": "1.3.0" }` |

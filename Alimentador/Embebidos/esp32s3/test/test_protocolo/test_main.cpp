@@ -289,8 +289,9 @@ void test_utilidades() {
   const uint8_t bytes[] = {0x00, 0xAB, 0x7F};
   TEST_ASSERT_EQUAL_STRING("00ab7f", bytesAHex(bytes, 3).c_str());
   Clase c;
-  TEST_ASSERT_TRUE(claseDesdeTexto("Paloma", c));
-  TEST_ASSERT_EQUAL(Clase::Paloma, c);
+  TEST_ASSERT_TRUE(claseDesdeTexto("Nada", c));
+  TEST_ASSERT_EQUAL(Clase::Nada, c);
+  TEST_ASSERT_FALSE(claseDesdeTexto("Paloma", c));
   TEST_ASSERT_FALSE(claseDesdeTexto("perro", c));
   TEST_ASSERT_EQUAL(0, tolvaDeClase(Clase::Nada));
   TEST_ASSERT_EQUAL_DOUBLE(3.1, redondear(3.14, 1));

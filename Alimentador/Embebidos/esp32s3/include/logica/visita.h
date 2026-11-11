@@ -13,7 +13,7 @@ namespace logica {
 // UUID versión 4 a partir de 16 bytes aleatorios (esp_random en el ESP32).
 std::string uuidV4(const uint8_t aleatorios[16]);
 
-// Plato de la visita: el de la especie reconocida; para Paloma o Nada, el que más cambió.
+// Plato de la visita: el de la especie reconocida; para Nada, el que más cambió.
 int platoDeVisita(Clase clase, double cambioPerroG, double cambioGatoG);
 
 // La visita termina tras `ausenciaMs` sin presencia o al llegar a la duración máxima.

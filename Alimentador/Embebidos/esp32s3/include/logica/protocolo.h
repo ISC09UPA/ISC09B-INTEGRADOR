@@ -20,8 +20,8 @@ constexpr int MAX_INTERVALO_HORAS = 48;
 constexpr size_t MAX_MASCOTAS = 8;
 constexpr size_t MAX_HORARIOS = 48;
 
-enum class Clase : uint8_t { Perro = 0, Gato = 1, Paloma = 2, Nada = 3 };
-constexpr size_t NUM_CLASES = 4;
+enum class Clase : uint8_t { Perro = 0, Gato = 1, Nada = 2 };
+constexpr size_t NUM_CLASES = 3;
 
 const char* nombreClase(Clase clase);
 bool claseDesdeTexto(const char* texto, Clase& clase);

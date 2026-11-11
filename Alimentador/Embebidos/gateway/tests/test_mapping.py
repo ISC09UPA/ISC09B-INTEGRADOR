@@ -60,12 +60,13 @@ def test_visita_a_dto():
 
 
 def test_visita_normaliza_clase_y_pet_nulo():
-    dto = mapping.visita_a_dto("f", visita(**{"class": "paloma", "petId": None}), AHORA)
-    assert dto["class"] == "Paloma" and dto["petId"] is None
+    dto = mapping.visita_a_dto("f", visita(**{"class": "nada", "petId": None}), AHORA)
+    assert dto["class"] == "Nada" and dto["petId"] is None
 
 
 @pytest.mark.parametrize("cambios", [
     {"class": "Raton"},
+    {"class": "Paloma"},
     {"confidence": 1.5},
     {"eventId": None},
     {"eventId": "x" * 65},

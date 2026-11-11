@@ -10,7 +10,7 @@ import re
 from typing import Any
 
 FEEDER_ID_RE = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
-CLASES = ("Perro", "Gato", "Paloma", "Nada")
+CLASES = ("Perro", "Gato", "Nada")
 TIPOS_EVENTO = ("JAM", "HOPPER_LOW")
 TOLVAS = (1, 2)  # 1 = perro, 2 = gato
 # Antes de esta fecha (2023-11-14) el reloj del ESP32 no está sincronizado

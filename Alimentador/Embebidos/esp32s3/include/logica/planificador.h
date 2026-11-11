@@ -37,7 +37,7 @@ struct Identificacion {
 
 // Perro/Gato con RFID: la mascota con esa etiqueta (si es de la especie vista).
 // Sin RFID: la única mascota de esa especie; si hay varias, la única que tiene comida
-// disponible. Paloma o Nada: ninguna.
+// disponible. Nada: ninguna.
 Identificacion identificarMascota(const ConfigAlimentador& config, Clase clase,
                                   const std::string& rfidLeido,
                                   const std::function<bool(int)>& tieneComida);

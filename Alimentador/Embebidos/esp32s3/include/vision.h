@@ -1,7 +1,7 @@
 #pragma once
 
 // Cámara OV2640 + modelo TFLite Micro cargado desde LittleFS (/model.tflite).
-// Salidas del modelo en este orden: Perro, Gato, Paloma, Nada.
+// Salidas del modelo en este orden: Perro, Gato, Nada.
 
 #include <stdint.h>
 

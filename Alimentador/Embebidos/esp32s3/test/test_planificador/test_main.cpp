@@ -114,7 +114,6 @@ void test_identificar_por_especie_y_rfid() {
   id = identificarMascota(c, Clase::Perro, "0a00b1c2d3", nadie);
   TEST_ASSERT_EQUAL(3, id.petId);
   TEST_ASSERT_TRUE(id.porRfid);
-  TEST_ASSERT_EQUAL(SIN_MASCOTA, identificarMascota(c, Clase::Paloma, "", nadie).petId);
   TEST_ASSERT_EQUAL(SIN_MASCOTA, identificarMascota(c, Clase::Nada, "", nadie).petId);
 }
 

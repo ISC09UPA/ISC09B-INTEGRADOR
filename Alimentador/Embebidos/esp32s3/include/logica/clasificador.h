@@ -19,7 +19,7 @@ struct ResultadoClase {
 // Si ya suman ~1 y están en [0, 1] se dejan igual; si no, se aplica softmax.
 void normalizarProbabilidades(float* valores, size_t n);
 
-// Clase con mayor probabilidad. El orden de las salidas es Perro, Gato, Paloma, Nada.
+// Clase con mayor probabilidad. El orden de las salidas es Perro, Gato, Nada.
 ResultadoClase elegirClase(const float* probabilidades, size_t n);
 
 bool esDudosa(const ResultadoClase& resultado, float umbral);

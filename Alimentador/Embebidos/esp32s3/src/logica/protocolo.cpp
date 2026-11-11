@@ -9,7 +9,7 @@ namespace logica {
 
 namespace {
 
-const char* const NOMBRES_CLASE[NUM_CLASES] = {"Perro", "Gato", "Paloma", "Nada"};
+const char* const NOMBRES_CLASE[NUM_CLASES] = {"Perro", "Gato", "Nada"};
 
 void fijarDetalle(std::string* detalle, const std::string& texto) {
   if (detalle) *detalle = texto;

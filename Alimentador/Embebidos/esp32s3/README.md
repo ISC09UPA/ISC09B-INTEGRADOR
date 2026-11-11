@@ -127,7 +127,7 @@ Los valores se guardan en `/calibracion.json` y sobreviven reinicios y OTA.
 - **Config**: llega retenida en `feeder/{id}/config` (mascotas, horarios, intervalo mínimo, zona horaria). Se valida completa; si algo está mal se conserva la anterior. Se guarda en LittleFS para funcionar sin la Pi.
 - **Hora**: NTP contra la Pi y `pool.ntp.org`; si NTP no responde se usa `gateway/time`. Sin hora válida no se sirven horarios ni se publica status.
 - **Horarios**: cada horario abre una comida para su mascota (o para todas si `petId` es null) durante `VENTANA_COMIDA_MIN` (3 h). La comida se sirve cuando la mascota llega al plato y nunca antes de `minIntervalHours` desde su comida anterior (también cuentan los dispensados manuales).
-- **Visita**: el PIR, un RFID nuevo o un cambio de peso en un plato inicia la visita. Se toman 3 fotos y se promedian; con confianza menor a `UMBRAL_CONFIANZA` la foto se sube a la Pi (`POST /photos`). Perro/Gato se asocian a la mascota de esa especie (con varias de la misma especie decide el RFID o, si no hay, la única a la que le toca comer). Si le toca, se dispensa `gramsPerMeal` menos lo que ya hay en el plato. Paloma y Nada nunca disparan el dispensador. Cuando deja de haber presencia 20 s se publica `visit` con el peso antes, lo dispensado y el peso después.
+- **Visita**: el PIR, un RFID nuevo o un cambio de peso en un plato inicia la visita. Se toman 3 fotos y se promedian; con confianza menor a `UMBRAL_CONFIANZA` la foto se sube a la Pi (`POST /photos`). Perro/Gato se asocian a la mascota de esa especie (con varias de la misma especie decide el RFID o, si no hay, la única a la que le toca comer). Si le toca, se dispensa `gramsPerMeal` menos lo que ya hay en el plato. Nada nunca dispara el dispensador. Cuando deja de haber presencia 20 s se publica `visit` con el peso antes, lo dispensado y el peso después.
 - **Atasco**: si durante el dispensado el plato no sube 1 g en 4 s, el servo gira en reversa 0.4 s y lo intenta otra vez; si sigue igual se detiene y publica `event` `JAM`.
 - **Tolva baja**: debajo de 15 % se publica `HOPPER_LOW` una vez; se rearma al pasar de 25 %.
 - **Status**: retenido cada 60 s y cuando cambia algo relevante (5 % de tolva, 10 g de plato, versión del modelo). LWT `{ "online": false }`.
@@ -153,7 +153,7 @@ Los valores se guardan en `/calibracion.json` y sobreviven reinicios y OTA.
 El archivo se descarga a `/model.tmp`, se verifica el SHA-256, reemplaza a `/model.tflite`, se guarda la versión en `/model.ver` y se recarga sin reiniciar. Si el modelo nuevo no carga se restaura el anterior.
 
 Requisitos del modelo:
-- TFLite (de preferencia cuantizado a int8; también acepta uint8 o float32) con entrada `[1, alto, ancho, 3]` (o 1 canal) y **4 salidas en este orden: Perro, Gato, Paloma, Nada**.
+- TFLite (de preferencia cuantizado a int8; también acepta uint8 o float32) con entrada `[1, alto, ancho, 3]` (o 1 canal) y **3 salidas en este orden: Perro, Gato, Nada**.
 - Los pixeles 0-255 se llevan a `[MODELO_ENTRADA_MIN, MODELO_ENTRADA_MAX]` (0-1 por defecto; -1 a 1 para MobileNet) antes de cuantizar con la escala del tensor. Debe coincidir con el entrenamiento.
 - La foto de 320x240 se recorta al centro en cuadrado y se escala al tamaño de entrada.
 - Operaciones registradas: las de MobileNet/EfficientNet-Lite y CNN simples (ver `registrarOperaciones()` en `vision.cpp`). Arena de 1.5 MB en PSRAM.

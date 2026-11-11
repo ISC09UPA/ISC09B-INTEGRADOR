@@ -68,7 +68,7 @@ void test_uuid_v4() {
 void test_plato_de_visita() {
   TEST_ASSERT_EQUAL(1, platoDeVisita(Clase::Perro, 0, -20));
   TEST_ASSERT_EQUAL(2, platoDeVisita(Clase::Gato, -50, 0));
-  TEST_ASSERT_EQUAL(2, platoDeVisita(Clase::Paloma, -1, -6));
+  TEST_ASSERT_EQUAL(2, platoDeVisita(Clase::Nada, -1, -6));
   TEST_ASSERT_EQUAL(1, platoDeVisita(Clase::Nada, -8, 2));
   TEST_ASSERT_EQUAL(1, platoDeVisita(Clase::Nada, NAN, NAN));
 }
@@ -84,7 +84,6 @@ void test_fin_de_visita() {
 
 void test_que_visitas_se_publican() {
   TEST_ASSERT_TRUE(debePublicarVisita(Clase::Gato, 0, 0, 2));
-  TEST_ASSERT_TRUE(debePublicarVisita(Clase::Paloma, 0, 0, 2));
   TEST_ASSERT_FALSE(debePublicarVisita(Clase::Nada, 0, 0.5, 2));
   TEST_ASSERT_FALSE(debePublicarVisita(Clase::Nada, 0, NAN, 2));
   TEST_ASSERT_TRUE(debePublicarVisita(Clase::Nada, 0, -12, 2));
