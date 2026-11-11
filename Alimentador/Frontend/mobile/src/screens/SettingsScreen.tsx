@@ -24,7 +24,7 @@ const ROLES: { valor: RolAlimentador; etiqueta: string }[] = [
  */
 export default function SettingsScreen() {
   const { usuario, cerrarSesion } = useAuth();
-  const { alimentadores, alimentador, esDueno, seleccionarAlimentador, recargarAlimentadores } = useAlimentador();
+  const { alimentadores, alimentador, esDueno, cargando, seleccionarAlimentador, recargarAlimentadores } = useAlimentador();
 
   const [gateways, setGateways] = useState<GatewayDto[]>([]);
   const [formulario, setFormulario] = useState(false);
@@ -53,9 +53,8 @@ export default function SettingsScreen() {
     alimentadoresApi.miembros(alimentador.id).then(setMiembros).catch(() => setMiembros([]));
   }, [alimentador]);
 
-  useEffect(() => {
-    if (!alimentadores.length) setFormulario(true);
-  }, [alimentadores.length]);
+  // Sin dispensadores, el formulario de alta se abre directo.
+  const formularioVisible = formulario || (!cargando && !alimentadores.length);
 
   const registrarGateway = async () => {
     setError(null);
@@ -159,7 +158,7 @@ export default function SettingsScreen() {
             ))}
           </View>
         ) : null}
-        {!formulario ? (
+        {!formularioVisible ? (
           <Pressable onPress={() => setFormulario(true)} style={styles.agregar} accessibilityRole="button">
             <Feather name="plus" size={20} color={colors.text} />
             <Text style={styles.agregarTexto}>Agregar dispensador</Text>
@@ -193,7 +192,10 @@ export default function SettingsScreen() {
             <Text style={styles.paso}>2. Dispensador (ESP32)</Text>
             <Campo placeholder="Código del ESP32, p. ej. feeder01" value={codigo} onChangeText={setCodigo} autoCapitalize="none" />
             <Campo placeholder="Nombre, p. ej. Cocina" value={nombre} onChangeText={setNombre} />
-            <Campo placeholder="Kcal por gramo del alimento" value={kcal} onChangeText={setKcal} keyboardType="decimal-pad" />
+            <View style={styles.filaKcal}>
+              <Text style={styles.kcalEtiqueta}>Kcal por gramo del alimento</Text>
+              <Campo contenedor={{ width: 90 }} value={kcal} onChangeText={setKcal} keyboardType="decimal-pad" accessibilityLabel="Kcal por gramo" />
+            </View>
             <TextoError mensaje={error} />
             <Boton titulo="Crear dispensador" onPress={crearAlimentador} cargando={guardando} />
             {alimentadores.length ? (
@@ -275,4 +277,6 @@ const styles = StyleSheet.create({
   claveTitulo: { fontFamily: fonts.jakartaSemibold, fontSize: 12, color: colors.text },
   claveValor: { fontFamily: fonts.medium, fontSize: 13, color: colors.black },
   cancelar: { alignItems: 'center', paddingVertical: 6 },
+  filaKcal: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  kcalEtiqueta: { flex: 1, fontFamily: fonts.jakarta, fontSize: 14, color: colors.text },
 });

@@ -126,7 +126,7 @@ export default function StatsScreen() {
               <Text style={styles.datoValor}>{totalVisitas}</Text>
             </View>
             <View style={styles.dato}>
-              <Text style={styles.datoEtiqueta}>De lo recomendado</Text>
+              <Text style={styles.datoEtiqueta}>Cumplimiento</Text>
               <Text style={styles.datoValor}>{cumplimiento === null ? '—' : `${cumplimiento} %`}</Text>
             </View>
           </View>

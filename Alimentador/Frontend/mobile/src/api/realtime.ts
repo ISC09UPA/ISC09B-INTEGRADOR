@@ -75,7 +75,10 @@ class TiempoReal {
       await this.reunirse();
       this.avisarEstado();
     });
-    conexion.onclose(() => this.avisarEstado());
+    conexion.onclose(() => {
+      this.avisarEstado();
+      this.programarReintento();
+    });
     return conexion;
   }
 
@@ -97,12 +100,29 @@ class TiempoReal {
 
     this.iniciando = this.conexion
       .start()
-      .then(() => this.reunirse())
+      .then(() => {
+        this.intentos = 0;
+        return this.reunirse();
+      })
+      .catch(() => this.programarReintento())
       .finally(() => {
         this.iniciando = null;
         this.avisarEstado();
       });
     return this.iniciando;
+  }
+
+  // withAutomaticReconnect no cubre el primer arranque; si falla, se reintenta con espera creciente.
+  private intentos = 0;
+  private reintento: ReturnType<typeof setTimeout> | null = null;
+
+  private programarReintento() {
+    if (this.reintento || !this.grupos.size) return;
+    const espera = Math.min(30_000, 2_000 * 2 ** this.intentos++);
+    this.reintento = setTimeout(() => {
+      this.reintento = null;
+      if (this.grupos.size) this.iniciar();
+    }, espera);
   }
 
   async unirse(alimentadorId: number): Promise<void> {
@@ -118,6 +138,9 @@ class TiempoReal {
 
   async detener(): Promise<void> {
     this.grupos.clear();
+    if (this.reintento) clearTimeout(this.reintento);
+    this.reintento = null;
+    this.intentos = 0;
     const c = this.conexion;
     this.conexion = null;
     if (c) await c.stop().catch(() => undefined);

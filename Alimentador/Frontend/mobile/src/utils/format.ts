@@ -1,6 +1,5 @@
 import type { IsoTime, MascotaDto } from '@/api/types';
 
-const DIAS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 const MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 const DIAS_CORTOS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
@@ -32,9 +31,10 @@ export function timeOnly(horas: number, minutos: number): IsoTime {
   return `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}:00`;
 }
 
-/** "Lunes · 10 nov · 2026" para la cabecera de inicio (Dia · fecha · Año). */
+/** "Mié · 11 nov · 2026" para la cabecera de inicio (Dia · fecha · Año). */
 export function fechaCabecera(fecha = new Date()): string {
-  return `${DIAS[fecha.getDay()]} · ${fecha.getDate()} ${MESES_CORTOS[fecha.getMonth()]} · ${fecha.getFullYear()}`;
+  const dia = DIAS_CORTOS[fecha.getDay()];
+  return `${dia[0].toUpperCase()}${dia.slice(1)} · ${fecha.getDate()} ${MESES_CORTOS[fecha.getMonth()]} · ${fecha.getFullYear()}`;
 }
 
 export function fechaLarga(fecha: Date | string): string {

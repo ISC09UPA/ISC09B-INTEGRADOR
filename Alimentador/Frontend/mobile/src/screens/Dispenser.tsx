@@ -263,22 +263,20 @@ export default function Dispenser() {
       {/* Tarjeta oscura de estado */}
       <Pressable style={styles.oscura} onPress={() => router.push('/ajustes')} accessibilityRole="button">
         <View style={styles.oscuraCabecera}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.oscuraTitulo} numberOfLines={1}>
-              {alimentador.nombre}
-            </Text>
-            <Text style={styles.oscuraSub} numberOfLines={1}>
-              {subtitulo}
-            </Text>
-          </View>
+          <Text style={styles.oscuraTitulo} numberOfLines={2}>
+            {alimentador.nombre}
+          </Text>
           <Pildora
             texto={conectado ? 'Conectado' : 'Desconectado'}
             fondo="#4A4A4A"
             color={conectado ? colors.white : '#FF8A8A'}
-            style={{ height: 30, borderRadius: 15, paddingHorizontal: 14 }}
-            textoStyle={{ fontSize: 14, color: colors.white }}
+            style={{ height: 28, borderRadius: 14, paddingHorizontal: 12 }}
+            textoStyle={{ fontSize: 13, color: colors.white }}
           />
         </View>
+        <Text style={styles.oscuraSub} numberOfLines={1}>
+          {subtitulo}
+        </Text>
         <View style={styles.niveles}>
           {[
             { etiqueta: 'Tolva de perro', valor: estado.nivelTolvaPerroPorcentaje },
@@ -423,8 +421,8 @@ const styles = StyleSheet.create({
   cabecera: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 12, paddingBottom: 16, paddingHorizontal: 4 },
   titulo: { fontFamily: fonts.jakartaBold, fontSize: 26, color: colors.text, letterSpacing: -0.5 },
   oscura: { backgroundColor: colors.card, borderRadius: 24, padding: 16, paddingTop: 18 },
-  oscuraCabecera: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-  oscuraTitulo: { fontFamily: fonts.jakartaBold, fontSize: 18, color: colors.white },
+  oscuraCabecera: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  oscuraTitulo: { flex: 1, fontFamily: fonts.jakartaBold, fontSize: 18, color: colors.white },
   oscuraSub: { fontFamily: fonts.jakarta, fontSize: 13, color: colors.border, marginTop: 1 },
   niveles: { flexDirection: 'row', gap: 10, marginTop: 14 },
   nivel: { flex: 1, backgroundColor: colors.cardInner, borderRadius: 16, padding: 14, gap: 8 },

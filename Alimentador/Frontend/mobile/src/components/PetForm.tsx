@@ -74,8 +74,8 @@ export function FilaPesoEdad({
 }
 
 export const OPCIONES_ACTIVIDAD: { valor: NivelActividad; etiqueta: string }[] = [
-  { valor: 'Bajo', etiqueta: 'Baja · casi no se mueve' },
-  { valor: 'Moderado', etiqueta: 'Moderada · paseos o juego diario' },
+  { valor: 'Bajo', etiqueta: 'Baja · poco movimiento' },
+  { valor: 'Moderado', etiqueta: 'Moderada · juego diario' },
   { valor: 'Alto', etiqueta: 'Alta · muy activo' },
 ];
 

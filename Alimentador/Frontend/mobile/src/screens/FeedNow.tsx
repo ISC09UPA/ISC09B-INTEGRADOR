@@ -175,7 +175,7 @@ export default function FeedNow() {
                 {mascota.nombre} comió {haceTiempo(ultima.terminadaEn)}
               </Text>
               <Text style={styles.infoTexto}>
-                Recibió {Math.round(ultima.dispensadoG)} g a las {horaDeFecha(ultima.iniciadaEn)}. Revisa antes de dar otra porción.
+                Recibió {Math.round(ultima.dispensadoG)} g a las {horaDeFecha(ultima.iniciadaEn)} Revisa antes de dar otra porción.
               </Text>
             </>
           ) : (
