@@ -5,7 +5,8 @@ public enum TipoError
     Ninguno,
     Validacion,
     NoEncontrado,
-    Conflicto
+    Conflicto,
+    NoAutorizado
 }
 
 // Resultado de una operación: el valor si salió bien, o el tipo de error y su mensaje.

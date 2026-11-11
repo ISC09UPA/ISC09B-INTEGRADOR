@@ -1,6 +1,7 @@
 using AlmacenInteligente.Application.Interfaces;
 using AlmacenInteligente.Infrastructure.Persistence;
 using AlmacenInteligente.Infrastructure.Repositories;
+using AlmacenInteligente.Infrastructure.Seguridad;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -15,6 +16,8 @@ public static class DependencyInjection
             opciones.UseSqlServer(cadenaConexion, sql => sql.EnableRetryOnFailure()));
 
         services.AddScoped<IProductoRepository, ProductoRepository>();
+        services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+        services.AddSingleton<IServicioContrasena, ServicioContrasenaBcrypt>();
         return services;
     }
 }
