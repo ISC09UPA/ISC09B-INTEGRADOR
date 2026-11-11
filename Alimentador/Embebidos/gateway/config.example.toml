@@ -11,7 +11,7 @@ timeout = 15.0                 # segundos por petición
 health_interval = 15           # cada cuánto se consulta GET /health
 heartbeat_interval = 60
 config_interval = 30           # poll de config?version=N
-config_full_refresh = 3600     # cada cuánto se pide config?version=0 completa
+config_full_refresh = 600      # cada cuánto se pide config?version=0 completa
 commands_interval = 5          # poll de comandos pendientes
 batch_size = 50                # registros por lote de visits/events
 backoff_base = 2.0             # reintentos: base * 2^n segundos...

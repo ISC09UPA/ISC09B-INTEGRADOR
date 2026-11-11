@@ -20,7 +20,7 @@ class BackendConfig:
     health_interval: float = 15
     heartbeat_interval: float = 60
     config_interval: float = 30
-    config_full_refresh: float = 3600
+    config_full_refresh: float = 600
     commands_interval: float = 5
     batch_size: int = 50
     backoff_base: float = 2.0
