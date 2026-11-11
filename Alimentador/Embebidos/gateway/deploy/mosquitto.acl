@@ -1,0 +1,12 @@
+# ACL del broker (/etc/mosquitto/alimentador.acl)
+
+# El gateway lee y escribe en todos los alimentadores
+user gateway
+topic readwrite feeder/#
+topic readwrite gateway/#
+
+# Cada ESP32 entra con usuario = Codigo del alimentador (FeederId del backend):
+# solo su propio árbol de temas y la hora del gateway.
+pattern readwrite feeder/%u/#
+# Mosquitto avisa que este patrón no tiene %u/%c; es intencional (aplica a todos los usuarios)
+pattern read gateway/time
