@@ -195,3 +195,26 @@ async def test_comandos_se_entregan_al_gestor(sync, falso):
     await sync.comprobar_conexion()
     assert await sync.obtener_comandos() == 1
     assert recibidos[0]["id"] == 1
+
+
+async def test_respuesta_no_json_es_falla_temporal(backend_cfg, store, broker, reloj):
+    import httpx
+
+    from alimentador_gateway.backend import BackendClient
+
+    def api(request):
+        if request.url.path == "/health":
+            return httpx.Response(200)
+        if request.url.path.endswith("/heartbeat"):
+            return httpx.Response(200, json={"serverTime": AHORA})
+        return httpx.Response(200, text="<html>portal cautivo</html>")
+
+    cliente = BackendClient("https://api.test", "pi", "k", transport=httpx.MockTransport(api))
+    s = Sincronizador(backend_cfg, store, cliente, broker.publicar, reloj)
+    s.encolar("visit", visita(1))
+    assert await s.comprobar_conexion() is True
+    with pytest.raises(BackendError) as e:
+        await s.vaciar_una_vez()
+    assert not e.value.definitivo
+    assert store.tamano_cola() == 1
+    await cliente.aclose()

@@ -63,6 +63,14 @@ class BackendClient:
             raise BackendError(f"{metodo} {ruta}: HTTP {resp.status_code} {cuerpo}", resp.status_code)
         return resp
 
+    async def _json(self, metodo: str, ruta: str, **kwargs: Any) -> Any:
+        resp = await self._pedir(metodo, ruta, **kwargs)
+        try:
+            return resp.json()
+        except ValueError as e:
+            # Respuesta inesperada (proxy, página de error): se trata como falla temporal
+            raise BackendError(f"{metodo} {ruta}: respuesta no es JSON (HTTP {resp.status_code})", 502) from e
+
     # ---------------- conectividad ----------------
 
     async def health(self) -> bool:
@@ -80,24 +88,26 @@ class BackendClient:
         resp = await self._pedir("GET", "/api/device/config", params={"version": version})
         if resp.status_code == 204 or not resp.content:
             return None
-        return resp.json()
+        try:
+            return resp.json()
+        except ValueError as e:
+            raise BackendError(f"GET config: respuesta no es JSON (HTTP {resp.status_code})", 502) from e
 
     async def heartbeat(self, feeders: list[dict[str, Any]], offline_since: int | None) -> dict[str, Any]:
-        resp = await self._pedir("POST", "/api/device/heartbeat",
-                                 json={"offlineSince": offline_since, "feeders": feeders})
-        return resp.json()
+        return await self._json("POST", "/api/device/heartbeat",
+                                json={"offlineSince": offline_since, "feeders": feeders})
 
     async def sync_complete(self) -> None:
         await self._pedir("POST", "/api/device/sync-complete")
 
     async def visitas(self, lote: list[dict[str, Any]]) -> dict[str, Any]:
-        return (await self._pedir("POST", "/api/device/visits", json=lote)).json()
+        return await self._json("POST", "/api/device/visits", json=lote)
 
     async def eventos(self, lote: list[dict[str, Any]]) -> dict[str, Any]:
-        return (await self._pedir("POST", "/api/device/events", json=lote)).json()
+        return await self._json("POST", "/api/device/events", json=lote)
 
     async def comandos(self) -> list[dict[str, Any]]:
-        datos = (await self._pedir("GET", "/api/device/commands")).json()
+        datos = await self._json("GET", "/api/device/commands")
         return datos if isinstance(datos, list) else []
 
     async def resultado_comando(self, comando_id: int, resultado: dict[str, Any]) -> None:
@@ -105,7 +115,10 @@ class BackendClient:
 
     async def solicitar_foto(self, solicitud: dict[str, Any]) -> dict[str, Any]:
         """POST photos -> {uploadUrl, blobName}."""
-        return (await self._pedir("POST", "/api/device/photos", json=solicitud)).json()
+        datos = await self._json("POST", "/api/device/photos", json=solicitud)
+        if not isinstance(datos, dict) or not isinstance(datos.get("uploadUrl"), str):
+            raise BackendError("POST photos: la respuesta no trae uploadUrl", 502)
+        return datos
 
     async def confirmar_foto(self, feeder_id: str, event_id: str) -> None:
         await self._pedir("POST", "/api/device/photos/confirm", json={"feederId": feeder_id, "eventId": event_id})
