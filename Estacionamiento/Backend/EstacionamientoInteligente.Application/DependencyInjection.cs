@@ -17,6 +17,8 @@ public static class DependencyInjection
         services.AddScoped<IEstadisticasService, EstadisticasService>();
         services.AddScoped<IProcesadorPasoPluma, ProcesadorPasoPluma>();
         services.AddScoped<IPlumaService, PlumaService>();
+        services.AddScoped<IEscanerService, EscanerService>();
+        services.AddScoped<ISimulacionService, SimulacionService>();
 
         return services;
     }
