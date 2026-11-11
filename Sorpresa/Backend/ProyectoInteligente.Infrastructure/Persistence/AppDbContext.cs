@@ -37,6 +37,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         b.Entity<Usuario>().ToTable("usuarios").HasIndex(x => x.Correo).IsUnique();
         b.Entity<Doctor>().ToTable("doctores").HasKey(x => x.UsuarioId);
         b.Entity<Doctor>().Property(x => x.UsuarioId).ValueGeneratedNever();
+        b.Entity<Doctor>().HasOne(x => x.Usuario).WithOne().HasForeignKey<Doctor>(x => x.UsuarioId);
         b.Entity<Consultorio>().ToTable("consultorios");
         b.Entity<Cita>().ToTable("citas");
         b.Entity<Turno>().ToTable("turnos");
