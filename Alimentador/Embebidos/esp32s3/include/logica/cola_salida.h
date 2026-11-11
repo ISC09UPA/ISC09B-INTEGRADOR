@@ -2,8 +2,9 @@
 
 // Cola de mensajes que deben llegar a la Pi (visitas, eventos y resultados de comandos).
 // Cada mensaje sale de la cola solo cuando llega el PUBACK de su publicación QoS 1. Si se cae
-// la conexión, lo que estaba en vuelo se vuelve a mandar (la Pi descarta duplicados por eventId
-// o por id de comando). Se guarda en LittleFS con serializar()/deserializar().
+// la conexión, el cliente MQTT reenvía lo que estaba en vuelo con el mismo packetId; si se
+// reinicia el ESP32, todo vuelve a pendiente y se manda otra vez (la Pi descarta duplicados por
+// eventId o por id de comando). Se guarda en LittleFS con serializar()/deserializar().
 
 #include <stddef.h>
 #include <stdint.h>
@@ -33,7 +34,7 @@ class ColaSalida {
   bool marcarEnVuelo(uint32_t seq, uint16_t packetId);
   // PUBACK recibido: quita el mensaje. Devuelve false si el packetId no era de la cola.
   bool confirmar(uint16_t packetId);
-  // Conexión caída: todo vuelve a pendiente.
+  // El cliente MQTT perdió sus publicaciones pendientes: todo vuelve a pendiente.
   void reiniciarEnVuelo();
 
   size_t tamano() const { return mensajes_.size(); }
