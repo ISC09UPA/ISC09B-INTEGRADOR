@@ -70,6 +70,13 @@ export default function PlantScreen({ navigation }) {
   // Sugerido: la cuadrícula abre «Plantas y dispositivos» para cambiar de planta.
   const abrirPlantas = () => navigation.navigate('Más', { screen: 'PlantasDispositivos' });
 
+  // Abre la galería de fotos de la planta activa (nueva pantalla).
+  const abrirGaleriaPlanta = () =>
+    navigation.navigate('Más', {
+      screen: 'GaleriaPlanta',
+      params: { plantaId: planta.id, nombre: planta.nombre },
+    });
+
   return (
     <SafeAreaView edges={['top']} style={styles.pantalla}>
       <ScrollView contentContainerStyle={styles.contenido} showsVerticalScrollIndicator={false}>
@@ -122,6 +129,15 @@ export default function PlantScreen({ navigation }) {
           onPress={tomarFoto}
           loading={tomandoFoto}
         />
+
+        {/* Galería de fotos de esta planta (solo visible si hay planta activa) */}
+        {planta ? (
+          <SecondaryButton
+            label="Ver galería de esta planta"
+            icon="image"
+            onPress={abrirGaleriaPlanta}
+          />
+        ) : null}
 
         {/* Condición actual con chip global */}
         <SectionHeader

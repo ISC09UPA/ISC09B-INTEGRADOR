@@ -3,7 +3,7 @@
  * Formulario con foto (cámara o galería), nombre, especie y dispositivo
  * asociado. Valida los campos y regresa a Plantas y dispositivos al guardar.
  */
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Image,
   KeyboardAvoidingView,
@@ -39,6 +39,10 @@ export default function NewPlantScreen({ navigation }) {
   const [selectorFoto, setSelectorFoto] = useState(false);
   const [selectorDispositivo, setSelectorDispositivo] = useState(false);
   const [confirmarSalida, setConfirmarSalida] = useState(false);
+
+  // Bloqueo inmediato contra dobles toques en «Guardar planta». La referencia
+  // cambia al instante, sin esperar el re-render que deshabilita el botón.
+  const guardandoRef = useRef(false);
 
   /** Validaciones en vivo (nombre y especie obligatorios, dispositivo requerido). */
   const validaciones = {
@@ -96,6 +100,11 @@ export default function NewPlantScreen({ navigation }) {
   };
 
   const guardar = async () => {
+    // Evita el doble envío: si ya hay una petición en curso (doble toque),
+    // se ignora. Así no se crean plantas duplicadas ni se apilan dos
+    // navigation.goBack() (el segundo regresaba una pantalla de más).
+    if (guardandoRef.current) return;
+    guardandoRef.current = true;
     setGuardando(true);
     try {
       await crearPlanta({
@@ -108,6 +117,7 @@ export default function NewPlantScreen({ navigation }) {
     } catch (error) {
       mostrarToast('error', error.message);
     } finally {
+      guardandoRef.current = false;
       setGuardando(false);
     }
   };

@@ -14,7 +14,7 @@ import NewPlantScreen from '../screens/more/NewPlantScreen';
 import ProfileScreen from '../screens/more/ProfileScreen';
 import ProfileEditScreen from '../screens/more/ProfileEditScreen';
 import NotificationsScreen from '../screens/more/NotificationsScreen';
-import PreferencesScreen from '../screens/more/PreferencesScreen';
+import PlantGalleryScreen from '../screens/more/PlantGalleryScreen';
 import GuideScreen from '../screens/more/GuideScreen';
 
 const Stack = createNativeStackNavigator();
@@ -31,7 +31,7 @@ export default function MoreStack() {
       <Stack.Screen name="Perfil" component={ProfileScreen} />
       <Stack.Screen name="DatosPersonales" component={ProfileEditScreen} />
       <Stack.Screen name="Notificaciones" component={NotificationsScreen} />
-      <Stack.Screen name="Preferencias" component={PreferencesScreen} />
+      <Stack.Screen name="GaleriaPlanta" component={PlantGalleryScreen} />
       <Stack.Screen name="GuiaSoporte" component={GuideScreen} />
     </Stack.Navigator>
   );

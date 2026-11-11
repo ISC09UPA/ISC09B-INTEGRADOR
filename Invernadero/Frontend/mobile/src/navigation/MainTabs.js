@@ -20,7 +20,18 @@ export default function MainTabs() {
       <Tab.Screen name="Planta" component={PlantScreen} options={{ title: 'Planta' }} />
       <Tab.Screen name="Riego" component={WaterScreen} options={{ title: 'Riego' }} />
       <Tab.Screen name="Historial" component={HistoryScreen} options={{ title: 'Historial' }} />
-      <Tab.Screen name="Más" component={MoreStack} options={{ title: 'Más' }} />
+      {/*
+        «Más» es un stack anidado. Con popToTopOnBlur (opción oficial de
+        bottom-tabs), al salir de la pestaña el stack vuelve a su raíz
+        (el menú), en lugar de quedarse pegado en la última pantalla abierta
+        (p. ej. «Plantas y dispositivos»). Si además se toca «Más» estando
+        dentro de una pantalla apilada, React Navigation ya regresa al menú.
+      */}
+      <Tab.Screen
+        name="Más"
+        component={MoreStack}
+        options={{ title: 'Más', popToTopOnBlur: true }}
+      />
     </Tab.Navigator>
   );
 }

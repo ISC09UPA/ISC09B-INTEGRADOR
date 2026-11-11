@@ -8,6 +8,11 @@ export function listarFotos() {
   return api.get('/gallery');
 }
 
+/** Obtiene únicamente las fotos de una planta específica (por su id). */
+export function listarFotosPorPlanta(plantaId) {
+  return api.get('/plants/photos', { plantaId });
+}
+
 /** Registra una nueva foto (cámara del invernadero o del teléfono). */
 export function agregarFoto() {
   return api.post('/gallery/photo');

@@ -1,5 +1,5 @@
 /**
- * Servicio de perfil y preferencias del usuario.
+ * Servicio de perfil, notificaciones y guía del usuario.
  */
 import { api } from './api';
 
@@ -11,16 +11,6 @@ export function obtenerPerfil() {
 /** Actualiza los datos personales (nombre, correo, contraseña). */
 export function actualizarPerfil(datos) {
   return api.patch('/profile', datos);
-}
-
-/** Obtiene las preferencias (unidades, idioma, tema). */
-export function obtenerPreferencias() {
-  return api.get('/preferences');
-}
-
-/** Actualiza las preferencias. */
-export function actualizarPreferencias(datos) {
-  return api.patch('/preferences', datos);
 }
 
 /** Obtiene la configuración de notificaciones. */

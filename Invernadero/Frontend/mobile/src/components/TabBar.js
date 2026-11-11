@@ -12,7 +12,10 @@ import { colors, shadows, spacing, typography } from '../theme';
 /** Iconos de cada pestaña (estilo de línea). */
 const ICONOS = {
   Inicio: { familia: Feather, nombre: 'home' },
-  Planta: { familia: Ionicons, nombre: 'leaf-outline' },
+  // «leaf» (sólido) en lugar de «leaf-outline»: la variante outline no se
+  // renderiza en algunos entornos (p. ej. Expo Go con Ionicons antiguo) y
+  // muestra un «?» en su lugar.
+  Planta: { familia: Ionicons, nombre: 'leaf' },
   Riego: { familia: Feather, nombre: 'droplet' },
   Historial: { familia: Feather, nombre: 'bar-chart-2' },
   Más: { familia: Feather, nombre: 'menu' },

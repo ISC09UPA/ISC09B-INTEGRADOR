@@ -19,7 +19,6 @@ import {
   GALERIA,
   HISTORIAL_SENSORES,
   PERFIL,
-  PREFERENCIAS,
   NOTIFICACIONES,
   GUIA_SOPORTE,
   FOTO_PLANTA,
@@ -47,9 +46,21 @@ const esperar = (ms) => new Promise((resolver) => setTimeout(resolver, ms));
 
 const esCorreoValido = (correo) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo);
 
+// Contador local para ids únicos. Date.now() puede colisionar si dos
+// peticiones se completan en el mismo milisegundo (p. ej., un doble toque),
+// lo que generaba registros con la misma key y avisos de React.
+let contadorIds = 0;
+const generarId = (prefijo) => `${prefijo}${Date.now()}-${(contadorIds += 1)}`;
+
 /* ------------------------------------------------------------------ */
 /* «Base de datos» en memoria: clonamos los datos mock para poder      */
 /* mutarlos durante la sesión (leer alertas, crear plantas, etc.).     */
+/*                                                                    */
+/* IMPORTANTE: todo vive SOLO en la memoria del proceso JavaScript.    */
+/* Nada se escribe en disco (únicamente la sesión va a SecureStore).   */
+/* En desarrollo, Fast Refresh y el simple segundo plano conservan     */
+/* este estado; un reinicio REAL (Reload de Expo Go / «r» en Metro /   */
+/* cerrar el proceso) restaura los datos mock originales.              */
 /* ------------------------------------------------------------------ */
 const db = {
   usuarios: [USUARIO],
@@ -71,7 +82,6 @@ const db = {
   galeria: GALERIA.map((f) => ({ ...f })),
   fotoPlanta: { ...FOTO_PLANTA },
   perfil: { ...PERFIL },
-  preferencias: { ...PREFERENCIAS },
   notificaciones: { ...NOTIFICACIONES },
   historial: HISTORIAL_SENSORES,
   guia: GUIA_SOPORTE,
@@ -164,7 +174,7 @@ const ENDPOINTS = {
     // El evento queda registrado de inmediato (en el backend real
     // se registraría al terminar el riego). Mes mock = junio.
     const evento = {
-      id: `e${Date.now()}`,
+      id: generarId('e'),
       tipo: 'Manual',
       fechaEtiqueta: 'Hoy, ahora',
       mes: MES_MOCK,
@@ -190,9 +200,16 @@ const ENDPOINTS = {
 
   'GET /plants': () => ({ plantas: db.plantas, plantaActivaId: db.plantaActivaId }),
 
+  // Fotos de una planta específica (galería por planta, nueva pantalla).
+  // No altera la galería general (GET /gallery).
+  'GET /plants/photos': ({ params }) =>
+    db.galeria
+      .filter((f) => f.plantaId === params?.plantaId)
+      .map((f) => ({ ...f })),
+
   'POST /plants': ({ body }) => {
     const planta = {
-      id: `p${Date.now()}`,
+      id: generarId('p'),
       nombre: body.nombre,
       especie: body.especie,
       ubicacion: 'Invernadero principal',
@@ -224,7 +241,7 @@ const ENDPOINTS = {
 
   'POST /gallery/photo': () => {
     const foto = {
-      id: `f${Date.now()}`,
+      id: generarId('f'),
       etiqueta: 'Hoy',
       color: ['#5E9B47', '#4E8A6A', '#6FAE55', '#7CB24F'][Math.floor(Math.random() * 4)],
     };
@@ -250,13 +267,6 @@ const ENDPOINTS = {
   'PATCH /notifications': ({ body }) => {
     db.notificaciones = { ...db.notificaciones, ...body };
     return { ...db.notificaciones };
-  },
-
-  'GET /preferences': () => ({ ...db.preferencias }),
-
-  'PATCH /preferences': ({ body }) => {
-    db.preferencias = { ...db.preferencias, ...body };
-    return { ...db.preferencias };
   },
 
   'GET /guide': () => ({ ...db.guia }),

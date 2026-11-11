@@ -2,7 +2,7 @@
  * Estado global de la app (Context API).
  *
  * Centraliza sesión, conectividad, lecturas, riego, plantas, alertas,
- * galería y preferencias. Las pantallas consumen `useApp()` y nunca
+ * galería y notificaciones. Las pantallas consumen `useApp()` y nunca
  * hablan directamente con los servicios (solo a través de las acciones).
  */
 import React, {
@@ -67,7 +67,6 @@ const estadoInicial = {
   historial: { periodo: '7d', datos: null, cargando: false },
 
   perfil: null,
-  preferencias: null,
   notificaciones: null,
   guia: null,
 
@@ -93,7 +92,7 @@ export function AppProvider({ children }) {
   const cargarDatosIniciales = useCallback(async () => {
     setState((prev) => ({ ...prev, lecturasCargando: true }));
     try {
-      const [lecturas, riego, plantasData, alertas, galeria, perfil, preferencias, dispositivo, consumo, eventosRiego, notificaciones] =
+      const [lecturas, riego, plantasData, alertas, galeria, perfil, dispositivo, consumo, eventosRiego, notificaciones] =
         await Promise.all([
           sensorsService.obtenerLecturas(),
           wateringService.obtenerEstado(),
@@ -101,7 +100,6 @@ export function AppProvider({ children }) {
           alertsService.listarAlertas(),
           galleryService.listarFotos(),
           profileService.obtenerPerfil(),
-          profileService.obtenerPreferencias(),
           plantsService.obtenerDispositivo(),
           wateringService.obtenerConsumo(),
           wateringService.obtenerEventos(MES_MOCK),
@@ -126,7 +124,6 @@ export function AppProvider({ children }) {
         mesEventos: MES_MOCK,
         eventosRiegoCargando: false,
         perfil,
-        preferencias,
         notificaciones,
         conectividad: {
           ...prev.conectividad,
@@ -400,13 +397,6 @@ export function AppProvider({ children }) {
       return perfil;
     }
 
-    /** Actualiza las preferencias (unidades, idioma, tema). */
-    async function actualizarPreferencias(datos) {
-      const preferencias = await profileService.actualizarPreferencias(datos);
-      setState((prev) => ({ ...prev, preferencias }));
-      return preferencias;
-    }
-
     /** Actualiza la configuración de notificaciones. */
     async function actualizarNotificaciones(datos) {
       const notificaciones = await profileService.actualizarNotificaciones(datos);
@@ -455,7 +445,6 @@ export function AppProvider({ children }) {
       activarPlanta,
       agregarFoto,
       actualizarPerfil,
-      actualizarPreferencias,
       actualizarNotificaciones,
       cargarGuia,
       eliminarFoto,

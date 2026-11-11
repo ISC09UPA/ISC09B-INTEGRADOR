@@ -1,7 +1,7 @@
 /**
  * Pantalla 12: Perfil y ajustes (dentro de Más).
- * Avatar con iniciales, datos del usuario, menú de ajustes, tarjeta del rol
- * de la cuenta, cierre de sesión con confirmación y versión de la app.
+ * Avatar con iniciales, datos del usuario, menú de ajustes,
+ * cierre de sesión con confirmación y versión de la app.
  */
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -19,13 +19,12 @@ import { iniciales } from '../../utils/formatters';
 import { colors, spacing, typography } from '../../theme';
 
 export default function ProfileScreen({ navigation }) {
-  const { sesion, perfil, cerrarSesion, mostrarToast } = useApp();
+  const { sesion, cerrarSesion, mostrarToast } = useApp();
 
   const [confirmandoSalida, setConfirmandoSalida] = useState(false);
   const [cerrando, setCerrando] = useState(false);
 
   const usuario = sesion?.usuario;
-  const rol = perfil?.rol ?? 'Administrador';
 
   const filas = [
     {
@@ -39,12 +38,6 @@ export default function ProfileScreen({ navigation }) {
       icono: 'bell',
       titulo: 'Notificaciones',
       subtitulo: 'Alertas y recordatorios',
-    },
-    {
-      clave: 'Preferencias',
-      icono: 'sliders',
-      titulo: 'Preferencias',
-      subtitulo: 'Unidades, idioma y tema',
     },
   ];
 
@@ -95,13 +88,6 @@ export default function ProfileScreen({ navigation }) {
               {indice < filas.length - 1 ? <View style={styles.divisor} /> : null}
             </View>
           ))}
-        </Card>
-
-        {/* Tarjeta informativa del rol */}
-        <Card style={styles.rol}>
-          <Text style={styles.rolEtiqueta}>Rol de la cuenta</Text>
-          <Text style={styles.rolValor}>{rol}</Text>
-          <Text style={styles.rolTexto}>{perfil?.rolDescripcion ?? 'Puede gestionar plantas, dispositivos y usuarios.'}</Text>
         </Card>
 
         {/* Cerrar sesión */}
@@ -187,21 +173,6 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     backgroundColor: colors.divider,
     marginLeft: spacing.lg + 38 + spacing.md,
-  },
-  rol: {
-    gap: spacing.xs,
-  },
-  rolEtiqueta: {
-    ...typography.caption,
-    color: colors.textSecondary,
-  },
-  rolValor: {
-    ...typography.bodyBold,
-    color: colors.textPrimary,
-  },
-  rolTexto: {
-    ...typography.caption,
-    color: colors.textSecondary,
   },
   version: {
     ...typography.micro,

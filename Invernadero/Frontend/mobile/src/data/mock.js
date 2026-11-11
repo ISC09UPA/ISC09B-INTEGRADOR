@@ -65,8 +65,8 @@ export const PLANTAS = [
     nombre: 'Albahaca Genovesa',
     especie: 'Ocimum basilicum',
     ubicacion: 'Módulo de prueba',
-    enLinea: false,
-    dispositivoId: null,
+    enLinea: true,
+    dispositivoId: 'd1',
     colorFoto: '#4E9A6A',
   },
 ];
@@ -190,6 +190,8 @@ export const ALERTAS = [
  * Galería de fotos de seguimiento (24 imágenes, como indica el menú Más).
  * Al no haber fotos reales, cada elemento define un tono de verde
  * para renderizar una «foto» simulada (bloque con degradado).
+ * Cada foto pertenece a una planta (plantaId) para poder filtrar la
+ * galería por planta desde la vista de detalle.
  */
 const COLORES_FOTOS = ['#5E9B47', '#4E8A6A', '#6FAE55', '#3F7D5C', '#7CB24F', '#57A06D'];
 const ETIQUETAS_FOTOS = ['Hoy'];
@@ -201,6 +203,8 @@ export const GALERIA = ETIQUETAS_FOTOS.map((etiqueta, i) => ({
   id: `f${i + 1}`,
   etiqueta,
   color: COLORES_FOTOS[i % COLORES_FOTOS.length],
+  // Alterna las fotos entre las dos plantas de ejemplo.
+  plantaId: i % 2 === 0 ? 'p1' : 'p2',
 }));
 
 /** Fecha/hora de la foto más reciente de la planta (mockup: «Hoy, 10:38»). */
@@ -260,18 +264,11 @@ export const ESTADISTICAS_HISTORIAL = {
   ambiente: { minimo: '58%', promedio: '70%', maximo: '81%', variacion: '2.1%' },
 };
 
-/** Perfil y preferencias de ejemplo. */
+/** Perfil de ejemplo. */
 export const PERFIL = {
   nombreCompleto: 'Mariana Ríos',
   email: 'mariana@invernadero.app',
   rol: 'Administrador',
-  rolDescripcion: 'Puede gestionar plantas, dispositivos y usuarios.',
-};
-
-export const PREFERENCIAS = {
-  unidades: '°C y litros',
-  idioma: 'Español',
-  tema: 'Claro',
 };
 
 export const NOTIFICACIONES = {
