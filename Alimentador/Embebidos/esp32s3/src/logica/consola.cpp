@@ -22,6 +22,7 @@ const DefinicionOrden ORDENES[] = {
     {"AYUDA", OrdenConsola::Ayuda, 0, 0},
     {"ESTADO", OrdenConsola::Estado, 0, 0},
     {"FOTO", OrdenConsola::Foto, 0, 0},
+    {"VER_ENTRADA", OrdenConsola::VerEntrada, 0, 0},
     {"REINICIAR", OrdenConsola::Reiniciar, 0, 0},
     {"DISPENSAR", OrdenConsola::Dispensar, 2, CONSOLA_MAX_GRAMOS},
     {"TARA", OrdenConsola::Tara, 1, 0},

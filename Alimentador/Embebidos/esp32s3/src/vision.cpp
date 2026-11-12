@@ -310,6 +310,20 @@ bool reconocer(uint8_t fotos, Captura& salida) {
   return true;
 }
 
+bool depurarEntrada(float* probabilidades, const uint8_t*& rgbSalida, int& ancho, int& alto) {
+  if (!camaraLista || !modeloCargado()) return false;
+  camera_fb_t* fb = esp_camera_fb_get();
+  if (!fb) return false;
+  bool ok = clasificarJpeg(fb->buf, fb->len, probabilidades);
+  esp_camera_fb_return(fb);
+  if (!ok) return false;
+  TfLiteTensor* t = interprete->input(0);
+  alto = t->dims->data[1];
+  ancho = t->dims->data[2];
+  rgbSalida = entrada;
+  return true;
+}
+
 bool subirFoto(const Captura& captura, const std::string& eventId) {
   if (captura.jpeg.empty() || WiFi.status() != WL_CONNECTED) return false;
   char confianza[16];
