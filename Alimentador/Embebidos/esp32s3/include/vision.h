@@ -29,6 +29,11 @@ std::string versionModelo();  // contenido de /model.ver; vacío si no hay model
 // (en ese caso igual intenta dejar una foto en `salida.jpeg`).
 bool reconocer(uint8_t fotos, Captura& salida);
 
+// Para depurar: toma una sola foto, la clasifica y deja en `rgb` el recorte que recibe el
+// modelo (RGB888, `ancho` x `alto`, ya en el orden de color que usa el modelo) y en
+// `probabilidades` las NUM_CLASES salidas. El búfer es interno: úsalo antes de otra foto.
+bool depurarEntrada(float* probabilidades, const uint8_t*& rgb, int& ancho, int& alto);
+
 // POST /photos de la Pi con la foto dudosa.
 bool subirFoto(const Captura& captura, const std::string& eventId);
 

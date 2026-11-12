@@ -3,7 +3,7 @@
 // Comandos por el monitor serie para probar y calibrar sin la Raspberry Pi.
 // Basado en el comando DISPENSAR del primer prototipo, ahora con tolva:
 //
-//   AYUDA | ESTADO | FOTO | REINICIAR
+//   AYUDA | ESTADO | FOTO | VER_ENTRADA | REINICIAR
 //   DISPENSAR <tolva 1|2> <gramos>
 //   TARA <plato 1|2>
 //   CALIBRAR_BASCULA <plato 1|2> <gramos de la pesa patrón>
@@ -16,6 +16,7 @@ enum class OrdenConsola {
   Ayuda,
   Estado,
   Foto,
+  VerEntrada,
   Reiniciar,
   Dispensar,
   Tara,

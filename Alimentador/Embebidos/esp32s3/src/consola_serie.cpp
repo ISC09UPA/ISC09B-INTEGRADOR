@@ -26,6 +26,32 @@ char linea[TAM_LINEA];
 size_t largo = 0;
 bool demasiadoLarga = false;
 
+// Imprime `datos` en base64, en renglones de 76 caracteres.
+void imprimirBase64(const uint8_t* datos, size_t largo) {
+  static const char tabla[] =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  char renglon[80];
+  size_t n = 0;
+  for (size_t i = 0; i < largo; i += 3) {
+    uint32_t v = static_cast<uint32_t>(datos[i]) << 16;
+    if (i + 1 < largo) v |= static_cast<uint32_t>(datos[i + 1]) << 8;
+    if (i + 2 < largo) v |= datos[i + 2];
+    renglon[n++] = tabla[(v >> 18) & 63];
+    renglon[n++] = tabla[(v >> 12) & 63];
+    renglon[n++] = i + 1 < largo ? tabla[(v >> 6) & 63] : '=';
+    renglon[n++] = i + 2 < largo ? tabla[v & 63] : '=';
+    if (n >= 76) {
+      renglon[n] = '\0';
+      Serial.println(renglon);
+      n = 0;
+    }
+  }
+  if (n > 0) {
+    renglon[n] = '\0';
+    Serial.println(renglon);
+  }
+}
+
 void ayuda() {
   Serial.println(
       "Comandos:\n"
@@ -37,6 +63,7 @@ void ayuda() {
       "  NIVEL_VACIO <tolva>            guarda la distancia actual como tolva vacia\n"
       "  NIVEL_LLENO <tolva>            guarda la distancia actual como tolva llena\n"
       "  FOTO                           toma fotos y muestra la clase\n"
+      "  VER_ENTRADA                    manda la imagen que ve el modelo (scripts/ver_entrada.py)\n"
       "  REINICIAR");
 }
 
@@ -96,6 +123,25 @@ void ejecutar(const char* texto) {
       } else {
         Serial.printf("Sin clasificacion (foto de %u bytes)\n", (unsigned)c.jpeg.size());
       }
+      break;
+    }
+    case logica::OrdenConsola::VerEntrada: {
+      float probabilidades[logica::NUM_CLASES];
+      const uint8_t* rgb = nullptr;
+      int ancho = 0, alto = 0;
+      if (!vision::depurarEntrada(probabilidades, rgb, ancho, alto)) {
+        Serial.println("ERROR: sin camara o sin modelo");
+        break;
+      }
+      Serial.print("Probabilidades:");
+      for (size_t i = 0; i < logica::NUM_CLASES; i++) {
+        Serial.printf(" %s %.3f", logica::nombreClase(static_cast<logica::Clase>(i)),
+                      probabilidades[i]);
+      }
+      Serial.println();
+      Serial.printf("IMG_INICIO %d %d\n", ancho, alto);
+      imprimirBase64(rgb, static_cast<size_t>(ancho) * alto * 3);
+      Serial.println("IMG_FIN");
       break;
     }
     case logica::OrdenConsola::Dispensar: {

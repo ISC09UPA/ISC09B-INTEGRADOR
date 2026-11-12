@@ -17,6 +17,10 @@ void test_consola_comandos_validos() {
   TEST_ASSERT_EQUAL(2, l.numero);
   TEST_ASSERT_EQUAL_DOUBLE(35.5, l.valor);
 
+  TEST_ASSERT_EQUAL(ErrorConsola::Ok, interpretarLinea("ver_entrada", l));
+  TEST_ASSERT_EQUAL(OrdenConsola::VerEntrada, l.orden);
+  TEST_ASSERT_EQUAL(ErrorConsola::Sobrante, interpretarLinea("VER_ENTRADA 1", l));
+
   TEST_ASSERT_EQUAL(ErrorConsola::Ok, interpretarLinea("TARA 1", l));
   TEST_ASSERT_EQUAL(OrdenConsola::Tara, l.orden);
   TEST_ASSERT_EQUAL(1, l.numero);
