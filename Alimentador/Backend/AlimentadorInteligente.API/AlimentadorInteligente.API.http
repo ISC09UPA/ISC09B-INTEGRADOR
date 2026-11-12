@@ -1,6 +1,154 @@
-@AlimentadorInteligente.API_HostAddress = http://localhost:5126
+@host = http://localhost:5126
+@token = <pega aquí el accessToken del login>
 
-GET {{AlimentadorInteligente.API_HostAddress}}/weatherforecast/
-Accept: application/json
+### Salud (lo usa la Raspberry Pi)
+GET {{host}}/health
 
-###
+### Registro
+POST {{host}}/api/auth/registro
+Content-Type: application/json
+
+{ "nombre": "Diego", "email": "diego@example.com", "password": "contrasena123" }
+
+### Login
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{ "email": "diego@example.com", "password": "contrasena123" }
+
+### Mis alimentadores
+GET {{host}}/api/alimentadores
+Authorization: Bearer {{token}}
+
+### Dar de alta la Raspberry Pi (la clave solo se muestra aquí)
+POST {{host}}/api/gateways
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "deviceId": "pi-casa" }
+
+### Crear alimentador
+POST {{host}}/api/alimentadores
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "codigo": "feeder01", "nombre": "Cocina", "kcalPorGramo": 3.6, "gatewayDeviceId": "pi-casa", "zonaHoraria": "America/Mexico_City" }
+
+### Ligar el alimentador a otra Pi propia (Dueño y propietario de la Pi)
+PUT {{host}}/api/alimentadores/1/gateway
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "gatewayId": 2 }
+
+### Quitar la Pi del alimentador
+DELETE {{host}}/api/alimentadores/1/gateway
+Authorization: Bearer {{token}}
+
+### Registrar mascota
+POST {{host}}/api/alimentadores/1/mascotas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "nombre": "Michi", "especie": "Gato", "pesoKg": 4.2, "edadMeses": 36, "nivelActividad": "Moderado", "esterilizado": true, "comidasPorDia": 3, "etiquetaRfid": null }
+
+### Dispensado manual
+POST {{host}}/api/alimentadores/1/dispensar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "gramos": 20, "mascotaId": 1 }
+
+### Dispensado manual sin elegir mascota (1 perro, 2 gato)
+POST {{host}}/api/alimentadores/1/dispensar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "gramos": 20, "tolva": 2 }
+
+### Artefactos OTA disponibles
+GET {{host}}/api/ota/artefactos
+Authorization: Bearer {{token}}
+
+### Publicar firmware (solo correos en Ota:Administradores; tipo: firmware | modelo)
+POST {{host}}/api/ota/artefactos
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=LimiteOta
+
+--LimiteOta
+Content-Disposition: form-data; name="tipo"
+
+firmware
+--LimiteOta
+Content-Disposition: form-data; name="version"
+
+1.3.0
+--LimiteOta
+Content-Disposition: form-data; name="archivo"; filename="alimentador.bin"
+Content-Type: application/octet-stream
+
+< ./ota/alimentador.bin
+--LimiteOta--
+
+### Borrar un artefacto que no se haya usado
+DELETE {{host}}/api/ota/artefactos/1
+Authorization: Bearer {{token}}
+
+### Lanzar la actualización en un alimentador (solo Dueño)
+POST {{host}}/api/alimentadores/1/ota
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "artefactoId": 1 }
+
+### [Pi] Configuración
+GET {{host}}/api/device/config?version=0
+X-Device-Id: pi-casa
+X-Device-Key: <clave del gateway>
+
+### [Pi] Heartbeat al recuperar internet (offlineSince solo en el primero)
+POST {{host}}/api/device/heartbeat
+X-Device-Id: pi-casa
+X-Device-Key: <clave del gateway>
+Content-Type: application/json
+
+{ "offlineSince": 1761832800, "feeders": [
+  { "feederId": "feeder01", "online": true, "hopperDogPct": 80, "hopperCatPct": 17, "plateDogG": 0, "plateCatG": 5,
+    "firmware": "1.0.0", "model": "1", "reportedAt": 1761833400 } ] }
+
+### [Pi] Lote de visitas
+POST {{host}}/api/device/visits
+X-Device-Id: pi-casa
+X-Device-Key: <clave del gateway>
+Content-Type: application/json
+
+[
+  { "feederId": "feeder01", "eventId": "boot42-0007", "petId": 1, "class": "gato", "confidence": 0.93,
+    "startedAt": 1761832800, "endedAt": 1761833100, "plateBeforeG": 3.1, "dispensedG": 31.2, "plateAfterG": 5.0 }
+]
+
+### [Pi] Evento de tolva baja (hopper: 1 perro, 2 gato)
+POST {{host}}/api/device/events
+X-Device-Id: pi-casa
+X-Device-Key: <clave del gateway>
+Content-Type: application/json
+
+[ { "feederId": "feeder01", "eventId": "boot42-0009", "type": "HOPPER_LOW", "occurredAt": 1761833260, "detail": "17", "hopper": 2 } ]
+
+### [Pi] Terminó de vaciar la cola
+POST {{host}}/api/device/sync-complete
+X-Device-Id: pi-casa
+X-Device-Key: <clave del gateway>
+
+### [Pi] Comandos pendientes (OTA trae url, sha256, target y version)
+GET {{host}}/api/device/commands
+X-Device-Id: pi-casa
+X-Device-Key: <clave del gateway>
+
+### [Pi] Resultado de una OTA
+POST {{host}}/api/device/commands/1/result
+X-Device-Id: pi-casa
+X-Device-Key: <clave del gateway>
+Content-Type: application/json
+
+{ "ok": true, "dispensedG": null, "error": null }
