@@ -1,0 +1,10 @@
+# .gitignore del proyecto Invernadero
+
+# Carpetas de compilación de .NET (Backend) — nunca se suben
+[Bb]in/
+[Oo]bj/
+
+# Archivos de usuario de Visual Studio
+*.user
+*.suo
+.vs/
