@@ -18,3 +18,7 @@ C:\Users\victo\OneDrive\Documents\GitHub\ISC09B-INTEGRADOR\Invernadero\Backend\I
 C:\Users\victo\OneDrive\Documents\GitHub\ISC09B-INTEGRADOR\Invernadero\Backend\InvernaderoInteligente.Infrastructure\obj\Debug\net10.0\ref\InvernaderoInteligente.Infrastructure.dll
 C:\Users\victo\OneDrive\Documents\GitHub\ISC09B-INTEGRADOR\Invernadero\Backend\InvernaderoInteligente.Infrastructure\bin\Debug\net10.0\InvernaderoInteligente.Infrastructure.runtimeconfig.json
 C:\Users\victo\OneDrive\Documents\GitHub\ISC09B-INTEGRADOR\Invernadero\Backend\InvernaderoInteligente.Infrastructure\obj\Debug\net10.0\InvernaderoInteligente.Infrastructure.genruntimeconfig.cache
+C:\Users\victo\AppData\Local\Temp\InvernaderoSwaggerBuild\InvernaderoInteligente.Infrastructure.deps.json
+C:\Users\victo\AppData\Local\Temp\InvernaderoSwaggerBuild\InvernaderoInteligente.Infrastructure.runtimeconfig.json
+C:\Users\victo\AppData\Local\Temp\InvernaderoSwaggerBuild\InvernaderoInteligente.Infrastructure.dll
+C:\Users\victo\AppData\Local\Temp\InvernaderoSwaggerBuild\InvernaderoInteligente.Infrastructure.pdb

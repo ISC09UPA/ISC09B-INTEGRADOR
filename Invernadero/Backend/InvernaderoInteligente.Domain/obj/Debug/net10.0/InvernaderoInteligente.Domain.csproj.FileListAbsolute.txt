@@ -10,3 +10,6 @@ C:\Users\victo\OneDrive\Documents\GitHub\ISC09B-INTEGRADOR\Invernadero\Backend\I
 C:\Users\victo\OneDrive\Documents\GitHub\ISC09B-INTEGRADOR\Invernadero\Backend\InvernaderoInteligente.Domain\obj\Debug\net10.0\refint\InvernaderoInteligente.Domain.dll
 C:\Users\victo\OneDrive\Documents\GitHub\ISC09B-INTEGRADOR\Invernadero\Backend\InvernaderoInteligente.Domain\obj\Debug\net10.0\InvernaderoInteligente.Domain.pdb
 C:\Users\victo\OneDrive\Documents\GitHub\ISC09B-INTEGRADOR\Invernadero\Backend\InvernaderoInteligente.Domain\obj\Debug\net10.0\ref\InvernaderoInteligente.Domain.dll
+C:\Users\victo\AppData\Local\Temp\InvernaderoSwaggerBuild\InvernaderoInteligente.Domain.deps.json
+C:\Users\victo\AppData\Local\Temp\InvernaderoSwaggerBuild\InvernaderoInteligente.Domain.dll
+C:\Users\victo\AppData\Local\Temp\InvernaderoSwaggerBuild\InvernaderoInteligente.Domain.pdb

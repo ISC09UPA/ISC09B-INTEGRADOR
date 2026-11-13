@@ -5,6 +5,7 @@ using InvernaderoInteligente.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using NSwag.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -50,6 +51,14 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwaggerUi(settings =>
+    {
+        settings.SwaggerRoutes.Add(new SwaggerUiRoute("Invernadero API", "/openapi/v1.json"));
+    });
+}
 
 app.UseCors("PermitirTodo");
 

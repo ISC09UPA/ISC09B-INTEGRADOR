@@ -1,0 +1,90 @@
+12/11/2026 10:40:15 p. m.	This log contains information about the import schema operation into project 'BD-Sembradio' on computer 'NOVA' by user 'victo'.
+12/11/2026 10:40:15 p. m.	Import of database schema has started.
+12/11/2026 10:40:16 p. m.	Gathering database credentials
+12/11/2026 10:40:16 p. m.	Gathering database options
+12/11/2026 10:40:16 p. m.	Gathering generic database scoped configuration option
+12/11/2026 10:40:16 p. m.	Gathering users
+12/11/2026 10:40:16 p. m.	Gathering roles
+12/11/2026 10:40:16 p. m.	Gathering application roles
+12/11/2026 10:40:16 p. m.	Gathering role memberships
+12/11/2026 10:40:16 p. m.	Gathering filegroups
+12/11/2026 10:40:16 p. m.	Gathering full-text catalogs
+12/11/2026 10:40:16 p. m.	Gathering assemblies
+12/11/2026 10:40:16 p. m.	Gathering certificates
+12/11/2026 10:40:16 p. m.	Gathering asymmetric keys
+12/11/2026 10:40:16 p. m.	Gathering symmetric keys
+12/11/2026 10:40:16 p. m.	Gathering encrypted symmetric keys
+12/11/2026 10:40:16 p. m.	Gathering schemas
+12/11/2026 10:40:16 p. m.	Gathering XML schema collections
+12/11/2026 10:40:16 p. m.	Gathering user-defined data types
+12/11/2026 10:40:16 p. m.	Gathering user-defined types
+12/11/2026 10:40:16 p. m.	Gathering table types
+12/11/2026 10:40:16 p. m.	Gathering unique keys for table types
+12/11/2026 10:40:16 p. m.	Gathering primary keys for table types
+12/11/2026 10:40:16 p. m.	Gathering indexes for table types
+12/11/2026 10:40:16 p. m.	Gathering check constraints for table types
+12/11/2026 10:40:16 p. m.	Gathering default constraints for table types
+12/11/2026 10:40:16 p. m.	Gathering partition functions
+12/11/2026 10:40:16 p. m.	Gathering partition schemes
+12/11/2026 10:40:16 p. m.	Gathering functions
+12/11/2026 10:40:16 p. m.	Gathering encrypted functions
+12/11/2026 10:40:16 p. m.	Gathering aggregates
+12/11/2026 10:40:16 p. m.	Gathering procedures
+12/11/2026 10:40:16 p. m.	Gathering encrypted procedures
+12/11/2026 10:40:16 p. m.	Gathering tables
+12/11/2026 10:40:16 p. m.	Gathering primary keys
+12/11/2026 10:40:16 p. m.	Gathering unique constraints
+12/11/2026 10:40:16 p. m.	Gathering foreign keys
+12/11/2026 10:40:16 p. m.	Gathering default constraints
+12/11/2026 10:40:16 p. m.	Gathering check constraints
+12/11/2026 10:40:16 p. m.	Gathering views
+12/11/2026 10:40:16 p. m.	Gathering encrypted views
+12/11/2026 10:40:16 p. m.	Gathering indexes
+12/11/2026 10:40:16 p. m.	Gathering statistics
+12/11/2026 10:40:16 p. m.	Gathering full-text index stoplists
+12/11/2026 10:40:16 p. m.	Gathering search property lists
+12/11/2026 10:40:16 p. m.	Gathering search properties
+12/11/2026 10:40:16 p. m.	Gathering full-text indexes
+12/11/2026 10:40:16 p. m.	Gathering column store indexes
+12/11/2026 10:40:16 p. m.	Gathering spatial indexes
+12/11/2026 10:40:16 p. m.	Gathering XML indexes
+12/11/2026 10:40:16 p. m.	Gathering JSON indexes
+12/11/2026 10:40:16 p. m.	Gathering Selective XML indexes
+12/11/2026 10:40:16 p. m.	Gathering encrypted triggers
+12/11/2026 10:40:16 p. m.	Gathering triggers
+12/11/2026 10:40:16 p. m.	Gathering encrypted and clr ddl triggers
+12/11/2026 10:40:16 p. m.	Gathering ddl triggers
+12/11/2026 10:40:16 p. m.	Creating edge constraints
+12/11/2026 10:40:16 p. m.	Gathering synonyms
+12/11/2026 10:40:16 p. m.	Gathering defaults
+12/11/2026 10:40:16 p. m.	Gathering data constraint uddt bindings
+12/11/2026 10:40:16 p. m.	Gathering rules
+12/11/2026 10:40:16 p. m.	Gathering data constraint uddt bindings
+12/11/2026 10:40:16 p. m.	Gathering message types
+12/11/2026 10:40:16 p. m.	Gathering queues
+12/11/2026 10:40:16 p. m.	Gathering contracts
+12/11/2026 10:40:16 p. m.	Gathering services
+12/11/2026 10:40:16 p. m.	Gathering event notifications
+12/11/2026 10:40:16 p. m.	Gathering remote service bindings
+12/11/2026 10:40:16 p. m.	Gathering broker priorities
+12/11/2026 10:40:16 p. m.	Gathering signatures
+12/11/2026 10:40:16 p. m.	Gathering compression options
+12/11/2026 10:40:16 p. m.	Gathering sequence types
+12/11/2026 10:40:16 p. m.	Gathering security policies
+12/11/2026 10:40:16 p. m.	Gather column encryption keys
+12/11/2026 10:40:16 p. m.	Gathering column master keys
+12/11/2026 10:40:16 p. m.	Gathering external data sources
+12/11/2026 10:40:16 p. m.	Gathering external file formats
+12/11/2026 10:40:16 p. m.	Gathering external models
+12/11/2026 10:40:16 p. m.	Gathering external tables
+12/11/2026 10:40:16 p. m.	Gathering XML index compression options
+12/11/2026 10:40:16 p. m.	Gathering extended properties
+12/11/2026 10:40:16 p. m.	Gathering assemblies
+12/11/2026 10:40:16 p. m.	Gathering credentials
+12/11/2026 10:40:17 p. m.	Gathering logins
+12/11/2026 10:40:17 p. m.	Gathering server audits
+12/11/2026 10:40:17 p. m.	Scanning project for duplicate elements
+12/11/2026 10:40:18 p. m.	Finished duplicate element processing
+12/11/2026 10:40:18 p. m.	Finished importing database.
+12/11/2026 10:40:18 p. m.	A summary of the import was saved to the following location: C:\Users\victo\OneDrive\Documents\GitHub\ISC09B-INTEGRADOR\Invernadero\BD\BD-Sembradio\Import Schema Logs\BD-Sembradio_20261113044015.log
+12/11/2026 10:40:18 p. m.	Click Finish to continue...
