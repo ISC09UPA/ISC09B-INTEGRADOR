@@ -3,7 +3,9 @@ using AlmacenInteligente.API.Seguridad;
 using AlmacenInteligente.Application.Interfaces;
 using AlmacenInteligente.Application.Services;
 using AlmacenInteligente.Infrastructure;
+using AlmacenInteligente.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,6 +24,8 @@ if (Encoding.UTF8.GetByteCount(jwt.Key ?? string.Empty) < 32)
 builder.Services.AddInfrastructure(cadenaConexion);
 builder.Services.AddScoped<IProductoService, ProductoService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IMovimientoService, MovimientoService>();
+builder.Services.AddScoped<IEspacioService, EspacioService>();
 builder.Services.AddSingleton(jwt);
 builder.Services.AddSingleton<IGeneradorToken, GeneradorTokenJwt>();
 
@@ -64,9 +68,20 @@ builder.Services
     });
 builder.Services.AddAuthorization();
 
-// Add services to the container.
+// La app usa token en el encabezado (no cookies), así que se permite cualquier origen (Expo web / pruebas).
+builder.Services.AddCors(opciones =>
+    opciones.AddDefaultPolicy(p => p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
 
-builder.Services.AddControllers();
+// Cuerpos inválidos (JSON mal formado, campos faltantes) también responden { "error": "mensaje legible" }.
+builder.Services.AddControllers().ConfigureApiBehaviorOptions(opciones =>
+    opciones.InvalidModelStateResponseFactory = contexto =>
+    {
+        var campos = contexto.ModelState
+            .Where(c => c.Value is { Errors.Count: > 0 })
+            .Select(c => string.IsNullOrEmpty(c.Key) ? "cuerpo" : c.Key.TrimStart('$', '.'))
+            .Distinct();
+        return new BadRequestObjectResult(new { error = $"Datos inválidos o incompletos en: {string.Join(", ", campos)}." });
+    });
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
@@ -80,9 +95,18 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// GET api/salud — sin sesión. Sirve para el health check del App Service y para "despertar" la base serverless
+// antes de presentar (la primera llamada puede tardar ~1 minuto).
+app.MapGet("/api/salud", async (AlmacenDbContext db, CancellationToken ct) =>
+{
+    var baseDatos = await db.Database.CanConnectAsync(ct);
+    return Results.Ok(new { api = "ok", baseDatos = baseDatos ? "ok" : "sin conexión", horaUtc = DateTime.UtcNow });
+}).AllowAnonymous();
 
 app.Run();

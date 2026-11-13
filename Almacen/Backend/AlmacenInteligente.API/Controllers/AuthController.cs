@@ -7,10 +7,10 @@ using Microsoft.AspNetCore.Mvc;
 namespace AlmacenInteligente.API.Controllers;
 
 [ApiController]
-[Route("auth")]
+[Route("api/auth")]
 public class AuthController(IAuthService servicio) : ApiControllerBase
 {
-    // POST auth/login — { "usuario": "...", "contrasena": "..." } -> 200 con token / 400 / 401
+    // POST api/auth/login — { "usuario": "...", "contrasena": "..." } -> 200 con token / 400 / 401
     [HttpPost("login")]
     [AllowAnonymous]
     public async Task<ActionResult<LoginRespuestaDto>> Login(LoginDto dto, CancellationToken ct)
@@ -19,7 +19,7 @@ public class AuthController(IAuthService servicio) : ApiControllerBase
         return resultado.EsExito ? Ok(resultado.Valor) : ErrorHttp(resultado);
     }
 
-    // GET auth/yo — quién es el dueño del token (sirve para probar que el token funciona)
+    // GET api/auth/yo — quién es el dueño del token (sirve para probar que el token funciona)
     [HttpGet("yo")]
     [Authorize]
     public ActionResult<UsuarioSesionDto> Yo()

@@ -1,6 +1,7 @@
 namespace AlmacenInteligente.Domain.Entities;
 
-// Bitácora: no modifica la existencia directamente.
+// Bitácora de entradas y salidas.
+// Un movimiento MANUAL ajusta la existencia del espacio; la siguiente lectura del sensor la corrige.
 public class Movimiento
 {
     public long Id { get; set; }

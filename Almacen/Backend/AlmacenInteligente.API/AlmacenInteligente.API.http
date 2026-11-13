@@ -1,6 +1,62 @@
-@AlmacenInteligente.API_HostAddress = http://localhost:5280
+# Pruebas de la API desde Visual Studio (botón "Send request" sobre cada bloque).
+# Usar https: con http la redirección quita el encabezado Authorization.
+@host = https://localhost:7276
+@contrasena = CAMBIAR_POR_LA_CONTRASENA_TEMPORAL
 
-GET {{AlmacenInteligente.API_HostAddress}}/weatherforecast/
-Accept: application/json
+### Estado de la API y de la base (sin sesión; despierta la base)
+GET {{host}}/api/salud
 
-###
+### Login (admin)
+# @name login
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{ "usuario": "admin", "contrasena": "{{contrasena}}" }
+
+### Quién soy
+GET {{host}}/api/auth/yo
+Authorization: Bearer {{login.response.body.$.token}}
+
+### Productos (incluye capacidad, salidas30Dias y ultimoMovimiento)
+GET {{host}}/api/productos
+Authorization: Bearer {{login.response.body.$.token}}
+
+### Alta de producto (id opcional: se genera PROD-###)
+POST {{host}}/api/productos
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{ "nombre": "Tornillo M4", "pesoUnitarioGramos": 5, "puntoReorden": 10 }
+
+### Espacios del anaquel
+GET {{host}}/api/espacios
+Authorization: Bearer {{login.response.body.$.token}}
+
+### Asignar producto y capacidad a un espacio (admin)
+PUT {{host}}/api/espacios/A1-E1
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{ "productoId": "PROD-001", "capacidad": 50, "taraGramos": 0 }
+
+### Movimiento manual: entrada
+POST {{host}}/api/movimientos
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{ "productoId": "PROD-001", "tipoMovimiento": "ENTRADA", "cantidad": 20 }
+
+### Movimiento manual: salida
+POST {{host}}/api/movimientos
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{ "productoId": "PROD-001", "tipoMovimiento": "salida", "cantidad": 3 }
+
+### Mi historial
+GET {{host}}/api/movimientos/mios?limite=20
+Authorization: Bearer {{login.response.body.$.token}}
+
+### Historial general (admin)
+GET {{host}}/api/movimientos?productoId=PROD-001
+Authorization: Bearer {{login.response.body.$.token}}

@@ -1,3 +1,4 @@
+using AlmacenInteligente.API.Seguridad;
 using AlmacenInteligente.Application.Common;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,4 +19,8 @@ public abstract class ApiControllerBase : ControllerBase
             _ => StatusCode(StatusCodes.Status500InternalServerError, cuerpo)
         };
     }
+
+    // Id del usuario dueño del token (claim "sub"); null si no viene.
+    protected int? UsuarioIdActual() =>
+        int.TryParse(User.FindFirst(TiposClaim.Id)?.Value, out var id) ? id : null;
 }

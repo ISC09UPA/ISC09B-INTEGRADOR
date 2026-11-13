@@ -11,15 +11,18 @@ public record ProductoDto(
     string? Descripcion,
     int PesoUnitarioGramos,
     int Existencia,
+    int? Capacidad,       // suma de la capacidad de sus espacios; null si no tiene espacio o alguno no tiene límite
     int PuntoReorden,
     bool RequiereReorden,
+    int Salidas30Dias,    // piezas que salieron en los últimos 30 días (todas las fuentes)
     string? EtiquetaVision,
     string? ImagenUrl,
     UbicacionDto? Ubicacion,
     UltimoMovimientoDto? UltimoMovimiento);
 
+// Id opcional: si no se manda, se genera el siguiente PROD-###.
 public record CrearProductoDto(
-    string Id,
+    string? Id,
     string Nombre,
     string? Descripcion,
     int PesoUnitarioGramos,

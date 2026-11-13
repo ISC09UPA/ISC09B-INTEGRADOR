@@ -55,6 +55,7 @@ public class AlmacenDbContext(DbContextOptions<AlmacenDbContext> options) : DbCo
             e.Property(x => x.Id).HasMaxLength(10);
             e.Property(x => x.AnaquelId).HasMaxLength(10).IsRequired();
             e.Property(x => x.ProductoId).HasMaxLength(20);
+            // Columna "capacidad" (INT NULL): la agrega Database/001_capacidad_espacios.sql.
             e.HasOne(x => x.Anaquel).WithMany(a => a.Espacios).HasForeignKey(x => x.AnaquelId);
             e.HasOne(x => x.Producto).WithMany(p => p.Espacios).HasForeignKey(x => x.ProductoId).IsRequired(false);
         });

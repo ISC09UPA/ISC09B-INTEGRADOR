@@ -7,6 +7,7 @@ public class Espacio
     public string? ProductoId { get; set; } // null = espacio vacío
     public int TaraGramos { get; set; }
     public int Existencia { get; set; } // fuente de verdad: sensor de peso
+    public int? Capacidad { get; set; } // piezas máximas; null = sin límite (script Database/001)
     public DateTime? UltimaLectura { get; set; }
 
     public Anaquel Anaquel { get; set; } = null!;
