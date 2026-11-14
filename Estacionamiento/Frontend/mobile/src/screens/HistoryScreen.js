@@ -1,38 +1,44 @@
 import { useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
-import { HISTORY, HISTORY_STATS } from '../data/history';
+import { Cargando, ErrorCarga } from '../components/EstadoCarga';
+import { historial } from '../api';
+import { useCarga } from '../hooks/useCarga';
+import { hora, duracion, diaYSemana, horasMinutos, mesCorto, cajonCorto } from '../utils/formato';
 import { colors, radius } from '../theme';
 
+// Los ids son los valores de PeriodoHistorial del back (últimos 7 días, últimos 30 días, todo).
 const FILTERS = [
-  { id: 'semana', label: 'Esta semana', groups: ['semana'] },
-  { id: 'mes', label: 'Este mes', groups: ['semana', 'mes'] },
-  { id: 'todo', label: 'Todo', groups: ['semana', 'mes', 'antes'] },
+  { id: 'Semana', label: 'Esta semana' },
+  { id: 'Mes', label: 'Este mes' },
+  { id: 'Todo', label: 'Todo' },
 ];
 
 export default function HistoryScreen() {
-  const [filter, setFilter] = useState('semana');
-  const groups = FILTERS.find((f) => f.id === filter).groups;
-  const items = HISTORY.filter((h) => groups.includes(h.group));
+  const [filter, setFilter] = useState('Semana');
+  const resumen = useCarga(() => historial.resumen(), []);
+  const lista = useCarga(() => historial.listar(filter), [filter]);
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
       <Text style={styles.title}>Mi historial</Text>
 
-      {/* Resumen */}
-      <View style={styles.statsRow}>
-        <View style={[styles.stat, styles.statAccent]}>
-          <Text style={styles.statValue}>{HISTORY_STATS.visits}</Text>
-          <Text style={styles.statLabel}>visitas en {HISTORY_STATS.month}</Text>
+      {/* Resumen del mes: ResumenMesDto { mes, visitas, minutosPromedio, cajonFrecuente } */}
+      {resumen.datos && (
+        <View style={styles.statsRow}>
+          <View style={[styles.stat, styles.statAccent]}>
+            <Text style={styles.statValue}>{resumen.datos.visitas}</Text>
+            <Text style={styles.statLabel}>visitas en {mesCorto(resumen.datos.mes)}</Text>
+          </View>
+          <View style={styles.stat}>
+            <Text style={styles.statValue}>{horasMinutos(resumen.datos.minutosPromedio)}</Text>
+            <Text style={styles.statLabel}>h promedio</Text>
+          </View>
+          <View style={styles.stat}>
+            <Text style={styles.statValue}>{cajonCorto(resumen.datos.cajonFrecuente)}</Text>
+            <Text style={styles.statLabel}>cajón frecuente</Text>
+          </View>
         </View>
-        <View style={styles.stat}>
-          <Text style={styles.statValue}>{HISTORY_STATS.avgTime}</Text>
-          <Text style={styles.statLabel}>h promedio</Text>
-        </View>
-        <View style={styles.stat}>
-          <Text style={styles.statValue}>{HISTORY_STATS.favoriteSlot}</Text>
-          <Text style={styles.statLabel}>cajón frecuente</Text>
-        </View>
-      </View>
+      )}
 
       {/* Filtros */}
       <View style={styles.filters}>
@@ -51,39 +57,48 @@ export default function HistoryScreen() {
       </View>
 
       {/* Lista */}
-      <View style={styles.list}>
-        {items.map((h, i) => (
-          <HistoryRow key={h.id} item={h} last={i === items.length - 1} />
-        ))}
-      </View>
+      {lista.cargando ? (
+        <Cargando />
+      ) : lista.error ? (
+        <ErrorCarga mensaje={lista.error} onReintentar={lista.recargar} />
+      ) : lista.datos.length === 0 ? (
+        <Text style={styles.empty}>No tienes entradas en este periodo.</Text>
+      ) : (
+        <View style={styles.list}>
+          {lista.datos.map((h, i) => (
+            <HistoryRow key={h.accesoId} item={h} last={i === lista.datos.length - 1} />
+          ))}
+        </View>
+      )}
     </ScrollView>
   );
 }
 
+/** item: HistorialItemDto { accesoId, horaEntrada, horaSalida, cajon, placa, minutosEstancia, enCurso } */
 function HistoryRow({ item, last }) {
-  const active = item.end === null;
+  const { dia, diaSemana } = diaYSemana(item.horaEntrada);
   return (
     <View style={[styles.row, !last && styles.rowBorder]}>
-      <View style={[styles.date, active && styles.dateActive]}>
-        <Text style={styles.dateDay}>{item.day}</Text>
-        <Text style={styles.dateDow}>{item.dow}</Text>
+      <View style={[styles.date, item.enCurso && styles.dateActive]}>
+        <Text style={styles.dateDay}>{dia}</Text>
+        <Text style={styles.dateDow}>{diaSemana}</Text>
       </View>
 
       <View style={{ flex: 1 }}>
         <Text style={styles.time}>
-          {item.start} → {active ? 'en curso' : item.end}
+          {hora(item.horaEntrada)} → {item.enCurso ? 'en curso' : hora(item.horaSalida)}
         </Text>
         <Text style={styles.meta}>
-          Cajón {item.slot} · {item.plate}
+          {item.cajon ? `Cajón ${item.cajon}` : 'Sin cajón'} · {item.placa ?? 'Placa no legible'}
         </Text>
       </View>
 
-      {active ? (
+      {item.enCurso ? (
         <View style={styles.livePill}>
           <Text style={styles.liveText}>En curso</Text>
         </View>
       ) : (
-        <Text style={styles.duration}>{item.duration}</Text>
+        <Text style={styles.duration}>{duracion(item.minutosEstancia)}</Text>
       )}
     </View>
   );
@@ -120,6 +135,8 @@ const styles = StyleSheet.create({
   chipActive: { backgroundColor: colors.green900, borderColor: colors.green900 },
   chipText: { fontSize: 12, fontWeight: '700', color: colors.inkSoft },
   chipTextActive: { color: '#fff' },
+
+  empty: { textAlign: 'center', color: colors.inkSoft, marginTop: 16 },
 
   list: {
     backgroundColor: colors.surface,

@@ -1,17 +1,21 @@
-import { useState } from 'react';
 import { View, Text, ScrollView, Pressable, Switch, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { MY_PARKING } from '../data/mock';
-import { HISTORY_STATS } from '../data/history';
+import { Cargando } from '../components/EstadoCarga';
+import { auth, historial } from '../api';
+import { useCarga } from '../hooks/useCarga';
+import { hora, horasMinutos, mesCorto, cajonCorto } from '../utils/formato';
 import { colors, radius } from '../theme';
 
-export default function ProfileScreen({ name = 'Usuario', email, onLogout, onOpenSlot }) {
-  // Preferencias locales. Después se guardan en la API.
-  const [notifyFree, setNotifyFree] = useState(true);
-  const [notifyExit, setNotifyExit] = useState(true);
+/** usuario: el UsuarioDto que llegó en el login ({ id, nombre, correo, rol, placas }). */
+export default function ProfileScreen({ usuario, onLogout, onOpenSlot }) {
+  // Se vuelve a pedir para tener las placas al día (el admin pudo ligar una después del login).
+  const yo = useCarga(() => auth.yo(), []);
+  const actual = useCarga(() => historial.actual(), []);
+  const resumen = useCarga(() => historial.resumen(), []);
 
-  const inside = MY_PARKING.exitTime === null;
-  const initial = name.charAt(0).toUpperCase();
+  const datos = yo.datos ?? usuario;
+  const acceso = actual.datos; // AccesoActualDto o null si no tiene auto dentro
+  const initial = datos.nombre.charAt(0).toUpperCase();
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
@@ -23,60 +27,72 @@ export default function ProfileScreen({ name = 'Usuario', email, onLogout, onOpe
           <Text style={styles.avatarText}>{initial}</Text>
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={styles.userName}>{name}</Text>
-          {email ? <Text style={styles.userEmail}>{email}</Text> : null}
+          <Text style={styles.userName}>{datos.nombre}</Text>
+          <Text style={styles.userEmail}>{datos.correo}</Text>
         </View>
         <View style={styles.roleChip}>
-          <Text style={styles.roleText}>Usuario</Text>
+          <Text style={styles.roleText}>{datos.rol}</Text>
         </View>
       </View>
 
-      {/* Mi vehículo */}
-      <Text style={styles.section}>Mi vehículo</Text>
-      <Pressable
-        style={styles.card}
-        onPress={inside ? () => onOpenSlot?.(MY_PARKING.slot) : undefined}
-      >
-        <View style={styles.vehicleRow}>
-          <View style={[styles.vehicleIcon, inside && styles.vehicleIconInside]}>
-            <Ionicons name="car-outline" size={22} color={colors.green900} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.plate}>{MY_PARKING.plate}</Text>
-            <Text style={styles.meta}>
-              {MY_PARKING.vehicle} ·{' '}
-              {inside
-                ? `Dentro · Cajón ${MY_PARKING.slot} desde ${MY_PARKING.entryTime}`
-                : 'Fuera'}
-            </Text>
-          </View>
-          {inside && <Ionicons name="chevron-forward" size={18} color={colors.inkSoft} />}
-        </View>
-      </Pressable>
+      {/* Mis vehículos */}
+      <Text style={styles.section}>{datos.placas.length > 1 ? 'Mis vehículos' : 'Mi vehículo'}</Text>
+      {yo.cargando && !yo.datos ? (
+        <Cargando />
+      ) : datos.placas.length === 0 ? (
+        <SinVehiculo correo={datos.correo} />
+      ) : (
+        datos.placas.map((placa) => {
+          const dentro = acceso?.placa === placa;
+          const estacionado = dentro && acceso.cajon !== null;
+          return (
+            <Pressable
+              key={placa}
+              style={styles.card}
+              onPress={estacionado ? () => onOpenSlot?.(acceso.cajon) : undefined}
+            >
+              <View style={styles.vehicleRow}>
+                <View style={[styles.vehicleIcon, dentro && styles.vehicleIconInside]}>
+                  <Ionicons name="car-outline" size={22} color={colors.green900} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.plate}>{placa}</Text>
+                  <Text style={styles.meta}>
+                    {!dentro
+                      ? 'Fuera'
+                      : estacionado
+                        ? `Dentro · Cajón ${acceso.cajon} desde ${hora(acceso.horaEntrada)}`
+                        : `Dentro desde ${hora(acceso.horaEntrada)} · aún sin cajón`}
+                  </Text>
+                </View>
+                {estacionado && <Ionicons name="chevron-forward" size={18} color={colors.inkSoft} />}
+              </View>
+            </Pressable>
+          );
+        })
+      )}
 
       {/* Resumen del mes */}
-      <View style={styles.statsRow}>
-        <Stat value={HISTORY_STATS.visits} label={`visitas en ${HISTORY_STATS.month}`} />
-        <Stat value={HISTORY_STATS.avgTime} label="h promedio" />
-        <Stat value={HISTORY_STATS.favoriteSlot} label="cajón frecuente" />
-      </View>
+      {resumen.datos && (
+        <View style={styles.statsRow}>
+          <Stat value={resumen.datos.visitas} label={`visitas en ${mesCorto(resumen.datos.mes)}`} />
+          <Stat value={horasMinutos(resumen.datos.minutosPromedio)} label="h promedio" />
+          <Stat value={cajonCorto(resumen.datos.cajonFrecuente)} label="cajón frecuente" />
+        </View>
+      )}
 
-      {/* Notificaciones */}
-      <Text style={styles.section}>Notificaciones</Text>
-      <View style={styles.list}>
+      {/* Notificaciones: planeadas (necesitan notificaciones push en el back). */}
+      <Text style={styles.section}>Notificaciones · Próximamente</Text>
+      <View style={[styles.list, styles.disabled]}>
         <SettingRow
           icon="notifications-outline"
           title="Lugar libre"
           subtitle="Avisarme cuando se libere un cajón"
-          value={notifyFree}
-          onChange={setNotifyFree}
         />
         <SettingRow
           icon="exit-outline"
           title="Salida registrada"
           subtitle="Avisarme cuando la cámara lea mi placa al salir"
-          value={notifyExit}
-          onChange={setNotifyExit}
           last
         />
       </View>
@@ -99,7 +115,22 @@ function Stat({ value, label }) {
   );
 }
 
-function SettingRow({ icon, title, subtitle, value, onChange, last }) {
+/** Sin placas ligadas: el admin tiene que dar de alta el vehículo con el correo de esta cuenta. */
+function SinVehiculo({ correo }) {
+  return (
+    <View style={[styles.card, styles.emptyCard]}>
+      <Ionicons name="car-outline" size={28} color={colors.inkSoft} />
+      <Text style={styles.emptyTitle}>Aún no tienes vehículo registrado</Text>
+      <Text style={styles.emptyText}>
+        Pídele al administrador que dé de alta tu placa con el correo {correo}. Así verás dónde está
+        tu auto y tu historial.
+      </Text>
+    </View>
+  );
+}
+
+// Los switches quedan apagados hasta que existan las notificaciones push.
+function SettingRow({ icon, title, subtitle, last }) {
   return (
     <View style={[styles.settingRow, !last && styles.rowBorder]}>
       <View style={styles.settingIcon}>
@@ -110,11 +141,10 @@ function SettingRow({ icon, title, subtitle, value, onChange, last }) {
         <Text style={styles.meta}>{subtitle}</Text>
       </View>
       <Switch
-        value={value}
-        onValueChange={onChange}
+        value={false}
+        disabled
         trackColor={{ false: colors.border, true: colors.green700 }}
         thumbColor="#fff"
-        activeThumbColor="#fff"
       />
     </View>
   );
@@ -179,6 +209,10 @@ const styles = StyleSheet.create({
   vehicleIconInside: { backgroundColor: colors.green700 },
   plate: { fontSize: 16, fontWeight: '800', letterSpacing: 0.5, color: colors.ink },
   meta: { fontSize: 12, color: colors.inkSoft, marginTop: 2 },
+  emptyCard: { alignItems: 'center', gap: 8, padding: 20 },
+  emptyTitle: { fontSize: 15, fontWeight: '800', color: colors.ink },
+  emptyText: { fontSize: 13, lineHeight: 19, textAlign: 'center', color: colors.inkSoft },
+  disabled: { opacity: 0.55 },
 
   statsRow: { flexDirection: 'row', gap: 10 },
   stat: {
