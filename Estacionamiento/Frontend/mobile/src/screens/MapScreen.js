@@ -1,12 +1,24 @@
 import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import ParkingSlot from '../components/ParkingSlot';
-import { SLOTS, MY_PARKING, GATE_CLOSED } from '../data/mock';
+import { Cargando, ErrorCarga } from '../components/EstadoCarga';
+import { cajones, historial } from '../api';
+import { useCarga } from '../hooks/useCarga';
+import { hora, duracion } from '../utils/formato';
 import { colors, radius } from '../theme';
 
+// "En vivo": mientras no exista SignalR en el back, el mapa se recarga solo cada 10 s.
+const RECARGA_MS = 10000;
+
+/** showMyCar: solo el rol Usuario tiene "Tu auto está en el cajón N". */
 export default function MapScreen({ name = 'Usuario', onSelectSlot, showMyCar = true }) {
-  const total = SLOTS.length;
-  const free = SLOTS.filter((s) => s.status === 'libre').length;
+  const mapa = useCarga(() => cajones.mapa(), [], { cadaMs: RECARGA_MS });
+  // GET /api/historial/actual responde 204 (null) si el usuario no tiene auto dentro.
+  const actual = useCarga(
+    () => (showMyCar ? historial.actual() : Promise.resolve(null)),
+    [showMyCar],
+    { cadaMs: RECARGA_MS }
+  );
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
@@ -21,6 +33,24 @@ export default function MapScreen({ name = 'Usuario', onSelectSlot, showMyCar = 
         </View>
       </View>
 
+      {mapa.cargando && !mapa.datos ? (
+        <Cargando />
+      ) : mapa.error && !mapa.datos ? (
+        <ErrorCarga mensaje={mapa.error} onReintentar={mapa.recargar} />
+      ) : (
+        <Mapa datos={mapa.datos} onSelectSlot={onSelectSlot} />
+      )}
+
+      {/* Tu auto (solo rol usuario y si está dentro) */}
+      {showMyCar && actual.datos && <MiAuto acceso={actual.datos} onPress={onSelectSlot} />}
+    </ScrollView>
+  );
+}
+
+/** datos: MapaCajonesDto { libres, total, plumaAbierta, cajones: [{ numero, estado, esMio }] } */
+function Mapa({ datos, onSelectSlot }) {
+  return (
+    <>
       {/* Lugares libres */}
       <View style={styles.freeCard}>
         <View style={styles.rowBetween}>
@@ -31,14 +61,11 @@ export default function MapScreen({ name = 'Usuario', onSelectSlot, showMyCar = 
           </View>
         </View>
         <Text style={styles.freeNumber}>
-          {free} <Text style={styles.freeOf}>de {total} cajones</Text>
+          {datos.libres} <Text style={styles.freeOf}>de {datos.total} cajones</Text>
         </Text>
         <View style={styles.bars}>
-          {SLOTS.map((s) => (
-            <View
-              key={s.id}
-              style={[styles.bar, s.status === 'libre' && styles.barFree]}
-            />
+          {datos.cajones.map((c) => (
+            <View key={c.numero} style={[styles.bar, c.estado === 'Libre' && styles.barFree]} />
           ))}
         </View>
       </View>
@@ -51,17 +78,21 @@ export default function MapScreen({ name = 'Usuario', onSelectSlot, showMyCar = 
         </View>
 
         <View style={styles.slots}>
-          {SLOTS.map((s) => (
-            <ParkingSlot key={s.id} id={s.id} status={s.status} onPress={onSelectSlot} />
+          {datos.cajones.map((c) => (
+            <ParkingSlot key={c.numero} cajon={c} onPress={onSelectSlot} />
           ))}
         </View>
 
         <View style={styles.lane}>
           <Text style={styles.laneText}>CARRIL ENTRADA / SALIDA</Text>
           <View style={styles.gate}>
-            <Ionicons name="remove-outline" size={16} color={colors.red} />
+            <Ionicons
+              name={datos.plumaAbierta ? 'lock-open-outline' : 'remove-outline'}
+              size={16}
+              color={colors.red}
+            />
             <Text style={styles.gateText}>
-              {GATE_CLOSED ? 'Pluma cerrada' : 'Pluma abierta'}
+              {datos.plumaAbierta ? 'Pluma abierta' : 'Pluma cerrada'}
             </Text>
           </View>
         </View>
@@ -72,23 +103,33 @@ export default function MapScreen({ name = 'Usuario', onSelectSlot, showMyCar = 
           <LegendItem color={colors.green700} border={colors.green900} label="Tu auto" />
         </View>
       </View>
+    </>
+  );
+}
 
-      {/* Tu auto (solo rol usuario) */}
-      {showMyCar && (
-        <Pressable style={styles.myCar} onPress={() => onSelectSlot?.(MY_PARKING.slot)}>
-          <View style={styles.myCarIcon}>
-            <Ionicons name="time-outline" size={18} color={colors.green900} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.myCarTitle}>Tu auto está en el cajón {MY_PARKING.slot}</Text>
-            <Text style={styles.myCarSub}>
-              Entraste a las {MY_PARKING.entryTime} · {MY_PARKING.elapsed}
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color={colors.inkSoft} />
-        </Pressable>
-      )}
-    </ScrollView>
+/** acceso: AccesoActualDto { accesoId, cajon, placa, horaEntrada, minutosEstancia } */
+function MiAuto({ acceso, onPress }) {
+  const estacionado = acceso.cajon !== null;
+  return (
+    <Pressable
+      style={styles.myCar}
+      onPress={estacionado ? () => onPress?.(acceso.cajon) : undefined}
+    >
+      <View style={styles.myCarIcon}>
+        <Ionicons name="time-outline" size={18} color={colors.green900} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.myCarTitle}>
+          {estacionado
+            ? `Tu auto está en el cajón ${acceso.cajon}`
+            : 'Tu auto entró y aún no se estaciona'}
+        </Text>
+        <Text style={styles.myCarSub}>
+          Entraste a las {hora(acceso.horaEntrada)} · {duracion(acceso.minutosEstancia)}
+        </Text>
+      </View>
+      {estacionado && <Ionicons name="chevron-forward" size={18} color={colors.inkSoft} />}
+    </Pressable>
   );
 }
 

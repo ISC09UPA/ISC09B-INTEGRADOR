@@ -23,14 +23,21 @@ const VARIANTS = {
   },
 };
 
-export default function ParkingSlot({ id, status, onPress }) {
-  const v = VARIANTS[status];
+/** Variante visual según el CajonDto del back: { numero, estado: "Libre" | "Ocupado", esMio }. */
+export function varianteCajon({ estado, esMio }) {
+  if (esMio) return 'mio';
+  return estado === 'Libre' ? 'libre' : 'ocupado';
+}
+
+/** cajon: un CajonDto del back ({ numero, estado, esMio }). */
+export default function ParkingSlot({ cajon, onPress }) {
+  const v = VARIANTS[varianteCajon(cajon)];
   return (
     <Pressable
-      onPress={() => onPress?.(id)}
+      onPress={() => onPress?.(cajon.numero)}
       style={({ pressed }) => [styles.slot, v.box, pressed && { opacity: 0.85 }]}
     >
-      <Text style={[styles.id, { color: v.text }]}>C{id}</Text>
+      <Text style={[styles.id, { color: v.text }]}>C{cajon.numero}</Text>
       <View style={styles.iconBox}>
         {v.icon && <Ionicons name="car-sport" size={26} color={v.icon} />}
       </View>

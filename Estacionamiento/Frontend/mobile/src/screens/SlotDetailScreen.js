@@ -1,6 +1,10 @@
-import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, Pressable, Image, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SLOTS, MY_PARKING } from '../data/mock';
+import { varianteCajon } from '../components/ParkingSlot';
+import { Cargando, ErrorCarga } from '../components/EstadoCarga';
+import { cajones } from '../api';
+import { useCarga } from '../hooks/useCarga';
+import { hora, duracion, fechaLarga, etiquetaTipo } from '../utils/formato';
 import { colors, radius } from '../theme';
 
 const BADGES = {
@@ -13,10 +17,9 @@ const BADGES = {
   },
 };
 
-export default function SlotDetailScreen({ slotId, onBack }) {
-  const slot = SLOTS.find((s) => s.id === slotId);
-  const status = slot?.status ?? 'libre';
-  const badge = BADGES[status];
+/** numero: número del cajón. El back decide qué datos del vehículo se pueden ver. */
+export default function SlotDetailScreen({ numero, onBack }) {
+  const { datos, cargando, error, recargar } = useCarga(() => cajones.detalle(numero), [numero]);
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
@@ -25,48 +28,72 @@ export default function SlotDetailScreen({ slotId, onBack }) {
         <Pressable style={styles.back} onPress={onBack}>
           <Ionicons name="chevron-back" size={20} color={colors.green900} />
         </Pressable>
-        <Text style={styles.title}>Cajón {slotId}</Text>
-        <View style={[styles.badge, badge.box]}>
-          <Text style={[styles.badgeText, { color: badge.color }]}>{badge.text}</Text>
-        </View>
+        <Text style={styles.title}>Cajón {numero}</Text>
+        {datos && <Badge cajon={datos} />}
       </View>
 
-      {status === 'mio' && <MyCarDetail data={MY_PARKING} />}
-
-      {status === 'ocupado' && (
-        <EmptyState
-          icon="car-sport"
-          title="Cajón ocupado"
-          text="Este cajón lo está usando otro vehículo."
-        />
-      )}
-
-      {status === 'libre' && (
-        <EmptyState
-          icon="checkmark-circle-outline"
-          title="Cajón libre"
-          text="Puedes estacionarte aquí. Tu entrada se registra sola cuando la cámara lea tu placa en la pluma."
-        />
+      {cargando && !datos ? (
+        <Cargando />
+      ) : error && !datos ? (
+        <ErrorCarga mensaje={error} onReintentar={recargar} />
+      ) : (
+        <Contenido cajon={datos} />
       )}
     </ScrollView>
   );
 }
 
-function MyCarDetail({ data }) {
+function Badge({ cajon }) {
+  const badge = BADGES[varianteCajon(cajon)];
+  return (
+    <View style={[styles.badge, badge.box]}>
+      <Text style={[styles.badgeText, { color: badge.color }]}>{badge.text}</Text>
+    </View>
+  );
+}
+
+/** cajon: DetalleCajonDto { numero, estado, esMio, vehiculo } */
+function Contenido({ cajon }) {
+  // El back solo manda "vehiculo" si es el auto del usuario o si quien consulta es administrador.
+  if (cajon.vehiculo) return <DetalleVehiculo vehiculo={cajon.vehiculo} esMio={cajon.esMio} />;
+
+  if (cajon.estado === 'Ocupado') {
+    return (
+      <EmptyState
+        icon="car-sport"
+        title="Cajón ocupado"
+        text="Este cajón lo está usando otro vehículo."
+      />
+    );
+  }
+
+  return (
+    <EmptyState
+      icon="checkmark-circle-outline"
+      title="Cajón libre"
+      text="Puedes estacionarte aquí. Tu entrada se registra sola cuando la cámara lea tu placa en la pluma."
+    />
+  );
+}
+
+/** vehiculo: VehiculoEnCajonDto { placa, tipo, fotoUrl, horaEntrada, horaSalida, minutosEstancia } */
+function DetalleVehiculo({ vehiculo, esMio }) {
+  const placa = vehiculo.placa ?? 'No legible';
   return (
     <>
-      {/* Foto de entrada (placeholder de Blob Storage) */}
+      {/* Foto de entrada (Blob Storage) */}
       <View style={styles.photo}>
-        <View style={styles.photoCenter}>
-          <Ionicons name="camera-outline" size={32} color="#ddd" />
-          <Text style={styles.photoText}>[Foto de entrada del vehículo]</Text>
-        </View>
+        {vehiculo.fotoUrl ? (
+          <Image source={{ uri: vehiculo.fotoUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+        ) : (
+          <View style={styles.photoCenter}>
+            <Ionicons name="camera-outline" size={32} color="#ddd" />
+            <Text style={styles.photoText}>Sin foto de entrada</Text>
+          </View>
+        )}
         <View style={styles.photoFooter}>
           <View style={styles.plateChip}>
-            <Text style={styles.plateText}>{data.plate}</Text>
-          </View>
-          <View style={styles.blobChip}>
-            <Text style={styles.blobText}>Blob Storage</Text>
+            <Text style={styles.plateText}>{placa}</Text>
           </View>
         </View>
       </View>
@@ -75,23 +102,23 @@ function MyCarDetail({ data }) {
       <View style={styles.statsRow}>
         <View style={[styles.stat, styles.statLight]}>
           <Text style={styles.statLabel}>Hora de entrada</Text>
-          <Text style={styles.statValue}>{data.entryTime}</Text>
+          <Text style={styles.statValue}>{hora(vehiculo.horaEntrada)}</Text>
         </View>
         <View style={[styles.stat, styles.statAccent]}>
           <Text style={styles.statLabel}>Tiempo de estancia</Text>
-          <Text style={styles.statValue}>{data.elapsed}</Text>
+          <Text style={styles.statValue}>{duracion(vehiculo.minutosEstancia)}</Text>
         </View>
       </View>
 
       {/* Datos */}
       <View style={styles.infoCard}>
-        <InfoRow label="Placa" value={data.plate} />
-        <InfoRow label="Vehículo" value={data.vehicle} />
-        <InfoRow label="Día" value={data.day} />
+        <InfoRow label="Placa" value={placa} />
+        <InfoRow label="Vehículo" value={etiquetaTipo(vehiculo.tipo)} />
+        <InfoRow label="Día" value={fechaLarga(vehiculo.horaEntrada)} />
         <InfoRow
           label="Hora de salida"
-          value={data.exitTime ?? 'Pendiente'}
-          muted={!data.exitTime}
+          value={vehiculo.horaSalida ? hora(vehiculo.horaSalida) : 'Pendiente'}
+          muted={!vehiculo.horaSalida}
           last
         />
       </View>
@@ -100,7 +127,9 @@ function MyCarDetail({ data }) {
       <View style={styles.note}>
         <Ionicons name="information-circle-outline" size={20} color={colors.inkSoft} />
         <Text style={styles.noteText}>
-          Tu salida se registra sola cuando la cámara lea tu placa en la pluma.
+          {esMio
+            ? 'Tu salida se registra sola cuando la cámara lea tu placa en la pluma.'
+            : 'La salida se registra sola cuando la cámara lea la placa en la pluma.'}
         </Text>
       </View>
     </>
@@ -150,7 +179,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.xl - 8,
     backgroundColor: '#242424',
     padding: 14,
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
+    overflow: 'hidden',
   },
   photoCenter: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
   photoText: { fontSize: 12, color: '#ddd' },
@@ -162,13 +192,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   plateText: { fontSize: 12, fontWeight: '800', letterSpacing: 1, color: colors.ink },
-  blobChip: {
-    backgroundColor: colors.green700,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  blobText: { fontSize: 10, fontWeight: '800', color: colors.green900 },
 
   statsRow: { flexDirection: 'row', gap: 12 },
   stat: { flex: 1, borderRadius: radius.lg, padding: 14, gap: 6, borderWidth: 1 },
