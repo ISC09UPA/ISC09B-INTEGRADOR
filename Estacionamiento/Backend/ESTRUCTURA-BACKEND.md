@@ -81,7 +81,7 @@ Backend/
 │  ├─ Data/                 EstacionamientoDbContext (conexión a Azure SQL), semilla de datos
 │  ├─ DAOs/                 UsuarioDao, VehiculoDao, CajonDao, … (implementan Domain/DAOs con los queries)
 │  ├─ Scripts/              archivos .sql (crear tablas, datos iniciales)
-│  ├─ Azure/                Blob, Computer Vision, Service Bus, Monitor
+│  ├─ Azure/                Blob, Computer Vision, Service Bus
 │  └─ DependencyInjection.cs
 │
 ├─ ESTRUCTURA-BACKEND.md
@@ -226,23 +226,22 @@ La Raspberry no usa la API HTTP. Sube la foto a Blob Storage (contenedor `fotos-
 
 | Servicio | Dónde se usa | Si no está configurado |
 |---|---|---|
-| Azure SQL Database | `Data/` (EF Core) y `Scripts/` (tablas) | Se usa LocalDB en desarrollo. |
+| Azure SQL Database | `Data/` (EF Core) y `Scripts/` (tablas) | En desarrollo se usa SQLite (archivo `estacionamiento-dev.db`, se crea solo). |
 | Blob Storage | `Azure/Blob/` | Las fotos se guardan en una carpeta local. |
 | Computer Vision (Read/OCR) | `Azure/ComputerVision/` | La placa se marca como "no legible". |
 | Custom Vision | `Azure/CustomVision/`, por HTTP (el SDK está obsoleto) | El tipo queda como `Desconocido`. |
 | Service Bus | `Azure/ServiceBus/` | El consumidor no arranca y los comandos solo se escriben en el log. |
 | Azure SignalR Service | `Program.cs` (`AddAzureSignalR`) | Se usa SignalR local. |
-| Azure Monitor | `Azure/Monitor/` (OpenTelemetry) | Las métricas no se exportan. |
 
-**Estadísticas:** las gráficas de la app se calculan con la base de datos. Las mismas métricas (cajones ocupados, entradas, entradas negadas) se envían a Azure Monitor para el dashboard del portal.
+**Estadísticas:** las gráficas de la app se calculan con la base de datos. Azure Monitor no se usa (el equipo no lo contempla).
 
 ---
 
 ## 9. Decisiones por confirmar
 
-1. ✅ Azure SQL + EF Core (LocalDB en desarrollo), ids Guid y tablas definidas en `Infrastructure/Scripts/`.
+1. ✅ Azure SQL + EF Core (SQLite en desarrollo), ids Guid y tablas definidas en `Infrastructure/Scripts/`.
 2. Login con JWT propio y contraseñas con BCrypt.
-3. Estadísticas calculadas desde la base de datos; las métricas también se mandan a Azure Monitor.
+3. ✅ Estadísticas calculadas desde la base de datos. Sin Azure Monitor.
 4. Implementaciones simuladas cuando falta la configuración de Azure.
 5. ¿Se queda el registro público (`POST /api/auth/registro`)?
 6. ¿Se quedan los endpoints de simulación?
