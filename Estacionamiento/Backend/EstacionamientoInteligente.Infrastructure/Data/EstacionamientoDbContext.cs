@@ -5,12 +5,13 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EstacionamientoInteligente.Infrastructure.Data;
 
 /// <summary>
-/// Conexión con Azure SQL (LocalDB en desarrollo) usando EF Core.
+/// Conexión con Azure SQL (SQLite en desarrollo) usando EF Core.
 /// Une cada modelo del dominio con su tabla de <c>Scripts/01_CrearTablas.sql</c>.
 /// </summary>
 /// <remarks>
 /// Solo lo usan los DAOs de Infrastructure; Domain y Application no saben que existe.
-/// Las tablas se crean con los scripts SQL, no con migraciones de EF.
+/// En Azure las tablas se crean con los scripts SQL; en desarrollo (SQLite) las crea EF al arrancar.
+/// No se usan migraciones de EF.
 /// </remarks>
 public class EstacionamientoDbContext(DbContextOptions<EstacionamientoDbContext> options) : DbContext(options)
 {
