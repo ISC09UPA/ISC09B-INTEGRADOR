@@ -2,10 +2,9 @@ namespace InvernaderoInteligente.Application.DTOs
 {
     public class UsuarioDto
     {
-        public Guid id_Usuario { get; set; }
+        public int id_Usuario { get; set; }
         public string nombre { get; set; } = string.Empty;
         public string correo { get; set; } = string.Empty;
         public DateTime fecha_Registro { get; set; }
-        public string rol { get; set; } = string.Empty;
     }
 }

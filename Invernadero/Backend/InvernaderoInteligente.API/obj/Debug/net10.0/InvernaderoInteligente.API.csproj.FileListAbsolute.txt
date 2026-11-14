@@ -184,3 +184,11 @@ C:\Users\victo\AppData\Local\Temp\InvernaderoSwaggerBuild\InvernaderoInteligente
 C:\Users\victo\AppData\Local\Temp\InvernaderoSwaggerBuild\InvernaderoInteligente.API.runtimeconfig.json
 C:\Users\victo\AppData\Local\Temp\InvernaderoSwaggerBuild\InvernaderoInteligente.API.dll
 C:\Users\victo\AppData\Local\Temp\InvernaderoSwaggerBuild\InvernaderoInteligente.API.pdb
+C:\Users\victo\AppData\Local\Temp\InvBuildCheck\appsettings.Development.json
+C:\Users\victo\AppData\Local\Temp\InvBuildCheck\appsettings.json
+C:\Users\victo\AppData\Local\Temp\InvBuildCheck\InvernaderoInteligente.API.staticwebassets.endpoints.json
+C:\Users\victo\AppData\Local\Temp\InvBuildCheck\InvernaderoInteligente.API.exe
+C:\Users\victo\AppData\Local\Temp\InvBuildCheck\InvernaderoInteligente.API.deps.json
+C:\Users\victo\AppData\Local\Temp\InvBuildCheck\InvernaderoInteligente.API.runtimeconfig.json
+C:\Users\victo\AppData\Local\Temp\InvBuildCheck\InvernaderoInteligente.API.dll
+C:\Users\victo\AppData\Local\Temp\InvBuildCheck\InvernaderoInteligente.API.pdb

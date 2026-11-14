@@ -13,3 +13,6 @@ C:\Users\victo\OneDrive\Documents\GitHub\ISC09B-INTEGRADOR\Invernadero\Backend\I
 C:\Users\victo\AppData\Local\Temp\InvernaderoSwaggerBuild\InvernaderoInteligente.Domain.deps.json
 C:\Users\victo\AppData\Local\Temp\InvernaderoSwaggerBuild\InvernaderoInteligente.Domain.dll
 C:\Users\victo\AppData\Local\Temp\InvernaderoSwaggerBuild\InvernaderoInteligente.Domain.pdb
+C:\Users\victo\AppData\Local\Temp\InvBuildCheck\InvernaderoInteligente.Domain.deps.json
+C:\Users\victo\AppData\Local\Temp\InvBuildCheck\InvernaderoInteligente.Domain.dll
+C:\Users\victo\AppData\Local\Temp\InvBuildCheck\InvernaderoInteligente.Domain.pdb

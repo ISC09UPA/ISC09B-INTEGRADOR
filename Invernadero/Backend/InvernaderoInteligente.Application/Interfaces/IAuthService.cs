@@ -6,6 +6,6 @@ namespace InvernaderoInteligente.Application.Interfaces
     {
         Task<LoginResponseDto?> LoginAsync(LoginRequestDto loginRequest);
         Task<LoginResponseDto?> RegisterAsync(RegisterRequestDto registerRequest);
-        Task<UsuarioDto?> GetByIdAsync(Guid id_Usuario);
+        Task<UsuarioDto?> GetByIdAsync(int id_Usuario);
     }
 }

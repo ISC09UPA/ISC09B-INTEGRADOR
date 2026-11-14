@@ -50,8 +50,7 @@ namespace InvernaderoInteligente.Infrastructure.ExternalServices
                 nombre = string.IsNullOrWhiteSpace(request.nombre) ? request.correo.Split('@')[0] : request.nombre.Trim(),
                 correo = request.correo.Trim(),
                 contrasena = BCrypt.Net.BCrypt.HashPassword(request.contrasena),
-                fecha_Registro = DateTime.UtcNow,
-                rol = "Usuario"
+                fecha_Registro = DateTime.UtcNow
             };
 
             _context.Usuarios.Add(usuario);
@@ -60,7 +59,7 @@ namespace InvernaderoInteligente.Infrastructure.ExternalServices
             return GenerarRespuesta(usuario);
         }
 
-        public async Task<UsuarioDto?> GetByIdAsync(Guid id_Usuario)
+        public async Task<UsuarioDto?> GetByIdAsync(int id_Usuario)
         {
             var usuario = await _context.Usuarios
                 .FirstOrDefaultAsync(u => u.id_Usuario == id_Usuario);
@@ -75,8 +74,7 @@ namespace InvernaderoInteligente.Infrastructure.ExternalServices
                 id_Usuario = usuario.id_Usuario,
                 nombre = usuario.nombre,
                 correo = usuario.correo,
-                fecha_Registro = usuario.fecha_Registro,
-                rol = usuario.rol
+                fecha_Registro = usuario.fecha_Registro
             };
         }
 
@@ -100,7 +98,7 @@ namespace InvernaderoInteligente.Infrastructure.ExternalServices
             {
                 new Claim(ClaimTypes.NameIdentifier, usuario.id_Usuario.ToString()),
                 new Claim(ClaimTypes.Email, usuario.correo),
-                new Claim(ClaimTypes.Role, usuario.rol)
+                new Claim(ClaimTypes.Role, "Usuario")
             };
 
             var token = new JwtSecurityToken(

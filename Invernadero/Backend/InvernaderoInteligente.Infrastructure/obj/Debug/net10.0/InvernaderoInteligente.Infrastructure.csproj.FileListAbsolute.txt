@@ -22,3 +22,7 @@ C:\Users\victo\AppData\Local\Temp\InvernaderoSwaggerBuild\InvernaderoInteligente
 C:\Users\victo\AppData\Local\Temp\InvernaderoSwaggerBuild\InvernaderoInteligente.Infrastructure.runtimeconfig.json
 C:\Users\victo\AppData\Local\Temp\InvernaderoSwaggerBuild\InvernaderoInteligente.Infrastructure.dll
 C:\Users\victo\AppData\Local\Temp\InvernaderoSwaggerBuild\InvernaderoInteligente.Infrastructure.pdb
+C:\Users\victo\AppData\Local\Temp\InvBuildCheck\InvernaderoInteligente.Infrastructure.deps.json
+C:\Users\victo\AppData\Local\Temp\InvBuildCheck\InvernaderoInteligente.Infrastructure.runtimeconfig.json
+C:\Users\victo\AppData\Local\Temp\InvBuildCheck\InvernaderoInteligente.Infrastructure.dll
+C:\Users\victo\AppData\Local\Temp\InvBuildCheck\InvernaderoInteligente.Infrastructure.pdb

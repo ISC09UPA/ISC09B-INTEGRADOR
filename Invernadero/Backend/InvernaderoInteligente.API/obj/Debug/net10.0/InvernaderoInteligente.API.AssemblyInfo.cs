@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("InvernaderoInteligente.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e671323a0d0f16b3e46ac3615862cbbf0dd9a219")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+84154122edd5bc91d6a76e0c064dcf687201d40d")]
 [assembly: System.Reflection.AssemblyProductAttribute("InvernaderoInteligente.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("InvernaderoInteligente.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

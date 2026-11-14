@@ -17,3 +17,6 @@ C:\Users\victo\OneDrive\Documents\GitHub\ISC09B-INTEGRADOR\Invernadero\Backend\I
 C:\Users\victo\AppData\Local\Temp\InvernaderoSwaggerBuild\InvernaderoInteligente.Application.deps.json
 C:\Users\victo\AppData\Local\Temp\InvernaderoSwaggerBuild\InvernaderoInteligente.Application.dll
 C:\Users\victo\AppData\Local\Temp\InvernaderoSwaggerBuild\InvernaderoInteligente.Application.pdb
+C:\Users\victo\AppData\Local\Temp\InvBuildCheck\InvernaderoInteligente.Application.deps.json
+C:\Users\victo\AppData\Local\Temp\InvBuildCheck\InvernaderoInteligente.Application.dll
+C:\Users\victo\AppData\Local\Temp\InvBuildCheck\InvernaderoInteligente.Application.pdb

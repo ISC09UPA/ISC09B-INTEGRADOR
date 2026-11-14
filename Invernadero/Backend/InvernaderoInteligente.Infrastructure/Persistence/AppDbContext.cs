@@ -19,27 +19,30 @@ namespace InvernaderoInteligente.Infrastructure.Persistence
             {
                 entity.ToTable("Usuarios");
                 entity.HasKey(u => u.id_Usuario);
-                entity.Property(u => u.correo).IsRequired().HasMaxLength(256);
-                entity.Property(u => u.contrasena).IsRequired();
-                entity.Property(u => u.nombre).HasMaxLength(150);
-                entity.Property(u => u.rol).HasMaxLength(50);
+                entity.Property(u => u.id_Usuario).ValueGeneratedOnAdd();
+                entity.Property(u => u.correo).IsRequired().HasMaxLength(255);
+                entity.Property(u => u.contrasena).IsRequired().HasMaxLength(255);
+                entity.Property(u => u.nombre).IsRequired().HasMaxLength(255);
+                entity.Property(u => u.fecha_Registro).HasDefaultValueSql("getdate()");
                 entity.HasIndex(u => u.correo).IsUnique();
             });
 
             modelBuilder.Entity<Sensor>(entity =>
             {
                 entity.ToTable("Sensores");
-                entity.HasKey(s => s.Id);
-                entity.Property(s => s.Nombre).IsRequired().HasMaxLength(150);
+                entity.HasKey(s => s.id_Sensor);
+                entity.Property(s => s.id_Sensor).ValueGeneratedOnAdd();
+                entity.Property(s => s.codigo_hardware).IsRequired().HasMaxLength(50);
                 entity.HasMany(s => s.Lecturas)
                       .WithOne(l => l.Sensor)
-                      .HasForeignKey(l => l.SensorId);
+                      .HasForeignKey(l => l.id_Sensor);
             });
 
             modelBuilder.Entity<Lectura>(entity =>
             {
-                entity.ToTable("Lecturas");
-                entity.HasKey(l => l.Id);
+                entity.ToTable("Lectura");
+                entity.HasKey(l => l.id_Lectura);
+                entity.Property(l => l.id_Lectura).ValueGeneratedOnAdd();
             });
         }
     }

@@ -59,7 +59,7 @@ public class AuthController : ControllerBase
     {
         var idClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        if (!Guid.TryParse(idClaim, out var id_Usuario))
+        if (!int.TryParse(idClaim, out var id_Usuario))
         {
             return Unauthorized(new { mensaje = "Token inválido." });
         }
