@@ -1,0 +1,346 @@
+
+
+#!/usr/bin/env python3
+"""
+Almacén Inteligente — Script principal de Raspberry Pi
+======================================================
+Lee sensores (IR FC-51 + cámara OpenCV), controla actuadores
+(LEDs, buzzer, LCD 16×2) y envía eventos al API REST.
+
+GPIO BCM:
+  GPIO17  → Sensor IR OUT
+  GPIO18  → Buzzer activo (PWM)
+  GPIO23  → LED Verde
+  GPIO24  → LED Rojo
+  GPIO25  → LCD RS
+  GPIO8   → LCD E
+  GPIO7   → LCD D4
+  GPIO12  → LCD D5
+  GPIO16  → LCD D6
+  GPIO20  → LCD D7
+"""
+
+import time
+import json
+import threading
+import requests
+import RPi.GPIO as GPIO
+
+# ── LCD driver (4-bit, sin librería externa) ──────────────────
+
+LCD_RS = 25
+LCD_E  = 8
+LCD_D4 = 7
+LCD_D5 = 12
+LCD_D6 = 16
+LCD_D7 = 20
+
+LCD_WIDTH = 16
+LCD_LINE_1 = 0x80  # dirección RAM línea 1
+LCD_LINE_2 = 0xC0  # dirección RAM línea 2
+LCD_CHR = True
+LCD_CMD = False
+E_PULSE = 0.0005
+E_DELAY = 0.0005
+
+
+def lcd_init():
+    """Inicializa LCD en modo 4-bit."""
+    lcd_byte(0x33, LCD_CMD)
+    lcd_byte(0x32, LCD_CMD)
+    lcd_byte(0x28, LCD_CMD)  # 4-bit, 2 líneas, 5×8
+    lcd_byte(0x0C, LCD_CMD)  # display ON, cursor OFF
+    lcd_byte(0x06, LCD_CMD)  # auto-incremento
+    lcd_byte(0x01, LCD_CMD)  # limpiar
+    time.sleep(0.003)
+
+
+def lcd_byte(bits, mode):
+    """Envía un byte al LCD (4 bits a la vez)."""
+    GPIO.output(LCD_RS, mode)
+
+    # nibble alto
+    GPIO.output(LCD_D4, bits & 0x10 == 0x10)
+    GPIO.output(LCD_D5, bits & 0x20 == 0x20)
+    GPIO.output(LCD_D6, bits & 0x40 == 0x40)
+    GPIO.output(LCD_D7, bits & 0x80 == 0x80)
+    lcd_toggle_enable()
+
+    # nibble bajo
+    GPIO.output(LCD_D4, bits & 0x01 == 0x01)
+    GPIO.output(LCD_D5, bits & 0x02 == 0x02)
+    GPIO.output(LCD_D6, bits & 0x04 == 0x04)
+    GPIO.output(LCD_D7, bits & 0x08 == 0x08)
+    lcd_toggle_enable()
+
+
+def lcd_toggle_enable():
+    time.sleep(E_DELAY)
+    GPIO.output(LCD_E, True)
+    time.sleep(E_PULSE)
+    GPIO.output(LCD_E, False)
+    time.sleep(E_DELAY)
+
+
+def lcd_text(message, line):
+    """Escribe texto en una línea del LCD (1 o 2)."""
+    addr = LCD_LINE_1 if line == 1 else LCD_LINE_2
+    lcd_byte(addr, LCD_CMD)
+    msg = message.ljust(LCD_WIDTH)[:LCD_WIDTH]
+    for char in msg:
+        lcd_byte(ord(char), LCD_CHR)
+
+
+def lcd_clear():
+    lcd_byte(0x01, LCD_CMD)
+    time.sleep(0.003)
+
+
+# ── Pines GPIO ────────────────────────────────────────────────
+
+PIN_IR     = 17
+PIN_BUZZER = 18
+PIN_LED_V  = 23
+PIN_LED_R  = 24
+
+
+# ── Configuración ────────────────────────────────────────────
+
+API_BASE_URL = "http://TU_IP_O_DOMINIO:5000"  # ← cambiar
+DISPOSITIVO_ID = "rpi-almacen-01"
+INTERVALO_POLLING = 0.2        # seg entre lecturas del IR
+COOLDOWN_DETECCION = 3         # seg mínimo entre detecciones
+TIMEOUT_API = 5                # seg timeout HTTP
+
+
+# ── Setup GPIO ────────────────────────────────────────────────
+
+def setup_gpio():
+    GPIO.setwarnings(False)
+    GPIO.setmode(GPIO.BCM)
+
+    # Entradas
+    GPIO.setup(PIN_IR, GPIO.IN)
+
+    # Salidas simples
+    GPIO.setup(PIN_LED_V, GPIO.OUT, initial=GPIO.LOW)
+    GPIO.setup(PIN_LED_R, GPIO.OUT, initial=GPIO.LOW)
+    GPIO.setup(PIN_BUZZER, GPIO.OUT, initial=GPIO.LOW)
+
+    # LCD
+    for pin in [LCD_RS, LCD_E, LCD_D4, LCD_D5, LCD_D6, LCD_D7]:
+        GPIO.setup(pin, GPIO.OUT, initial=GPIO.LOW)
+
+    lcd_init()
+
+
+# ── Actuadores ────────────────────────────────────────────────
+
+def led_verde(on: bool):
+    GPIO.output(PIN_LED_V, on)
+
+
+def led_rojo(on: bool):
+    GPIO.output(PIN_LED_R, on)
+
+
+def beep(duracion=0.3):
+    """Activa el buzzer por la duración indicada (seg)."""
+    GPIO.output(PIN_BUZZER, True)
+    time.sleep(duracion)
+    GPIO.output(PIN_BUZZER, False)
+
+
+def beep_alerta():
+    """Tres beeps cortos para alerta."""
+    for _ in range(3):
+        beep(0.15)
+        time.sleep(0.1)
+
+
+# ── API REST ──────────────────────────────────────────────────
+
+def api_ping() -> bool:
+    """Verifica que el API esté en línea."""
+    try:
+        r = requests.get(
+            f"{API_BASE_URL}/api/sensores/ping",
+            timeout=TIMEOUT_API
+        )
+        return r.status_code == 200
+    except requests.RequestException:
+        return False
+
+
+def enviar_evento_sensor(tipo_sensor: str, evento: str,
+                         cantidad: int = None, confianza: float = None,
+                         datos_extra: dict = None):
+    """Envía un evento de sensor al API (POST /api/sensores/evento)."""
+    payload = {
+        "tipoSensor": tipo_sensor,
+        "evento": evento,
+        "dispositivoId": DISPOSITIVO_ID,
+    }
+    if cantidad is not None:
+        payload["cantidadDetectada"] = cantidad
+    if confianza is not None:
+        payload["confianza"] = confianza
+    if datos_extra is not None:
+        payload["datosExtra"] = json.dumps(datos_extra)
+
+    try:
+        r = requests.post(
+            f"{API_BASE_URL}/api/sensores/evento",
+            json=payload,
+            timeout=TIMEOUT_API
+        )
+        if r.status_code == 201:
+            print(f"[API] Evento enviado: {tipo_sensor}/{evento}")
+        else:
+            print(f"[API] Respuesta {r.status_code}: {r.text[:100]}")
+    except requests.RequestException as e:
+        print(f"[API] Error de conexión: {e}")
+
+
+def enviar_movimiento(tipo: int, cantidad: int, producto_id: int,
+                      detectado_por: str = "SensorIR"):
+    """Registra un movimiento (POST /api/movimientos).
+    tipo: 1=Entrada, 2=Salida, 3=Ajuste
+    """
+    payload = {
+        "tipo": tipo,
+        "cantidad": cantidad,
+        "productoId": producto_id,
+        "detectadoPor": detectado_por,
+        "observaciones": f"Detectado automáticamente por {DISPOSITIVO_ID}"
+    }
+    try:
+        r = requests.post(
+            f"{API_BASE_URL}/api/movimientos",
+            json=payload,
+            timeout=TIMEOUT_API
+        )
+        if r.status_code in (200, 201):
+            print(f"[API] Movimiento registrado: tipo={tipo}, cant={cantidad}")
+        else:
+            print(f"[API] Error movimiento {r.status_code}")
+    except requests.RequestException as e:
+        print(f"[API] Error: {e}")
+
+
+# ── Lógica principal ─────────────────────────────────────────
+
+class AlmacenController:
+    def __init__(self):
+        self.ultima_deteccion = 0
+        self.conteo_entradas = 0
+        self.conteo_salidas = 0
+        self.api_online = False
+        self.running = True
+
+    def verificar_api(self):
+        """Checa conectividad con el API al arrancar."""
+        lcd_text("Conectando API..", 1)
+        lcd_text("Espere...", 2)
+
+        self.api_online = api_ping()
+
+        if self.api_online:
+            led_verde(True)
+            beep(0.1)
+            lcd_text("API conectada", 1)
+            lcd_text("Sistema listo", 2)
+            print("[OK] API en línea")
+        else:
+            led_rojo(True)
+            beep_alerta()
+            lcd_text("API sin conexion", 1)
+            lcd_text("Modo offline", 2)
+            print("[WARN] API no disponible — modo offline")
+
+        time.sleep(2)
+        led_verde(False)
+        led_rojo(False)
+
+    def procesar_deteccion_ir(self):
+        """Llamada cuando el sensor IR detecta un objeto."""
+        ahora = time.time()
+        if ahora - self.ultima_deteccion < COOLDOWN_DETECCION:
+            return  # cooldown activo, ignorar
+        self.ultima_deteccion = ahora
+
+        self.conteo_entradas += 1
+        print(f"[IR] Detección #{self.conteo_entradas}")
+
+        # Feedback visual y sonoro
+        led_verde(True)
+        beep(0.2)
+
+        # Actualizar LCD
+        lcd_text("Objeto detectado", 1)
+        lcd_text(f"Total: {self.conteo_entradas}", 2)
+
+        # Enviar al API en hilo aparte para no bloquear
+        if self.api_online:
+            t = threading.Thread(
+                target=enviar_evento_sensor,
+                args=("IR", "Deteccion"),
+                kwargs={"cantidad": 1}
+            )
+            t.start()
+
+        time.sleep(1)
+        led_verde(False)
+
+    def actualizar_lcd_idle(self):
+        """Pantalla en reposo."""
+        lcd_text("Almacen Intel.", 1)
+        lcd_text(f"Det:{self.conteo_entradas:>4}  OK", 2)
+
+    def loop_principal(self):
+        """Bucle que lee el sensor IR continuamente."""
+        print("=" * 40)
+        print("  Almacén Inteligente - RPi en marcha")
+        print("=" * 40)
+
+        setup_gpio()
+        self.verificar_api()
+        self.actualizar_lcd_idle()
+
+        ir_anterior = GPIO.HIGH  # IR FC-51: LOW = objeto detectado
+
+        try:
+            while self.running:
+                ir_actual = GPIO.input(PIN_IR)
+
+                # Flanco de bajada: objeto entra al rango del sensor
+                if ir_anterior == GPIO.HIGH and ir_actual == GPIO.LOW:
+                    self.procesar_deteccion_ir()
+                    self.actualizar_lcd_idle()
+
+                ir_anterior = ir_actual
+                time.sleep(INTERVALO_POLLING)
+
+        except KeyboardInterrupt:
+            print("\n[INFO] Detenido por el usuario")
+        finally:
+            self.cleanup()
+
+    def cleanup(self):
+        lcd_clear()
+        lcd_text("Sistema", 1)
+        lcd_text("apagado", 2)
+        time.sleep(1)
+        lcd_clear()
+        led_verde(False)
+        led_rojo(False)
+        GPIO.output(PIN_BUZZER, False)
+        GPIO.cleanup()
+        print("[INFO] GPIO limpio. Bye.")
+
+
+# ── Entrada ───────────────────────────────────────────────────
+
+if __name__ == "__main__":
+    ctrl = AlmacenController()
+    ctrl.loop_principal()
