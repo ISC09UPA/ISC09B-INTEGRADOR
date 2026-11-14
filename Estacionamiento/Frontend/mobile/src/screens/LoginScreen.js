@@ -8,23 +8,46 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
+import { auth } from "../api";
+import { MensajeError } from "../components/EstadoCarga";
 import { colors, radius } from "../theme";
 
+// Los valores son los del enum RolUsuario del back.
 const ROLES = [
-  { id: "usuario", label: "Usuario" },
-  { id: "administrador", label: "Administrador" },
+  { id: "Usuario", label: "Usuario" },
+  { id: "Administrador", label: "Administrador" },
 ];
 
-export default function LoginScreen({ onLogin }) {
-  const [role, setRole] = useState("usuario");
+/** onLogin recibe la respuesta del back: { token, expira, usuario }. */
+export default function LoginScreen({ onLogin, onCrearCuenta }) {
+  const [role, setRole] = useState("Usuario");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [enviando, setEnviando] = useState(false);
+  const [error, setError] = useState(null);
 
-  const handleSubmit = () => {
-    // TODO: conectar con la API de autenticación
-    onLogin({ role, email });
+  const valido = email.trim() !== "" && password !== "";
+
+  const handleSubmit = async () => {
+    if (!valido || enviando) return;
+    setEnviando(true);
+    setError(null);
+    try {
+      const sesion = await auth.login({ correo: email.trim(), contrasena: password, rol: role });
+      onLogin(sesion);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setEnviando(false);
+    }
   };
+
+  // Recuperar contraseña por correo está planeado para después.
+  const olvideContrasena = () =>
+    Alert.alert("Próximamente", "Pronto podrás recuperar tu contraseña por correo. Por ahora, pídele ayuda al administrador.");
 
   return (
     <KeyboardAvoidingView
@@ -104,19 +127,34 @@ export default function LoginScreen({ onLogin }) {
             />
           </View>
 
+          <MensajeError mensaje={error} />
+
           <Pressable
             onPress={handleSubmit}
+            disabled={!valido || enviando}
             style={({ pressed }) => [
               styles.btnPrimary,
               pressed && styles.btnPressed,
+              (!valido || enviando) && styles.btnDisabled,
             ]}
           >
-            <Text style={styles.btnPrimaryText}>Entrar</Text>
+            {enviando ? (
+              <ActivityIndicator color={colors.green900} />
+            ) : (
+              <Text style={styles.btnPrimaryText}>Entrar</Text>
+            )}
           </Pressable>
 
-          <Pressable style={styles.linkBtn}>
+          <Pressable style={styles.linkBtn} onPress={olvideContrasena}>
             <Text style={styles.linkText}>¿Olvidaste tu contraseña?</Text>
           </Pressable>
+
+          <View style={styles.signup}>
+            <Text style={styles.signupText}>¿No tienes cuenta?</Text>
+            <Pressable onPress={onCrearCuenta}>
+              <Text style={styles.signupLink}>Crear cuenta</Text>
+            </Pressable>
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -207,8 +245,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   btnPressed: { opacity: 0.85 },
+  btnDisabled: { opacity: 0.5 },
   btnPrimaryText: { color: colors.green900, fontSize: 16, fontWeight: "700" },
 
   linkBtn: { alignSelf: "center", paddingVertical: 4 },
   linkText: { fontSize: 14, fontWeight: '600', color: colors.red },
+
+  signup: { flexDirection: "row", justifyContent: "center", gap: 6 },
+  signupText: { fontSize: 14, color: colors.inkSoft },
+  signupLink: { fontSize: 14, fontWeight: "800", color: colors.ink },
 });
