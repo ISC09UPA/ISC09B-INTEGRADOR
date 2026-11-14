@@ -1,5 +1,7 @@
-using EstacionamientoInteligente.API.Ejemplos;
+using EstacionamientoInteligente.API.Comun;
+using EstacionamientoInteligente.Application.Interfaces;
 using EstacionamientoInteligente.Domain.DTOs;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EstacionamientoInteligente.API.Controllers;
@@ -8,7 +10,8 @@ namespace EstacionamientoInteligente.API.Controllers;
 [ApiController]
 [Route("api/escaner")]
 [Tags("Escáner y pluma")]
-public class EscanerController : ControllerBase
+[Authorize(Roles = Roles.Administrador)]
+public class EscanerController(IEscanerService escaner) : ControllerBase
 {
     /// <summary>
     /// Sube la foto, lee la placa (Computer Vision) y el tipo (Custom Vision).
@@ -20,7 +23,11 @@ public class EscanerController : ControllerBase
     [Consumes("multipart/form-data")]
     [ProducesResponseType<AnalisisPlacaDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public ActionResult<AnalisisPlacaDto> Analizar(IFormFile foto) => Ok(DatosEjemplo.Analisis());
+    public async Task<ActionResult<AnalisisPlacaDto>> Analizar(IFormFile foto)
+    {
+        await using var contenido = foto.OpenReadStream();
+        return Ok(await escaner.AnalizarAsync(contenido, foto.ContentType));
+    }
 
     /// <summary>
     /// Registra el paso con la placa confirmada (o corregida) y, si las reglas lo permiten, abre la pluma.
@@ -28,6 +35,6 @@ public class EscanerController : ControllerBase
     [HttpPost("registrar")]
     [ProducesResponseType<ResultadoPasoDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public ActionResult<ResultadoPasoDto> Registrar(RegistrarPasoRequest request) =>
-        Ok(DatosEjemplo.ResultadoSalida(request.Placa));
+    public async Task<ActionResult<ResultadoPasoDto>> Registrar(RegistrarPasoRequest request) =>
+        Ok(await escaner.RegistrarAsync(request));
 }
