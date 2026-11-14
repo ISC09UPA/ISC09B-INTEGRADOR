@@ -1,24 +1,25 @@
-import React, { useState } from 'react';
-import { Pressable } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { Pressable, View, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { C } from './src/theme';
-import { getProductos } from './src/api';
+import { getProductos, restaurarSesion, cerrarSesion, onExpira } from './src/api';
 import { useData, estado } from './src/components';
 import Login from './src/screens/Login';
 import Inventario from './src/screens/Inventario';
 import Estadisticas from './src/screens/Estadisticas';
 import Alertas from './src/screens/Alertas';
 import Camara from './src/screens/Camara';
+import Usuarios from './src/screens/Usuarios';
 import Movimientos from './src/screens/Movimientos';
 import Escanear from './src/screens/Escanear';
 
 const Tab = createBottomTabNavigator();
 const ICON = {
   Inventario: 'grid-outline', Estadísticas: 'stats-chart-outline', Alertas: 'notifications-outline',
-  Cámara: 'videocam-outline', Movimientos: 'swap-vertical-outline', Escanear: 'scan-outline',
+  Cámara: 'videocam-outline', Usuarios: 'people-outline', Movimientos: 'swap-vertical-outline', Escanear: 'scan-outline',
 };
 
 function Tabs({ user, salir }) {
@@ -37,13 +38,15 @@ function Tabs({ user, salir }) {
           </Pressable>
         ),
         tabBarActiveTintColor: C.primary,
+        tabBarLabelStyle: { fontSize: 10 },
         tabBarIcon: ({ color, size }) => <Ionicons name={ICON[route.name]} size={size} color={color} />,
       })}
     >
       <Tab.Screen name="Inventario">{() => <Inventario rol={user.rol} />}</Tab.Screen>
       {admin && <Tab.Screen name="Estadísticas" component={Estadisticas} />}
-      {admin && <Tab.Screen name="Alertas" component={Alertas} options={{ tabBarBadge: alertas || undefined }} />}
+      {admin && <Tab.Screen name="Alertas" options={{ tabBarBadge: alertas || undefined }}>{() => <Alertas usuario={user.nombre} />}</Tab.Screen>}
       {admin && <Tab.Screen name="Cámara" component={Camara} />}
+      {admin && <Tab.Screen name="Usuarios">{() => <Usuarios yo={user.email} />}</Tab.Screen>}
       {!admin && <Tab.Screen name="Movimientos">{() => <Movimientos usuario={user.nombre} />}</Tab.Screen>}
       <Tab.Screen name="Escanear" component={Escanear} />
     </Tab.Navigator>
@@ -52,12 +55,28 @@ function Tabs({ user, salir }) {
 
 export default function App() {
   const [user, setUser] = useState(null);
+  const [listo, setListo] = useState(false);
+
+  const salir = () => { cerrarSesion(); setUser(null); };
+
+  useEffect(() => {
+    onExpira(salir); // si el JWT vence o el servidor responde 401, se regresa al login
+    restaurarSesion().then((u) => { setUser(u); setListo(true); });
+  }, []);
+
+  if (!listo)
+    return (
+      <View style={{ flex: 1, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator color="#fff" size="large" />
+      </View>
+    );
+
   return (
     <>
       <StatusBar style="light" />
       {user ? (
         <NavigationContainer>
-          <Tabs user={user} salir={() => setUser(null)} />
+          <Tabs user={user} salir={salir} />
         </NavigationContainer>
       ) : (
         <Login onLogin={setUser} />

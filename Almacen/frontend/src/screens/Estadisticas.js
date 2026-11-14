@@ -1,21 +1,24 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, ScrollView } from 'react-native';
 import { C } from '../theme';
 import { getProductos, getMovimientos } from '../api';
-import { useData, S, Card, MovRow } from '../components';
+import { useData, S, Card, Btn, MovRow, Cargando } from '../components';
 
 const fecha = (dias) =>
   new Date(Date.now() + dias * 864e5).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
 
 export default function Estadisticas() {
-  const [ps] = useData(getProductos);
-  const [ms] = useData(() => getMovimientos());
-  if (!ps || !ms) return <Text style={{ padding: 24, color: C.sub }}>Cargando estadísticas…</Text>;
+  const [ps, loadP, errP] = useData(getProductos);
+  const [ms, loadM, errM] = useData(() => getMovimientos());
+  const [verTodos, setVerTodos] = useState(false);
+  if (!ps || !ms) return <Cargando texto="Cargando estadísticas…" error={errP || errM} onReintentar={() => { loadP(); loadM(); }} />;
 
-  const rot = ps.map((p) => ({ ...p, r: p.salidas30 / Math.max(p.stock, 1) })).sort((a, b) => b.r - a.r);
+  // Si el backend ya calculó la rotación y los días para agotarse (en la nube), se usan tal cual;
+  // si no vienen, se calculan aquí con las salidas de 30 días y las existencias.
+  const rot = ps.map((p) => ({ ...p, r: p.rotacion ?? p.salidas30 / Math.max(p.stock, 1) })).sort((a, b) => b.r - a.r);
   const top = rot[0] ? rot[0].r || 1 : 1;
   const pred = ps
-    .map((p) => ({ ...p, dias: p.salidas30 ? Math.floor(p.stock / (p.salidas30 / 30)) : null }))
+    .map((p) => ({ ...p, dias: p.diasAgotamiento !== undefined ? p.diasAgotamiento : p.salidas30 ? Math.floor(p.stock / (p.salidas30 / 30)) : null }))
     .sort((a, b) => (a.dias ?? 1e9) - (b.dias ?? 1e9));
 
   return (
@@ -54,7 +57,10 @@ export default function Estadisticas() {
 
       <Text style={S.h}>Historial de movimientos</Text>
       <Text style={S.sub}>Los últimos registros de todo el almacén</Text>
-      <Card>{ms.slice(0, 10).map((m) => <MovRow key={m.id} m={m} />)}</Card>
+      <Card>
+        {ms.length ? (verTodos ? ms : ms.slice(0, 10)).map((m) => <MovRow key={m.id} m={m} />) : <Text style={{ color: C.sub }}>Aún no hay movimientos registrados.</Text>}
+        {ms.length > 10 && <Btn t={verTodos ? 'Ver menos' : `Ver todos (${ms.length})`} kind="ghost" onPress={() => setVerTodos(!verTodos)} />}
+      </Card>
     </ScrollView>
   );
 }

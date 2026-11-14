@@ -1,17 +1,28 @@
 import React, { useState } from 'react';
-import { View, Text, SectionList, Pressable, Modal, Alert, ScrollView } from 'react-native';
+import { View, Text, SectionList, Pressable, Modal, ScrollView } from 'react-native';
 import { C } from '../theme';
+import { confirmar, avisar } from '../plataforma';
 import { getProductos, crearProducto, eliminarProducto, setReorden } from '../api';
-import { useData, estado, hora, S, Card, Btn, Chip, StockBar, FormProducto } from '../components';
+import { useData, estado, hora, S, Card, Btn, Chip, StockBar, FormProducto, ModalReorden, Cargando } from '../components';
 
 export default function Inventario({ rol }) {
-  const [ps, load] = useData(getProductos);
+  const [ps, load, error] = useData(getProductos);
   const [selId, setSelId] = useState(null);
   const [ro, setRo] = useState(0);
   const [nuevo, setNuevo] = useState(false);
+  const [reo, setReo] = useState(null);
   const admin = rol === 'admin';
 
-  if (!ps) return <Text style={{ padding: 24, color: C.sub }}>Cargando inventario…</Text>;
+  // Ejecuta una acción del administrador y avisa si el servidor la rechaza
+  async function accion(fn) {
+    try {
+      await fn();
+    } catch (e) {
+      avisar('No se pudo completar la acción', e.message);
+    }
+  }
+
+  if (!ps) return <Cargando texto="Cargando inventario…" error={error} onReintentar={load} />;
   const p = ps.find((x) => x.id === selId);
   const bajos = ps.filter((x) => estado(x) === 'bajo').length;
   const secciones = [...new Set(ps.map((x) => x.anaquel))].sort().map((a) => ({ title: a, data: ps.filter((x) => x.anaquel === a) }));
@@ -48,6 +59,7 @@ export default function Inventario({ rol }) {
               </View>
               <Text style={{ color: C.sub, marginTop: 4 }}>{item.stock} de {item.max} piezas</Text>
               <StockBar p={item} />
+              {admin && <Btn t="Reordenar" kind="ghost" onPress={() => setReo(item)} />}
             </Card>
           </Pressable>
         )}
@@ -93,15 +105,13 @@ export default function Inventario({ rol }) {
               )}
               {admin && (
                 <>
-                  <Btn t="Guardar punto de reorden" off={ro === p.reorden} onPress={async () => { await setReorden(p.id, ro); load(); setSelId(null); }} />
+                  <Btn t="Reordenar producto" kind="ghost" onPress={() => { setReo(p); setSelId(null); }} />
+                  <Btn t="Guardar punto de reorden" off={ro === p.reorden} onPress={() => accion(async () => { await setReorden(p.id, ro); load(); setSelId(null); })} />
                   <Btn
                     t="Dar de baja producto"
                     kind="danger"
                     onPress={() =>
-                      Alert.alert('Dar de baja', `¿Quitar ${p.nombre} del inventario?`, [
-                        { text: 'Cancelar', style: 'cancel' },
-                        { text: 'Dar de baja', style: 'destructive', onPress: async () => { await eliminarProducto(p.id); setSelId(null); load(); } },
-                      ])
+                      confirmar('Dar de baja', `¿Quitar ${p.nombre} del inventario?`, 'Dar de baja', () => accion(async () => { await eliminarProducto(p.id); setSelId(null); load(); }))
                     }
                   />
                 </>
@@ -111,6 +121,8 @@ export default function Inventario({ rol }) {
           )}
         </View>
       </Modal>
+
+      {reo && <ModalReorden p={reo} onClose={() => setReo(null)} onDone={load} />}
 
       {/* Alta de producto */}
       <Modal visible={nuevo} transparent animationType="slide" onRequestClose={() => setNuevo(false)}>

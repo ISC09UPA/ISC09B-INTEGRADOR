@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { C } from '../theme';
 import { S, Btn } from '../components';
 import { login } from '../api';
+import { USE_MOCK } from '../config';
 
 export default function Login({ onLogin }) {
   const [email, setEmail] = useState('');
@@ -38,9 +39,11 @@ export default function Login({ onLogin }) {
         <TextInput style={S.input} value={pass} onChangeText={setPass} secureTextEntry onSubmitEditing={entrar} />
         {!!err && <Text style={{ color: C.red, marginTop: 10 }}>{err}</Text>}
         <Btn t={busy ? 'Entrando…' : 'Iniciar sesión'} onPress={entrar} off={busy || !email || !pass} />
-        <Text style={{ color: C.sub, fontSize: 12, marginTop: 14, textAlign: 'center' }}>
-          Demo: admin@almacen.com / admin123{'\n'}operador@almacen.com / op123
-        </Text>
+        {USE_MOCK && (
+          <Text style={{ color: C.sub, fontSize: 12, marginTop: 14, textAlign: 'center' }}>
+            Modo demo: admin@almacen.com / admin123{'\n'}operador@almacen.com / op123
+          </Text>
+        )}
       </View>
     </KeyboardAvoidingView>
   );

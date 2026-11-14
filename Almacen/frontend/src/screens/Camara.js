@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, Platform } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { Ionicons } from '@expo/vector-icons';
 import { C } from '../theme';
-import { CAMERA_URL } from '../api';
+import { CAMERA_URL } from '../config';
 import { S, Btn } from '../components';
 
 export default function Camara() {
@@ -19,7 +19,11 @@ export default function Camara() {
             <Text style={{ color: '#9FB2BE', textAlign: 'center', marginTop: 4 }}>Revisa que la Raspberry esté encendida y que CAMERA_URL en api.js sea correcta.</Text>
           </View>
         ) : (
+          Platform.OS === 'web' ? (
+            React.createElement('img', { key: k, src: CAMERA_URL, onError: () => setErr(true), style: { width: '100%', height: '100%', objectFit: 'cover' } })
+          ) : (
           <WebView key={k} source={{ uri: CAMERA_URL }} onError={() => setErr(true)} onHttpError={() => setErr(true)} style={{ flex: 1, backgroundColor: '#0B141A' }} />
+          )
         )}
         {!err && (
           <View style={{ position: 'absolute', top: 12, left: 12, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,.55)', borderRadius: 14, paddingHorizontal: 10, paddingVertical: 5 }}>

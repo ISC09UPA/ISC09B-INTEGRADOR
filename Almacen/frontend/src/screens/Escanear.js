@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, Image, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, Image, ScrollView, ActivityIndicator, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { C } from '../theme';
+import { avisar } from '../plataforma';
 import { identificarProducto, crearProducto } from '../api';
 import { estado, hora, S, Card, Btn, Chip, StockBar, FormProducto } from '../components';
 
@@ -12,9 +13,12 @@ export default function Escanear() {
   const [reg, setReg] = useState(false);
 
   async function tomar() {
-    const perm = await ImagePicker.requestCameraPermissionsAsync();
-    if (!perm.granted) return Alert.alert('Permiso de cámara', 'Activa el permiso de cámara para identificar productos.');
-    const r = await ImagePicker.launchCameraAsync({ quality: 0.6 });
+    const web = Platform.OS === 'web';
+    if (!web) {
+      const perm = await ImagePicker.requestCameraPermissionsAsync();
+      if (!perm.granted) return avisar('Permiso de cámara', 'Activa el permiso de cámara para identificar productos.');
+    }
+    const r = web ? await ImagePicker.launchImageLibraryAsync({ quality: 0.6 }) : await ImagePicker.launchCameraAsync({ quality: 0.6 });
     if (r.canceled) return;
     setImg(r.assets[0].uri);
     setRes(null);
@@ -23,7 +27,7 @@ export default function Escanear() {
     try {
       setRes(await identificarProducto(r.assets[0].uri));
     } catch (e) {
-      Alert.alert('No se pudo identificar', e.message);
+      avisar('No se pudo identificar', e.message);
     }
     setBusy(false);
   }
@@ -74,7 +78,7 @@ export default function Escanear() {
                 setRes(null);
                 setImg(null);
                 setReg(false);
-                Alert.alert('Listo', 'Producto registrado en el inventario');
+                avisar('Listo', 'Producto registrado en el inventario');
               }}
             />
           ) : (
