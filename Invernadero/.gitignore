@@ -1,0 +1,75 @@
+# =====================================================
+# .gitignore - Proyecto Invernadero (Backend, BD, Embebidos, Frontend)
+# =====================================================
+
+# -----------------------------------------------------
+# Compilación .NET (Backend)
+# -----------------------------------------------------
+[Bb]in/
+[Oo]bj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Visual Studio
+.vs/
+
+# NuGet (paquetes clásicos)
+packages/
+
+# Pruebas y cobertura
+[Tt]est[Rr]esult*/
+*.coverage
+*.coveragexml
+coverage/
+
+# -----------------------------------------------------
+# Secretos y configuración local (NUNCA se suben)
+# -----------------------------------------------------
+.env
+.env.*
+!.env.example
+!.env.*.example
+secrets.json
+appsettings.Development.json
+*.pubxml.user
+*.azurepubxml.user
+*.publishsettings
+
+# -----------------------------------------------------
+# SQL Server Data Tools (carpeta BD)
+# Los .sql fuente SÍ se versionan; solo se ignoran artefactos generados.
+# -----------------------------------------------------
+*.dbmdl
+*.jfm
+*.dacpac
+Import Schema Logs/
+*.sqlproj.user
+*.publish.xml
+
+# -----------------------------------------------------
+# Embebidos (Arduino IDE y PlatformIO)
+# -----------------------------------------------------
+.pio/
+*.hex
+*.elf
+*.eep
+
+# -----------------------------------------------------
+# Frontend (Expo/React Native)
+# Frontend/mobile ya tiene su propio .gitignore (node_modules, .expo, dist, /ios, /android...)
+# -----------------------------------------------------
+.vscode/
+.idea/
+.history/
+
+# Logs
+*.log
+
+# -----------------------------------------------------
+# Sistema operativo
+# -----------------------------------------------------
+.DS_Store
+Thumbs.db
+Desktop.ini
