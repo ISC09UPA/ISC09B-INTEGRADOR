@@ -7,16 +7,16 @@
 #include "config.h"
 #include "logica/sensores.h"
 #include "publicador.h"
+#include "tof.h"
 
 namespace nivel {
 
 namespace {
 
-constexpr uint32_t ECO_TIMEOUT_US = 25000;    // ~4 m
-constexpr uint32_t ENTRE_DISPAROS_MS = 60;    // deja apagar el eco anterior
+constexpr uint32_t ENTRE_MUESTRAS_MS = 60;  // el VL53L0X entrega una medición cada 50 ms
 
 struct Tolva {
-  int pinEco;
+  tof::Sensor sensor;
   double muestras[NIVEL_MUESTRAS];
   float distanciaCm = NAN;
   float porcentaje = NAN;
@@ -29,13 +29,9 @@ uint32_t ultimoDisparoMs = 0;
 uint8_t muestraActual = 0;
 bool midiendo = false;
 
-double medirCm(int pinEco) {
-  digitalWrite(PIN_ULTRASONICO_TRIG, LOW);
-  delayMicroseconds(4);
-  digitalWrite(PIN_ULTRASONICO_TRIG, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(PIN_ULTRASONICO_TRIG, LOW);
-  return logica::distanciaDesdeEcoUs(pulseIn(pinEco, HIGH, ECO_TIMEOUT_US));
+double medirCm(tof::Sensor sensor) {
+  uint16_t mm = tof::distanciaMm(sensor);
+  return mm == 0 ? NAN : mm / 10.0;
 }
 
 void terminarRonda() {
@@ -56,11 +52,8 @@ void terminarRonda() {
 }  // namespace
 
 void iniciar() {
-  pinMode(PIN_ULTRASONICO_TRIG, OUTPUT);
-  digitalWrite(PIN_ULTRASONICO_TRIG, LOW);
-  tolvas[0].pinEco = PIN_ULTRASONICO_ECHO_PERRO;
-  tolvas[1].pinEco = PIN_ULTRASONICO_ECHO_GATO;
-  for (Tolva& t : tolvas) pinMode(t.pinEco, INPUT);
+  tolvas[0].sensor = tof::Nivel1;
+  tolvas[1].sensor = tof::Nivel2;
   inicioRondaMs = millis() - NIVEL_PERIODO_MS;  // primera ronda de inmediato
 }
 
@@ -72,12 +65,12 @@ void atender() {
     muestraActual = 0;
     inicioRondaMs = ahora;
   }
-  if (ahora - ultimoDisparoMs < ENTRE_DISPAROS_MS) return;
+  if (ahora - ultimoDisparoMs < ENTRE_MUESTRAS_MS) return;
   ultimoDisparoMs = ahora;
 
   // Alterna tolvas: muestra 0 perro, 1 gato, 2 perro...
   int tolva = muestraActual % 2;
-  tolvas[tolva].muestras[muestraActual / 2] = medirCm(tolvas[tolva].pinEco);
+  tolvas[tolva].muestras[muestraActual / 2] = medirCm(tolvas[tolva].sensor);
   muestraActual++;
   if (muestraActual >= NIVEL_MUESTRAS * 2) {
     midiendo = false;

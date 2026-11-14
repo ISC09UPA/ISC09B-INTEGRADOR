@@ -1,6 +1,6 @@
 #pragma once
 
-// Dispensadores: un servo de rotación continua por tolva que gira un tornillo sinfín.
+// Dispensadores: un NEMA17 con TMC2209 (STEP/DIR) por tolva que gira un tornillo sinfín.
 // El dispensado se controla con la báscula del plato de esa tolva: se detiene al llegar a la
 // ración y, si el peso no sube, intenta desatascar girando en reversa y avisa JAM.
 

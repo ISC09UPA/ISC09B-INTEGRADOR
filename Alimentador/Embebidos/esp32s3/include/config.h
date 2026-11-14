@@ -8,60 +8,50 @@
 #define FIRMWARE_VERSION "1.0.0"
 
 // ---------------------------------------------------------------------------
-// Pines por placa
+// Pines de la PCB del alimentador (ESP32-S3 N16R8 CAM con OV3660)
 // ---------------------------------------------------------------------------
-#if defined(PLACA_XIAO_S3_SENSE)
-// Seeed XIAO ESP32S3 Sense: solo hay 11 pines libres (D0..D10), se usan todos.
-// La ranura microSD de la placa de expansión comparte GPIO7/8/9: no se usa.
-constexpr int PIN_SERVO_PERRO = 1;    // D0
-constexpr int PIN_SERVO_GATO = 2;     // D1
-constexpr int PIN_HX711_PERRO_SCK = 3;   // D2
-constexpr int PIN_HX711_PERRO_DOUT = 4;  // D3
-constexpr int PIN_HX711_GATO_DOUT = 5;   // D4
-constexpr int PIN_HX711_GATO_SCK = 43;   // D6 (TX0, el monitor serie va por USB)
-constexpr int PIN_ULTRASONICO_TRIG = 6;  // D5, compartido por los dos sensores
-constexpr int PIN_ULTRASONICO_ECHO_PERRO = 7;  // D8
-constexpr int PIN_ULTRASONICO_ECHO_GATO = 8;   // D9
-constexpr int PIN_PRESENCIA = 9;         // D10, sensor PIR
-constexpr int PIN_RFID_RX = 44;          // D7 (RX0), lector RDM6300 a 9600 baudios
-constexpr int PIN_LED_ESTADO = 21;       // LED de usuario de la XIAO (activo en bajo)
-constexpr bool LED_ACTIVO_EN_BAJO = true;
+// GPIO35-37 los ocupa la PSRAM octal, 19/20 el USB, 43/44 el monitor serie y 4-13, 15-18 la
+// cámara. Lo que no cabe en la ESP32 (EN/DIR de los TMC2209, XSHUT de los ToF, buzzer y botón)
+// va por el expansor MCP23017 del conector J2.
+#if !defined(PLACA_ESP32S3_CAM)
+#error "Define PLACA_ESP32S3_CAM en platformio.ini"
+#endif
 
-// Cámara OV2640 de la placa Sense
-constexpr int CAM_PIN_PWDN = -1;
-constexpr int CAM_PIN_RESET = -1;
-constexpr int CAM_PIN_XCLK = 10;
-constexpr int CAM_PIN_SIOD = 40;
-constexpr int CAM_PIN_SIOC = 39;
-constexpr int CAM_PIN_D7 = 48;
-constexpr int CAM_PIN_D6 = 11;
-constexpr int CAM_PIN_D5 = 12;
-constexpr int CAM_PIN_D4 = 14;
-constexpr int CAM_PIN_D3 = 16;
-constexpr int CAM_PIN_D2 = 18;
-constexpr int CAM_PIN_D1 = 17;
-constexpr int CAM_PIN_D0 = 15;
-constexpr int CAM_PIN_VSYNC = 38;
-constexpr int CAM_PIN_HREF = 47;
-constexpr int CAM_PIN_PCLK = 13;
+// Motores NEMA17 con TMC2209 en modo STEP/DIR (J7/J9). STEP sale de la ESP32 con LEDC.
+constexpr int PIN_STEP_PERRO = 1;   // J23.3 -> STEP1
+constexpr int PIN_STEP_GATO = 2;    // J23.4 -> STEP2
 
-#elif defined(PLACA_ESP32S3_CAM)
-// ESP32-S3-WROOM-1 N8R8 con OV2640 (Freenove ESP32-S3 CAM y similares; la cámara usa
-// el mismo mapeo que la ESP32-S3-EYE). GPIO35-37 los ocupa la PSRAM octal, 19/20 el USB,
-// 43/44 el monitor serie y 48 el LED RGB.
-constexpr int PIN_SERVO_PERRO = 1;
-constexpr int PIN_SERVO_GATO = 2;
-constexpr int PIN_HX711_PERRO_DOUT = 14;
-constexpr int PIN_HX711_PERRO_SCK = 21;
-constexpr int PIN_HX711_GATO_DOUT = 47;
+// Básculas HX711 de los platos (J16 perro, J17 gato)
+constexpr int PIN_HX711_PERRO_DOUT = 38;
+constexpr int PIN_HX711_PERRO_SCK = 14;
+constexpr int PIN_HX711_GATO_DOUT = 39;
 constexpr int PIN_HX711_GATO_SCK = 42;
-constexpr int PIN_ULTRASONICO_TRIG = 41;
-constexpr int PIN_ULTRASONICO_ECHO_PERRO = 40;
-constexpr int PIN_ULTRASONICO_ECHO_GATO = 39;
-constexpr int PIN_PRESENCIA = 38;
-constexpr int PIN_RFID_RX = 3;  // Pin de arranque solo si se quema el eFuse de JTAG; libre por defecto
-constexpr int PIN_LED_ESTADO = -1;
-constexpr bool LED_ACTIVO_EN_BAJO = false;
+
+// Bus I2C compartido: MCP23017, DS3231 y los tres VL53L0X
+constexpr int PIN_I2C_SDA = 21;
+constexpr int PIN_I2C_SCL = 47;
+constexpr uint32_t I2C_FRECUENCIA_HZ = 400000;
+
+constexpr int PIN_RFID_RX = 41;     // RDM6300 a través del divisor R1/R2 (5 V -> 3.3 V)
+constexpr int PIN_LED_RGB = 48;     // WS2812 de J4
+
+// Expansor MCP23017 (A0-A2 a GND) y bits de su puerto A, en el orden de J2 pines 5-12
+constexpr uint8_t MCP23017_DIRECCION = 0x20;
+constexpr uint8_t MCP_EN1 = 0;      // TMC2209 tolva perro, activo en bajo
+constexpr uint8_t MCP_DIR1 = 1;
+constexpr uint8_t MCP_EN2 = 2;      // TMC2209 tolva gato, activo en bajo
+constexpr uint8_t MCP_DIR2 = 3;
+constexpr uint8_t MCP_XSHUT1 = 4;   // VL53L0X nivel tolva perro (J20)
+constexpr uint8_t MCP_XSHUT2 = 5;   // VL53L0X nivel tolva gato (J21)
+constexpr uint8_t MCP_BUZZER = 6;   // base de Q1 a través de R3
+constexpr uint8_t MCP_BOTON = 7;    // a GND al presionar, pull-up interno
+
+// Direcciones I2C. Los VL53L0X arrancan en 0x29; al iniciar se les asigna una a cada uno.
+constexpr uint8_t DS3231_DIRECCION = 0x68;
+constexpr uint8_t TOF_DIRECCION_FABRICA = 0x29;
+constexpr uint8_t TOF_DIRECCION_PRESENCIA = 0x30;
+constexpr uint8_t TOF_DIRECCION_NIVEL1 = 0x31;
+constexpr uint8_t TOF_DIRECCION_NIVEL2 = 0x32;
 
 constexpr int CAM_PIN_PWDN = -1;
 constexpr int CAM_PIN_RESET = -1;
@@ -80,13 +70,8 @@ constexpr int CAM_PIN_VSYNC = 6;
 constexpr int CAM_PIN_HREF = 7;
 constexpr int CAM_PIN_PCLK = 13;
 
-#else
-#error "Define PLACA_ESP32S3_CAM o PLACA_XIAO_S3_SENSE en platformio.ini"
-#endif
-
-// Módulos opcionales: poner en false si no está conectado el sensor.
+// Módulos opcionales: poner en false si no está conectado.
 constexpr bool USAR_RFID = true;
-constexpr bool USAR_PIR = true;
 
 // ---------------------------------------------------------------------------
 // Red, MQTT y HTTP
@@ -111,12 +96,11 @@ constexpr uint32_t BASCULA_MAX_SIN_LECTURA_MS = 2000;  // después de esto el pe
 constexpr float BASCULA_CAMBIO_PRESENCIA_G = 8.0f;  // cambio en el plato que inicia una visita
 
 // ---------------------------------------------------------------------------
-// Dispensador (un servo de rotación continua por tolva que mueve un tornillo sinfín)
+// Dispensador (un NEMA17 17HS8401 por tolva con TMC2209 que gira un tornillo sinfín)
 // ---------------------------------------------------------------------------
-constexpr uint16_t SERVO_PULSO_PARO_US = 1500;
-constexpr uint16_t SERVO_PULSO_AVANCE_US = 1800;
-constexpr uint16_t SERVO_PULSO_REVERSA_US = 1200;
-constexpr uint32_t SERVO_REVERSA_DESATASCO_MS = 400;
+// Con MS1/MS2 del TMC2209 a GND son 8 micropasos: 1600 pasos por vuelta. 800 Hz = 0.5 vuelta/s.
+constexpr uint32_t MOTOR_PASOS_HZ = 800;
+constexpr uint32_t MOTOR_REVERSA_DESATASCO_MS = 400;
 constexpr float FLUJO_POR_DEFECTO_G_S = 8.0f;   // se calibra con CALIBRAR_FLUJO
 constexpr float DISPENSADO_ANTICIPACION_G = 2.0f;  // comida que sigue cayendo al parar
 constexpr uint32_t DISPENSADO_ASENTAR_MS = 1500;
@@ -127,7 +111,7 @@ constexpr float DISPENSADO_MINIMO_G = 2.0f;     // no vale la pena mover el moto
 constexpr bool RELLENAR_HASTA_RACION = true;    // descuenta lo que ya hay en el plato
 
 // ---------------------------------------------------------------------------
-// Nivel de tolva (ultrasónico JSN-SR04T / HC-SR04P a 3.3 V)
+// Nivel de tolva (VL53L0X en la tapa de cada tolva, medido hacia abajo)
 // ---------------------------------------------------------------------------
 constexpr float TOLVA_DISTANCIA_VACIA_CM = 30.0f;  // se calibra con NIVEL_VACIO
 constexpr float TOLVA_DISTANCIA_LLENA_CM = 4.0f;   // se calibra con NIVEL_LLENO
@@ -135,6 +119,9 @@ constexpr float TOLVA_BAJA_PCT = 15.0f;            // HOPPER_LOW por debajo de e
 constexpr float TOLVA_REARME_PCT = 25.0f;          // vuelve a avisar tras rellenar arriba de esto
 constexpr uint32_t NIVEL_PERIODO_MS = 5000;
 constexpr uint8_t NIVEL_MUESTRAS = 5;              // mediana de 5 lecturas
+// Sensor de presencia frente a los platos (J19): algo más cerca que esto es una mascota.
+constexpr uint16_t PRESENCIA_UMBRAL_MM = 350;
+constexpr uint32_t TOF_PERIODO_MS = 100;
 constexpr float CAMBIO_ESTADO_TOLVA_PCT = 5.0f;    // status inmediato si cambia más que esto
 constexpr float CAMBIO_ESTADO_PLATO_G = 10.0f;
 

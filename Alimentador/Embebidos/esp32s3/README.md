@@ -9,46 +9,62 @@ ESP32-S3 ── MQTT (1883) ──► Raspberry Pi (Mosquitto + gateway) ── 
 
 ## Hardware
 
-| Pieza | Uso |
-| --- | --- |
-| ESP32-S3 con PSRAM octal y OV2640: **Freenove ESP32-S3 CAM** (N8R8, mismo mapeo de cámara que la ESP32-S3-EYE) o **Seeed XIAO ESP32S3 Sense** | Control, cámara y modelo |
-| 2 servos de rotación continua (MG996R/FS5103R o similar), uno por tolva, moviendo un tornillo sinfín | Dispensar |
-| 2 celdas de carga (1 a 5 kg) con módulo HX711 | Peso del plato del perro y del gato |
-| 2 sensores ultrasónicos a 3.3 V (JSN-SR04T o HC-SR04P) en la tapa de cada tolva | Nivel de comida |
-| Sensor PIR (HC-SR501 o AM312) apuntando a los platos | Detectar que llegó alguien |
-| Lector RFID RDM6300 de 125 kHz (opcional) y llaveros EM4100 en el collar | Distinguir dos mascotas de la misma especie |
-| Fuente de 5 V / 3 A | Los servos van directo a 5 V, no al pin de 3.3 V de la placa |
+Todo va montado en la PCB del alimentador (proyecto de Proteus `alimentador.pdsprj`); los módulos se conectan en sus headers.
+
+| Pieza | Conector | Uso |
+| --- | --- | --- |
+| ESP32-S3 N16R8 CAM con OV3660 (mismo mapeo de cámara que la ESP32-S3-EYE) | J1, J22-J24 | Control, cámara y modelo |
+| 2 NEMA17 17HS8401 con driver TMC2209 (STEP/DIR), uno por tolva, moviendo un tornillo sinfín | J7-J12 | Dispensar |
+| Expansor MCP23017 | J2 | EN/DIR de los TMC2209, XSHUT de los ToF, buzzer y botón |
+| 2 celdas de carga (1 a 5 kg) con módulo HX711 | J16 perro, J17 gato | Peso de los platos |
+| 2 VL53L0X en la tapa de cada tolva | J20, J21 | Nivel de comida |
+| 1 VL53L0X frente a los platos | J19 | Detectar que llegó alguien |
+| RTC DS3231 | J18 | Hora sin red |
+| Lector RFID RDM6300 de 125 kHz y llaveros EM4100 en el collar | J3 (divisor R1/R2) | Distinguir dos mascotas de la misma especie |
+| LED WS2812, botón y buzzer (con Q1 BC547 y R3 1 kΩ) | J4, J5, J6 | Indicadores |
+| Fuente de 12 V / 2 A y módulo LM2596 ajustado a 5 V | J13, J14/J15 | Motores a 12 V, lógica a 5 V |
 
 Tolva y plato 1 son del **perro** y 2 del **gato** (igual que el backend).
 
 ### Conexiones
 
-Todas las señales son de 3.3 V. Si el ultrasónico es de 5 V (HC-SR04 normal), pon un divisor 1 kΩ / 2 kΩ en ECHO. Los pines se cambian solo en `include/config.h`.
+Los pines se cambian solo en `include/config.h`.
 
-| Señal | Freenove ESP32-S3 CAM (`esp32s3cam`) | XIAO ESP32S3 Sense (`xiao_s3`) |
-| --- | --- | --- |
-| Servo tolva perro (PWM) | GPIO1 | GPIO1 (D0) |
-| Servo tolva gato (PWM) | GPIO2 | GPIO2 (D1) |
-| HX711 perro DOUT / SCK | GPIO14 / GPIO21 | GPIO4 (D3) / GPIO3 (D2) |
-| HX711 gato DOUT / SCK | GPIO47 / GPIO42 | GPIO5 (D4) / GPIO43 (D6) |
-| Ultrasónicos TRIG (compartido) | GPIO41 | GPIO6 (D5) |
-| ECHO tolva perro | GPIO40 | GPIO7 (D8) |
-| ECHO tolva gato | GPIO39 | GPIO8 (D9) |
-| PIR (salida) | GPIO38 | GPIO9 (D10) |
-| RDM6300 TX → RX del ESP32 | GPIO3 | GPIO44 (D7) |
-| LED de estado | (no) | GPIO21 (LED de la placa) |
-| Cámara | interna (XCLK 15, SDA 4, SCL 5, D0-D7 11/9/8/10/12/18/17/16, VSYNC 6, HREF 7, PCLK 13) | interna (placa Sense) |
+| Señal | ESP32-S3 |
+| --- | --- |
+| STEP TMC2209 perro / gato | GPIO1 / GPIO2 |
+| HX711 perro DT / SCK | GPIO38 / GPIO14 |
+| HX711 gato DT / SCK | GPIO39 / GPIO42 |
+| I2C SDA / SCL (MCP23017, DS3231, 3× VL53L0X) | GPIO21 / GPIO47 |
+| RDM6300 TX (por el divisor 1 kΩ / 2 kΩ) | GPIO41 |
+| WS2812 DIN | GPIO48 |
+| Cámara | interna (XCLK 15, SDA 4, SCL 5, D0-D7 11/9/8/10/12/18/17/16, VSYNC 6, HREF 7, PCLK 13) |
+
+| MCP23017 (0x20, puerto A) | Señal |
+| --- | --- |
+| GPA0 / GPA1 | EN1 (activo en bajo) / DIR1 |
+| GPA2 / GPA3 | EN2 (activo en bajo) / DIR2 |
+| GPA4 / GPA5 | XSHUT del VL53L0X de nivel 1 / nivel 2 |
+| GPA6 | Buzzer (base de Q1) |
+| GPA7 | Botón a GND (pull-up interno) |
+
+El orden del puerto A sigue los pines 5-12 de J2. Si el módulo MCP23017 que se compre saca los pines en otro orden, se cambian las constantes `MCP_*` de `config.h`.
+
+Direcciones I2C: MCP23017 0x20, DS3231 0x68 (su EEPROM AT24C32 en 0x57) y los VL53L0X, que arrancan todos en 0x29. Al iniciar, los dos de nivel se apagan con XSHUT, el de presencia (que no tiene XSHUT) pasa a 0x30 y después se enciende el de nivel 1 (→ 0x31) y el de nivel 2 (→ 0x32).
 
 Notas:
-- En la Freenove, GPIO38/39/40 son también del lector microSD (no se usa) y GPIO35-37 los ocupa la PSRAM.
-- En la XIAO se usan los 11 pines; la microSD de la placa Sense comparte GPIO7/8/9 y no se puede usar. Si no conectas el RFID o el PIR, pon `USAR_RFID` / `USAR_PIR` en `false`.
-- GND común entre la fuente de los servos, los HX711 y la placa.
+- TMC2209 con MS1/MS2 a GND: 8 micropasos, 1600 pasos por vuelta. `MOTOR_PASOS_HZ` (800 Hz = media vuelta por segundo) da la velocidad del sinfín. Ajusta el potenciómetro Vref del driver a ~0.8 V antes de conectar el motor (17HS8401: 1.7 A nominal, se deja en ~1 A para que no se caliente).
+- Si un motor gira al revés, voltea un par de bobinas en J11/J12 o invierte `girar()` en `dispensador.cpp`.
+- Los motores se deshabilitan (EN en alto) cuando no dispensan. Si el MCP23017 no responde, el LED se pone rojo y no se dispensa.
+- GND común entre la fuente de 12 V, el LM2596 y la placa (ya está en la PCB).
+
+LED: azul parpadeando sin MQTT, verde conectado, amarillo con una tolva baja, rojo si falta el MCP23017. El botón da un bip y publica `status` de inmediato.
 
 ## Estructura
 
 ```
 esp32s3/
-├── platformio.ini          entornos esp32s3cam, xiao_s3 y native (pruebas)
+├── platformio.ini          entornos esp32s3cam y native (pruebas)
 ├── particiones_ota.csv     8 MB: app0 + app1 (3 MB c/u) + LittleFS (1.9 MB)
 ├── include/
 │   ├── config.h            pines y constantes (único lugar a tocar para el hardware)
@@ -60,13 +76,16 @@ esp32s3/
 │   ├── main.cpp            setup/loop y publicación de status
 │   ├── red_wifi.cpp        WiFi con reconexión
 │   ├── enlace_mqtt.cpp     MQTT (LWT, suscripciones, cola con PUBACK)
-│   ├── reloj.cpp           NTP + gateway/time + zona horaria
+│   ├── reloj.cpp           DS3231 + NTP + gateway/time + zona horaria
 │   ├── almacenamiento.cpp  LittleFS con escritura atómica
 │   ├── configuracion.cpp   config recibida y última comida por mascota
 │   ├── calibracion.cpp     escalas, taras, flujos y distancias
+│   ├── expansor.cpp        MCP23017
+│   ├── tof.cpp             3× VL53L0X (presencia y niveles)
+│   ├── indicadores.cpp     WS2812, buzzer y botón
 │   ├── basculas.cpp        HX711
-│   ├── nivel_tolva.cpp     ultrasónicos y HOPPER_LOW
-│   ├── dispensador.cpp     servos, control por peso, atasco (JAM)
+│   ├── nivel_tolva.cpp     nivel con los ToF y HOPPER_LOW
+│   ├── dispensador.cpp     NEMA17/TMC2209, control por peso, atasco (JAM)
 │   ├── vision.cpp          cámara, TFLite Micro, subida de fotos dudosas
 │   ├── rfid.cpp            RDM6300
 │   ├── visitas.cpp         ciclo de visita (reconocer → dispensar → pesar → publicar)
@@ -90,7 +109,7 @@ esp32s3/
    pio run -e esp32s3cam -t uploadfs
    ```
    `uploadfs` borra LittleFS completo (config, cola y calibración): hazlo solo la primera vez.
-4. Compila y flashea por USB (en la XIAO usa `-e xiao_s3`). Si no entra en modo de descarga, deja presionado BOOT al conectar:
+4. Compila y flashea por USB. Si no entra en modo de descarga, deja presionado BOOT al conectar:
    ```bash
    pio run -e esp32s3cam -t upload
    pio device monitor
@@ -125,10 +144,10 @@ Los valores se guardan en `/calibracion.json` y sobreviven reinicios y OTA.
 ## Cómo funciona
 
 - **Config**: llega retenida en `feeder/{id}/config` (mascotas, horarios, intervalo mínimo, zona horaria). Se valida completa; si algo está mal se conserva la anterior. Se guarda en LittleFS para funcionar sin la Pi.
-- **Hora**: NTP contra la Pi y `pool.ntp.org`; si NTP no responde se usa `gateway/time`. Sin hora válida no se sirven horarios ni se publica status.
+- **Hora**: al arrancar se toma del DS3231; luego NTP contra la Pi y `pool.ntp.org`, y si NTP no responde se usa `gateway/time`. Cada hora buena se guarda en el DS3231. Sin hora válida no se sirven horarios ni se publica status.
 - **Horarios**: cada horario abre una comida para su mascota (o para todas si `petId` es null) durante `VENTANA_COMIDA_MIN` (3 h). La comida se sirve cuando la mascota llega al plato y nunca antes de `minIntervalHours` desde su comida anterior (también cuentan los dispensados manuales).
-- **Visita**: el PIR, un RFID nuevo o un cambio de peso en un plato inicia la visita. Se toman 3 fotos y se promedian; con confianza menor a `UMBRAL_CONFIANZA` la foto se sube a la Pi (`POST /photos`). Perro/Gato se asocian a la mascota de esa especie (con varias de la misma especie decide el RFID o, si no hay, la única a la que le toca comer). Si le toca, se dispensa `gramsPerMeal` menos lo que ya hay en el plato. Nada nunca dispara el dispensador. Cuando deja de haber presencia 20 s se publica `visit` con el peso antes, lo dispensado y el peso después.
-- **Atasco**: si durante el dispensado el plato no sube 1 g en 4 s, el servo gira en reversa 0.4 s y lo intenta otra vez; si sigue igual se detiene y publica `event` `JAM`.
+- **Visita**: el VL53L0X de presencia (algo a menos de `PRESENCIA_UMBRAL_MM`), un RFID nuevo o un cambio de peso en un plato inicia la visita. Se toman 3 fotos y se promedian; con confianza menor a `UMBRAL_CONFIANZA` la foto se sube a la Pi (`POST /photos`). Perro/Gato se asocian a la mascota de esa especie (con varias de la misma especie decide el RFID o, si no hay, la única a la que le toca comer). Si le toca, se dispensa `gramsPerMeal` menos lo que ya hay en el plato. Nada nunca dispara el dispensador. Cuando deja de haber presencia 20 s se publica `visit` con el peso antes, lo dispensado y el peso después.
+- **Atasco**: si durante el dispensado el plato no sube 1 g en 4 s, el motor gira en reversa 0.4 s y lo intenta otra vez; si sigue igual se detiene y publica `event` `JAM`.
 - **Tolva baja**: debajo de 15 % se publica `HOPPER_LOW` una vez; se rearma al pasar de 25 %.
 - **Status**: retenido cada 60 s y cuando cambia algo relevante (5 % de tolva, 10 g de plato, versión del modelo). LWT `{ "online": false }`.
 - **Sin conexión**: visitas, eventos y resultados van a una cola en LittleFS (`/cola.txt`, 300 mensajes) y solo salen de ella cuando llega el PUBACK. Al reconectar o reiniciar se reenvían en orden; la Pi descarta duplicados por `eventId` / `id`. Las fotos dudosas no se guardan si la Pi no responde.

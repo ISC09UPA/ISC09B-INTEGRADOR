@@ -3,7 +3,7 @@
 Arquitectura:
 
 ```
-ESP32-S3 (cámara + modelo + servos + celdas de carga)
+ESP32-S3 (cámara + modelo + motores a pasos + celdas de carga)
    │  WiFi LAN, MQTT (Mosquitto en la Pi, puerto 1883, usuario/clave por alimentador)
    │  HTTP LAN a la Pi (puerto 8080): descarga OTA y subida de fotos dudosas
    ▼
