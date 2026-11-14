@@ -1,7 +1,12 @@
 using System.Text.Json.Serialization;
 using EstacionamientoInteligente.API.Middleware;
+using EstacionamientoInteligente.Application;
+using EstacionamientoInteligente.Infrastructure;
+using EstacionamientoInteligente.Infrastructure.Data;
+using EstacionamientoInteligente.Infrastructure.Locales;
 using EstacionamientoInteligente.Infrastructure.Seguridad;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 
@@ -24,7 +29,6 @@ builder.Services.AddCors(o => o.AddDefaultPolicy(p => p.AllowAnyOrigin().AllowAn
 // JWT: la app manda "Authorization: Bearer <token>" y aquí se valida en cada petición.
 // Firma, emisor, audiencia y expiración deben coincidir; si no, responde 401.
 var opcionesJwt = builder.Configuration.GetSection(OpcionesJwt.Seccion).Get<OpcionesJwt>() ?? new OpcionesJwt();
-builder.Services.Configure<OpcionesJwt>(builder.Configuration.GetSection(OpcionesJwt.Seccion));
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(o =>
@@ -46,15 +50,30 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 builder.Services.AddAuthorization();
 
-// PENDIENTE (cuando existan Application e Infrastructure):
-//   builder.Services.AddApplication();
-//   builder.Services.AddInfrastructure(builder.Configuration);  ← ahí se registra GeneradorToken
-//   [Authorize(Roles = ...)] en los controllers, SignalR (/hubs/estacionamiento) y Azure Monitor.
+// Services de Application y lo que usan de Infrastructure (base, DAOs, JWT, fotos, maqueta).
+builder.Services.AddApplication();
+builder.Services.AddInfrastructure(builder.Configuration);
+
+// PENDIENTE (Fase 4): SignalR (/hubs/estacionamiento).
 
 var app = builder.Build();
 
+// En desarrollo (SQLite) crea la base, las tablas y los 4 cajones si faltan; siempre crea el administrador si no existe.
+await InicializadorBaseDatos.InicializarAsync(
+    app.Services,
+    crearTablas: app.Configuration.GetValue<bool>("BaseDatos:CrearTablasAlArrancar"));
+
 // Va primero para atrapar las excepciones de todo lo que viene después.
 app.UseExceptionHandler();
+
+// Fotos guardadas en la compu mientras no exista Blob Storage (ver AlmacenFotosLocal).
+var carpetaFotos = Path.Combine(app.Environment.ContentRootPath, AlmacenFotosLocal.Carpeta);
+Directory.CreateDirectory(carpetaFotos);
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(carpetaFotos),
+    RequestPath = AlmacenFotosLocal.RutaPublica
+});
 
 if (app.Environment.IsDevelopment())
 {

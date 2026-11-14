@@ -6,3 +6,11 @@ obj/
 # Llaves locales: nunca se suben
 .env
 appsettings.*.local.json
+
+# Base SQLite de desarrollo (se crea sola al arrancar la API)
+*.db
+*.db-shm
+*.db-wal
+
+# Fotos que guarda la API mientras no exista Blob Storage
+fotos-locales/
