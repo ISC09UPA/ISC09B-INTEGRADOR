@@ -7,7 +7,7 @@
 
 namespace logica {
 
-// Distancia del sensor ultrasónico a la comida -> % de llenado (0..100).
+// Distancia del sensor de nivel a la comida -> % de llenado (0..100).
 // NAN si la distancia no es válida o la calibración está al revés.
 double porcentajeTolva(double distanciaCm, double distanciaVaciaCm, double distanciaLlenaCm);
 

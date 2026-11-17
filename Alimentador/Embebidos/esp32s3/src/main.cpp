@@ -14,6 +14,8 @@
 #include "credenciales.h"
 #include "dispensador.h"
 #include "enlace_mqtt.h"
+#include "expansor.h"
+#include "indicadores.h"
 #include "logica/protocolo.h"
 #include "logica/sensores.h"
 #include "nivel_tolva.h"
@@ -21,6 +23,7 @@
 #include "red_wifi.h"
 #include "reloj.h"
 #include "rfid.h"
+#include "tof.h"
 #include "vision.h"
 #include "visitas.h"
 
@@ -81,9 +84,25 @@ void alConectar() {
   estadoPendiente = true;
 }
 
-void led(bool encendido) {
-  if (PIN_LED_ESTADO < 0) return;
-  digitalWrite(PIN_LED_ESTADO, encendido != LED_ACTIVO_EN_BAJO ? HIGH : LOW);
+bool tolvaBaja() {
+  for (int tolva = 1; tolva <= 2; tolva++) {
+    float pct = nivel::porcentaje(tolva);
+    if (!isnan(pct) && pct < TOLVA_BAJA_PCT) return true;
+  }
+  return false;
+}
+
+void actualizarLed() {
+  using indicadores::Color;
+  if (!expansor::disponible()) {
+    indicadores::color(Color::Rojo);
+  } else if (!mqtt::conectado()) {
+    indicadores::color((millis() / 500) % 2 == 0 ? Color::Azul : Color::Apagado);
+  } else if (tolvaBaja()) {
+    indicadores::color(Color::Amarillo);
+  } else {
+    indicadores::color(Color::Verde);
+  }
 }
 
 }  // namespace
@@ -95,15 +114,17 @@ void setup() {
   if (!logica::feederIdValido(FEEDER_ID)) {
     Serial.println("FEEDER_ID invalido en secrets.h (solo letras, numeros, '-' y '_')");
   }
-  if (PIN_LED_ESTADO >= 0) pinMode(PIN_LED_ESTADO, OUTPUT);
-  led(true);
+  indicadores::iniciar();
+  // El I2C va primero: el expansor deja motores deshabilitados y los ToF de nivel apagados.
+  if (!expansor::iniciar()) Serial.println("ERROR: MCP23017 sin respuesta; motores deshabilitados");
 
   if (!almacenamiento::iniciar()) Serial.println("ERROR: LittleFS no disponible");
   ota::alArrancar();
   calibracion::cargar();
-  reloj::iniciar();
+  reloj::iniciar();  // toma la hora del DS3231 si la tiene
   configuracion::cargar();
 
+  tof::iniciar();
   dispensador::iniciar();
   basculas::iniciar();
   nivel::iniciar();
@@ -125,6 +146,8 @@ void loop() {
   mqtt::atender();
   ota::atender();
 
+  reloj::atender();
+  tof::atender();
   basculas::atender();
   nivel::atender();
   rfid::atender();
@@ -134,6 +157,8 @@ void loop() {
 
   atenderEstado();
   consola::atender();
-  led(!mqtt::conectado() && (millis() / 500) % 2 == 0);
+  indicadores::atender();
+  if (indicadores::botonPresionado()) estadoPendiente = true;
+  actualizarLed();
   delay(5);
 }

@@ -1,6 +1,6 @@
 #pragma once
 
-// Nivel de las tolvas con sensores ultrasónicos (un TRIG compartido, un ECHO por tolva).
+// Nivel de las tolvas con un VL53L0X en la tapa de cada una (ver tof.h).
 // Cada NIVEL_PERIODO_MS toma NIVEL_MUESTRAS lecturas por tolva, una por vuelta del loop para no
 // bloquear, y usa la mediana. Publica HOPPER_LOW al bajar de TOLVA_BAJA_PCT.
 

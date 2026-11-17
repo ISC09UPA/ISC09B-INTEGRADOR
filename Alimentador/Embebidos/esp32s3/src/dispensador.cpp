@@ -6,6 +6,7 @@
 #include "basculas.h"
 #include "calibracion.h"
 #include "config.h"
+#include "expansor.h"
 #include "logica/racion.h"
 #include "publicador.h"
 
@@ -13,9 +14,11 @@ namespace dispensador {
 
 namespace {
 
-// PWM de 50 Hz con 14 bits: un periodo de 20 000 µs son 16 384 cuentas.
-constexpr uint32_t SERVO_FRECUENCIA_HZ = 50;
-constexpr uint8_t SERVO_RESOLUCION_BITS = 14;
+// El STEP de cada TMC2209 es una señal cuadrada de LEDC: cada flanco de subida es un micropaso.
+// EN (activo en bajo) y DIR van por el MCP23017. El motor se deshabilita al parar para que no
+// se caliente; el tornillo sinfín no necesita par de retención.
+constexpr uint8_t STEP_RESOLUCION_BITS = 8;
+constexpr uint32_t STEP_DUTY_MARCHA = 128;  // 50 %
 constexpr int CANALES_LEDC[2] = {4, 5};  // la cámara usa el canal 0 para XCLK
 
 enum class Fase { Libre, Dispensando, Reversa };
@@ -27,18 +30,30 @@ AlTerminar alTerminar;
 uint32_t reversaDesdeMs = 0;
 uint8_t reintentos = 0;
 
-int pinServo(int tolva) { return tolva == 1 ? PIN_SERVO_PERRO : PIN_SERVO_GATO; }
+int pinStep(int tolva) { return tolva == 1 ? PIN_STEP_PERRO : PIN_STEP_GATO; }
+uint8_t bitEn(int tolva) { return tolva == 1 ? MCP_EN1 : MCP_EN2; }
+uint8_t bitDir(int tolva) { return tolva == 1 ? MCP_DIR1 : MCP_DIR2; }
 
-void pulso(int tolva, uint16_t microsegundos) {
-  uint32_t cuentas = (static_cast<uint32_t>(microsegundos) << SERVO_RESOLUCION_BITS) / 20000;
+void pasos(int tolva, bool marcha) {
 #if ESP_ARDUINO_VERSION_MAJOR >= 3
-  ledcWrite(pinServo(tolva), cuentas);
+  ledcWrite(pinStep(tolva), marcha ? STEP_DUTY_MARCHA : 0);
 #else
-  ledcWrite(CANALES_LEDC[tolva - 1], cuentas);
+  ledcWrite(CANALES_LEDC[tolva - 1], marcha ? STEP_DUTY_MARCHA : 0);
 #endif
 }
 
-void parar(int tolva) { pulso(tolva, SERVO_PULSO_PARO_US); }
+// Si el motor gira al revés, se invierte aquí o se voltea un par de bobinas en J11/J12.
+void girar(int tolva, bool avance) {
+  expansor::escribir(bitDir(tolva), avance);
+  expansor::escribir(bitEn(tolva), false);
+  delayMicroseconds(5);  // DIR debe estar estable antes del primer paso
+  pasos(tolva, true);
+}
+
+void parar(int tolva) {
+  pasos(tolva, false);
+  expansor::escribir(bitEn(tolva), true);
+}
 
 logica::ParametrosDispensado parametros(int tolva) {
   logica::ParametrosDispensado p;
@@ -78,10 +93,10 @@ void terminar(bool atasco, const char* error) {
 void iniciar() {
   for (int tolva = 1; tolva <= 2; tolva++) {
 #if ESP_ARDUINO_VERSION_MAJOR >= 3
-    ledcAttach(pinServo(tolva), SERVO_FRECUENCIA_HZ, SERVO_RESOLUCION_BITS);
+    ledcAttach(pinStep(tolva), MOTOR_PASOS_HZ, STEP_RESOLUCION_BITS);
 #else
-    ledcSetup(CANALES_LEDC[tolva - 1], SERVO_FRECUENCIA_HZ, SERVO_RESOLUCION_BITS);
-    ledcAttachPin(pinServo(tolva), CANALES_LEDC[tolva - 1]);
+    ledcSetup(CANALES_LEDC[tolva - 1], MOTOR_PASOS_HZ, STEP_RESOLUCION_BITS);
+    ledcAttachPin(pinStep(tolva), CANALES_LEDC[tolva - 1]);
 #endif
     parar(tolva);
   }
@@ -91,6 +106,15 @@ bool ocupado() { return fase != Fase::Libre; }
 
 bool dispensar(int tolva, double gramos, AlTerminar cb) {
   if (ocupado() || (tolva != 1 && tolva != 2) || !(gramos > 0)) return false;
+  if (!expansor::disponible()) {
+    // Sin el MCP23017 no se pueden habilitar los TMC2209.
+    Resultado r;
+    r.tolva = tolva;
+    r.objetivoG = gramos;
+    r.error = "expansor sin respuesta";
+    if (cb) cb(r);
+    return true;
+  }
   float peso = basculas::gramos(tolva);
   if (isnan(peso)) {
     // Sin báscula no se puede controlar la ración ni detectar atascos.
@@ -106,7 +130,7 @@ bool dispensar(int tolva, double gramos, AlTerminar cb) {
   reintentos = 0;
   control.iniciar(gramos, peso, millis(), parametros(tolva));
   fase = Fase::Dispensando;
-  pulso(tolva, SERVO_PULSO_AVANCE_US);
+  girar(tolva, true);
   log_i("Dispensando %.1f g de la tolva %d (plato en %.1f g)", gramos, tolva, peso);
   return true;
 }
@@ -117,9 +141,9 @@ void atender() {
   float peso = basculas::gramos(tolvaActiva);
 
   if (fase == Fase::Reversa) {
-    if (ahora - reversaDesdeMs < SERVO_REVERSA_DESATASCO_MS) return;
+    if (ahora - reversaDesdeMs < MOTOR_REVERSA_DESATASCO_MS) return;
     control.reanudar(ahora, peso);
-    pulso(tolvaActiva, SERVO_PULSO_AVANCE_US);
+    girar(tolvaActiva, true);
     fase = Fase::Dispensando;
     return;
   }
@@ -133,7 +157,7 @@ void atender() {
       if (reintentos < ATASCO_REINTENTOS) {
         reintentos++;
         log_w("Posible atasco en tolva %d, reversa corta", tolvaActiva);
-        pulso(tolvaActiva, SERVO_PULSO_REVERSA_US);
+        girar(tolvaActiva, false);
         reversaDesdeMs = ahora;
         fase = Fase::Reversa;
       } else {
@@ -172,8 +196,8 @@ bool calibrarFlujo(int tolva, double segundos, double& gramosPorSegundo) {
   };
 
   float antes = pesoEstable();
-  if (isnan(antes)) return false;
-  pulso(tolva, SERVO_PULSO_AVANCE_US);
+  if (isnan(antes) || !expansor::disponible()) return false;
+  girar(tolva, true);
   delay(static_cast<uint32_t>(segundos * 1000));
   parar(tolva);
   delay(DISPENSADO_ASENTAR_MS);

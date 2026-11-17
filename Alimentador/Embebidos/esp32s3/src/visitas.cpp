@@ -13,6 +13,7 @@
 #include "publicador.h"
 #include "reloj.h"
 #include "rfid.h"
+#include "tof.h"
 #include "vision.h"
 
 namespace visitas {
@@ -42,19 +43,25 @@ void cambiarFase(Fase nueva) {
   faseDesdeMs = millis();
 }
 
+// Sensor VL53L0X frente a los platos: algo dentro del umbral es una mascota.
+bool tofPresencia() {
+  uint16_t mm = tof::distanciaMm(tof::Presencia);
+  return mm > 0 && mm < PRESENCIA_UMBRAL_MM;
+}
+
 bool hayPresencia() {
-  bool pir = USAR_PIR && digitalRead(PIN_PRESENCIA) == HIGH;
+  bool cerca = tofPresencia();
   bool pesoCambio = false;
   for (int i = 0; i < 2; i++) {
     float g = basculas::gramos(i + 1);
     if (!isnan(g) && !isnan(ultimoPeso[i]) && fabsf(g - ultimoPeso[i]) > 1.0f) pesoCambio = true;
     ultimoPeso[i] = g;
   }
-  return pir || pesoCambio;
+  return cerca || pesoCambio;
 }
 
 bool debeEmpezar() {
-  if (USAR_PIR && digitalRead(PIN_PRESENCIA) == HIGH) return true;
+  if (tofPresencia()) return true;
   if (rfid::hayLecturaNueva()) return true;
   for (int i = 0; i < 2; i++) {
     float g = basculas::gramos(i + 1);
@@ -174,9 +181,7 @@ void terminar() {
 
 }  // namespace
 
-void iniciar() {
-  if (USAR_PIR) pinMode(PIN_PRESENCIA, INPUT);
-}
+void iniciar() {}
 
 void atender() {
   switch (fase) {

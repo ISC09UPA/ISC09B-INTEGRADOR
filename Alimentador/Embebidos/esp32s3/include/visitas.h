@@ -1,7 +1,7 @@
 #pragma once
 
 // Ciclo de una visita al plato:
-//   1. Presencia (PIR, RFID nuevo o cambio de peso en un plato) inicia la visita y guarda el peso
+//   1. Presencia (VL53L0X frente a los platos, RFID nuevo o cambio de peso en un plato) inicia la visita y guarda el peso
 //      de los platos de antes.
 //   2. Se toman FOTOS_POR_VISITA fotos y se clasifican; si la confianza es baja se sube la foto a
 //      la Pi. Con la clase (y el RFID si hay) se identifica a la mascota.
