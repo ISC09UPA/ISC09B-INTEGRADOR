@@ -25,6 +25,12 @@ public static class DependencyInjection
         services.AddScoped<IOtaService, OtaService>();
         services.AddScoped<IDispositivoService, DispositivoService>();
         services.AddScoped<IMonitoreoService, MonitoreoService>();
+
+        services.AddScoped<IAdminResumenService, AdminResumenService>();
+        services.AddScoped<IAdminUsuarioService, AdminUsuarioService>();
+        services.AddScoped<IAdminAlimentadorService, AdminAlimentadorService>();
+        services.AddScoped<IAdminEmbebidosService, AdminEmbebidosService>();
+        services.AddScoped<IAdminOtaService, AdminOtaService>();
         return services;
     }
 }

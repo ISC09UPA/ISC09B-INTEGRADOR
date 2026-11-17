@@ -122,3 +122,50 @@ public interface IMonitoreoService
     /// <summary>No ha comido y baja de apetito (RF-17, RF-26).</summary>
     Task DetectarAnomaliasAsync(CancellationToken ct = default);
 }
+
+// --- Panel de administración (/api/admin). La política "Administrador" de la API protege el acceso. ---
+
+/// <summary>Cifras generales del sistema para la portada del panel.</summary>
+public interface IAdminResumenService
+{
+    Task<ResumenAdminDto> ObtenerAsync(CancellationToken ct = default);
+}
+
+/// <summary>Cuentas de usuario: rol de administrador y activación.</summary>
+public interface IAdminUsuarioService
+{
+    Task<Pagina<UsuarioAdminDto>> ListarAsync(ConsultaUsuarios consulta, CancellationToken ct = default);
+    Task<UsuarioAdminDetalleDto> ObtenerAsync(int id, CancellationToken ct = default);
+    /// <summary>Nadie se quita su propio rol ni se le quita al último administrador activo.</summary>
+    Task<UsuarioAdminDto> CambiarAdministradorAsync(int id, CambiarAdministradorRequest request, CancellationToken ct = default);
+    /// <summary>Desactivar revoca los refresh tokens; mismas reglas que el rol.</summary>
+    Task<UsuarioAdminDto> CambiarActivoAsync(int id, CambiarActivoRequest request, CancellationToken ct = default);
+}
+
+/// <summary>Consulta de cualquier alimentador sin ser su miembro.</summary>
+public interface IAdminAlimentadorService
+{
+    Task<Pagina<AlimentadorAdminDto>> ListarAsync(ConsultaAlimentadores consulta, CancellationToken ct = default);
+    Task<AlimentadorAdminDetalleDto> ObtenerAsync(int id, CancellationToken ct = default);
+}
+
+/// <summary>Raspberry Pi, ESP32, eventos y fotos dudosas.</summary>
+public interface IAdminEmbebidosService
+{
+    Task<IReadOnlyList<GatewayAdminDto>> ListarGatewaysAsync(CancellationToken ct = default);
+    /// <summary>Como IGatewayService.RegenerarClaveAsync pero para cualquier Pi, sin ser su propietario.</summary>
+    Task<GatewayClaveResponse> RegenerarClaveAsync(int gatewayId, CancellationToken ct = default);
+    Task<Pagina<EventoAdminDto>> ListarEventosAsync(ConsultaEventos consulta, CancellationToken ct = default);
+    Task<Pagina<FotoDudosaAdminDto>> ListarFotosAsync(ConsultaFotos consulta, CancellationToken ct = default);
+    /// <summary>Asigna la clase correcta a una foto dudosa para reentrenar el modelo (RF-14).</summary>
+    Task<FotoDudosaAdminDto> RevisarFotoAsync(int id, RevisarFotoRequest request, CancellationToken ct = default);
+}
+
+/// <summary>Despliegues OTA masivos sin ser dueño de los alimentadores (RF-15).</summary>
+public interface IAdminOtaService
+{
+    Task<DespliegueOtaResponse> DesplegarAsync(CrearDespliegueOtaRequest request, CancellationToken ct = default);
+    Task<Pagina<ComandoAdminDto>> ListarAsync(ConsultaDespliegues consulta, CancellationToken ct = default);
+    /// <summary>Solo una OTA pendiente (aún no entregada a la Pi); queda como fallida.</summary>
+    Task<ComandoAdminDto> CancelarAsync(int id, CancellationToken ct = default);
+}
