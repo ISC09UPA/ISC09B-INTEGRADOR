@@ -11,6 +11,7 @@ using AlimentadorInteligente.Infrastructure;
 using AlimentadorInteligente.Infrastructure.Options;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 
@@ -71,7 +72,12 @@ builder.Services
         };
     })
     .AddScheme<AuthenticationSchemeOptions, DeviceKeyAuthenticationHandler>(DeviceKeyAuthenticationHandler.Esquema, null);
-builder.Services.AddAuthorization();
+// Administración: el rol se consulta en la BD en cada petición, no se guarda en el JWT
+builder.Services.AddScoped<IAuthorizationHandler, AdministradorAuthorizationHandler>();
+builder.Services.AddAuthorization(o => o.AddPolicy(RequisitoAdministrador.Politica, p => p
+    .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
+    .RequireAuthenticatedUser()
+    .AddRequirements(new RequisitoAdministrador())));
 
 var app = builder.Build();
 
