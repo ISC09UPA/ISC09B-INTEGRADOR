@@ -3,7 +3,9 @@ using AlimentadorInteligente.Application.Abstractions;
 using AlimentadorInteligente.Application.DTOs;
 using AlimentadorInteligente.Application.Services;
 using AlimentadorInteligente.Domain.Entities;
+using AlimentadorInteligente.Infrastructure.Options;
 using AlimentadorInteligente.Infrastructure.Persistence;
+using AlimentadorInteligente.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -11,9 +13,16 @@ namespace AlimentadorInteligente.Tests;
 
 internal sealed class NotificadorFalso : INotificadorTiempoReal
 {
+    /// <summary>Comandos enviados por ComandoActualizado, con el alimentador al que se mandaron.</summary>
+    public List<(int AlimentadorId, ComandoDto Comando)> Comandos { get; } = [];
+
     public Task VisitaRegistradaAsync(int alimentadorId, VisitaDto visita, CancellationToken ct = default) => Task.CompletedTask;
     public Task AlertaCreadaAsync(int alimentadorId, AlertaDto alerta, CancellationToken ct = default) => Task.CompletedTask;
-    public Task ComandoActualizadoAsync(int alimentadorId, ComandoDto comando, CancellationToken ct = default) => Task.CompletedTask;
+    public Task ComandoActualizadoAsync(int alimentadorId, ComandoDto comando, CancellationToken ct = default)
+    {
+        Comandos.Add((alimentadorId, comando));
+        return Task.CompletedTask;
+    }
     public Task EstadoAlimentadorAsync(int alimentadorId, EstadoAlimentadorDto estado, CancellationToken ct = default) => Task.CompletedTask;
 }
 
@@ -58,6 +67,7 @@ internal sealed class Escenario : IDisposable
 
     public AppDbContext Db { get; }
     public ArchivosFalsos Archivos { get; } = new();
+    public NotificadorFalso Notificador { get; } = new();
     public Gateway Gateway { get; }
     public Alimentador Alimentador { get; }
 
@@ -125,6 +135,38 @@ internal sealed class Escenario : IDisposable
         Db.SaveChanges();
         return usuario;
     }
+
+    // --- Autenticación y administración ---
+
+    public AuthService Auth(params string[] correosIniciales)
+    {
+        var jwt = Microsoft.Extensions.Options.Options.Create(new JwtOptions { Key = new string('k', 32) });
+        return new(Db, new TokenService(jwt), new PasswordHasher(), new UsuarioFalso(DuenoId),
+            new AdminOpciones { CorreosIniciales = correosIniciales });
+    }
+
+    /// <summary>Da el rol de administrador al usuario (por omisión, al dueño del escenario).</summary>
+    public Usuario HacerAdministrador(int usuarioId = DuenoId)
+    {
+        var usuario = Db.Usuarios.Find(usuarioId)!;
+        usuario.EsAdministrador = true;
+        Db.SaveChanges();
+        return usuario;
+    }
+
+    public AdminUsuarioService AdminUsuarios(int usuarioId = DuenoId) => new(Db, new UsuarioFalso(usuarioId));
+
+    public AdminAlimentadorService AdminAlimentadores() => new(Db);
+
+    public AdminEmbebidosService AdminEmbebidos()
+    {
+        var jwt = Microsoft.Extensions.Options.Options.Create(new JwtOptions { Key = new string('k', 32) });
+        return new(Db, new TokenService(jwt), Archivos);
+    }
+
+    public AdminOtaService AdminOta(int usuarioId = DuenoId) => new(Db, new UsuarioFalso(usuarioId), Notificador);
+
+    public AdminResumenService AdminResumen() => new(Db);
 
     public void Dispose() => Db.Dispose();
 }
