@@ -20,7 +20,7 @@ public static class DependencyInjection
         services.Configure<JwtOptions>(config.GetSection(JwtOptions.Seccion));
         services.Configure<BlobStorageOptions>(config.GetSection(BlobStorageOptions.Seccion));
         services.Configure<ExpoPushOptions>(config.GetSection(ExpoPushOptions.Seccion));
-        services.AddSingleton(config.GetSection(OtaOpciones.Seccion).Get<OtaOpciones>() ?? new OtaOpciones());
+        services.AddSingleton(config.GetSection(AdminOpciones.Seccion).Get<AdminOpciones>() ?? new AdminOpciones());
 
         services.AddDbContext<AppDbContext>(o => o.UseNpgsql(config.GetConnectionString("Postgres")));
         services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());

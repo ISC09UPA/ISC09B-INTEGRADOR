@@ -9,8 +9,6 @@ namespace AlimentadorInteligente.Tests;
 
 public class OtaYGatewaysTests
 {
-    private const string Admin = "diego@example.com";
-
     private static MemoryStream Archivo(params byte[] bytes) => new(bytes);
 
     private static async Task<ArtefactoOta> AgregarArtefactoAsync(Escenario e, TipoArtefactoOta tipo = TipoArtefactoOta.Firmware, string version = "1.2.0")
@@ -44,7 +42,7 @@ public class OtaYGatewaysTests
         using var e = new Escenario();
         byte[] bytes = [1, 2, 3, 4, 5];
 
-        var creado = await e.Ota(Admin).PublicarAsync(
+        var creado = await e.Ota().PublicarAsync(
             new PublicarArtefactoRequest("firmware", "1.3.0", "alimentador.bin"), Archivo(bytes));
 
         Assert.Equal(Convert.ToHexStringLower(SHA256.HashData(bytes)), creado.Sha256);
@@ -58,7 +56,7 @@ public class OtaYGatewaysTests
     public async Task La_version_es_unica_por_tipo()
     {
         using var e = new Escenario();
-        var ota = e.Ota(Admin);
+        var ota = e.Ota();
         await ota.PublicarAsync(new PublicarArtefactoRequest("firmware", "1.0.0", "fw.bin"), Archivo(1));
 
         await Assert.ThrowsAsync<ConflictoException>(
@@ -73,7 +71,7 @@ public class OtaYGatewaysTests
     {
         using var e = new Escenario();
 
-        await Assert.ThrowsAsync<ProhibidoException>(() => e.Ota("otro@example.com")
+        await Assert.ThrowsAsync<ProhibidoException>(() => e.Ota(esAdministrador: false)
             .PublicarAsync(new PublicarArtefactoRequest("firmware", "1.0.0", "fw.bin"), Archivo(1)));
 
         Assert.Empty(e.Archivos.Blobs);
@@ -88,7 +86,7 @@ public class OtaYGatewaysTests
     {
         using var e = new Escenario();
 
-        await Assert.ThrowsAsync<ReglaNegocioException>(() => e.Ota(Admin)
+        await Assert.ThrowsAsync<ReglaNegocioException>(() => e.Ota()
             .PublicarAsync(new PublicarArtefactoRequest(tipo, version, "fw.bin"), Archivo(bytes)));
     }
 
@@ -101,8 +99,8 @@ public class OtaYGatewaysTests
         var libre = await AgregarArtefactoAsync(e, version: "1.1.0");
         e.Archivos.Blobs[$"ota/{libre.BlobNombre}"] = [1];
 
-        await Assert.ThrowsAsync<ConflictoException>(() => e.Ota(Admin).EliminarAsync(usado.Id));
-        await e.Ota(Admin).EliminarAsync(libre.Id);
+        await Assert.ThrowsAsync<ConflictoException>(() => e.Ota().EliminarAsync(usado.Id));
+        await e.Ota().EliminarAsync(libre.Id);
 
         Assert.Equal(usado.Id, (await e.Db.ArtefactosOta.SingleAsync()).Id);
         Assert.Empty(e.Archivos.Blobs);

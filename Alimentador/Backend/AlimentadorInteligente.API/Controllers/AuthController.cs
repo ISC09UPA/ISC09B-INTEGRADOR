@@ -28,6 +28,12 @@ public class AuthController(IAuthService auth) : ControllerBase
         return NoContent();
     }
 
+    /// <summary>Usuario de la sesión actual y si es administrador.</summary>
+    [Authorize]
+    [HttpGet("yo")]
+    public async Task<ActionResult<YoDto>> Yo(CancellationToken ct)
+        => Ok(await auth.ObtenerYoAsync(ct));
+
     /// <summary>Registra el token de Expo del celular para recibir notificaciones push.</summary>
     [Authorize]
     [HttpPut("push-token")]

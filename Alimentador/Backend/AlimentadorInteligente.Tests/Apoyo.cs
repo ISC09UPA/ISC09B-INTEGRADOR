@@ -105,8 +105,13 @@ internal sealed class Escenario : IDisposable
     public MascotaService Mascotas()
         => new(Db, new AccesoAlimentador(Db, new UsuarioFalso(DuenoId)));
 
-    public OtaService Ota(params string[] administradores)
-        => new(Db, new UsuarioFalso(DuenoId), Archivos, new OtaOpciones { Administradores = administradores });
+    /// <summary>Servicio OTA usado por el dueño; con <paramref name="esAdministrador"/> se le da o quita el rol.</summary>
+    public OtaService Ota(bool esAdministrador = true)
+    {
+        Db.Usuarios.Find(DuenoId)!.EsAdministrador = esAdministrador;
+        Db.SaveChanges();
+        return new(Db, new UsuarioFalso(DuenoId), Archivos);
+    }
 
     public AlimentadorService Alimentadores(int usuarioId = DuenoId)
         => new(Db, new UsuarioFalso(usuarioId), new AccesoAlimentador(Db, new UsuarioFalso(usuarioId)));

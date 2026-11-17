@@ -10,6 +10,7 @@ public interface IAuthService
     Task<AuthResponse> RefreshAsync(RefreshRequest request, CancellationToken ct = default);
     Task LogoutAsync(RefreshRequest request, CancellationToken ct = default);
     Task GuardarPushTokenAsync(PushTokenRequest request, CancellationToken ct = default);
+    Task<YoDto> ObtenerYoAsync(CancellationToken ct = default);
 }
 
 /// <summary>Verifica el rol del usuario actual en un alimentador (RF-19).</summary>
@@ -85,7 +86,7 @@ public interface IComandoService
     Task<ComandoDto> LanzarOtaAsync(int alimentadorId, LanzarOtaRequest request, CancellationToken ct = default);
 }
 
-/// <summary>Publicación de firmware y modelos para OTA (RF-15). Solo administradores (Ota:Administradores).</summary>
+/// <summary>Publicación de firmware y modelos para OTA (RF-15). Solo administradores (Usuario.EsAdministrador).</summary>
 public interface IOtaService
 {
     /// <summary>Sube el archivo al contenedor "ota", calcula SHA-256 y tamaño y registra el artefacto.</summary>
