@@ -37,13 +37,7 @@ dotnet user-secrets set "BlobStorage:ConnectionString" "<cadena de conexión con
 
 En Azure App Service se configuran como variables de entorno (`Jwt__Key`, `ConnectionStrings__Postgres`, `BlobStorage__ConnectionString`).
 
-Quién puede publicar artefactos OTA se define con la lista de correos `Ota:Administradores` (vacía = nadie):
-
-```bash
-dotnet user-secrets set "Ota:Administradores:0" "diego@example.com"
-```
-
-En App Service: `Ota__Administradores__0`, `Ota__Administradores__1`, etc.
+El primer administrador se define con la lista de correos `Admin:CorreosIniciales` (ver [Administración](#administración)).
 
 ## Ejecutar
 
@@ -76,7 +70,7 @@ Roles por alimentador (RF-19): **Dueño** configura todo; **Cuidador** consulta 
 
 Orden de alta: crear la cuenta, registrar la Pi con `POST /api/gateways` (la clave solo se muestra esa vez) y crear el alimentador con su `gatewayDeviceId`. Solo quien registró una Pi puede ligarle alimentadores. Después se puede cambiar de Pi con `PUT /api/alimentadores/{id}/gateway` o quitarla con `DELETE`; ambos suben la versión de configuración para que la Pi nueva la descargue.
 
-Publicar artefactos OTA es exclusivo de los correos en `Ota:Administradores`; lanzar una actualización en un alimentador es del Dueño.
+Publicar y borrar artefactos OTA es exclusivo de los administradores (`EsAdministrador`); lanzar una actualización en un alimentador es del Dueño (o de un administrador desde `/api/admin/ota/despliegues`).
 
 ## Endpoints
 
@@ -84,7 +78,8 @@ Publicar artefactos OTA es exclusivo de los correos en `Ota:Administradores`; la
 
 | Método | Ruta | Descripción |
 | --- | --- | --- |
-| POST | `/api/auth/registro`, `/login`, `/refresh`, `/logout` | Cuenta y tokens |
+| POST | `/api/auth/registro`, `/login`, `/refresh`, `/logout` | Cuenta y tokens; la respuesta incluye `esAdministrador`. Login con la cuenta desactivada: 403; refresh: 401 |
+| GET | `/api/auth/yo` | Usuario de la sesión: `id`, `nombre`, `email`, `esAdministrador` |
 | PUT | `/api/auth/push-token` | Token de Expo para notificaciones |
 | GET/POST | `/api/gateways`, POST `/api/gateways/{id}/regenerar-clave` | Raspberry Pi del usuario y su clave |
 | GET/POST | `/api/alimentadores` | Mis alimentadores / registrar uno (quien lo crea queda como Dueño) |
@@ -104,6 +99,10 @@ Publicar artefactos OTA es exclusivo de los correos en `Ota:Administradores`; la
 | POST | `/api/ota/artefactos` | Publicar un artefacto (multipart: `tipo` = `firmware` \| `modelo`, `version`, `archivo`, máx. 32 MB). Sube al contenedor `ota` y calcula SHA-256 y tamaño. 201; 409 si la versión ya existe para ese tipo. Solo administradores |
 | DELETE | `/api/ota/artefactos/{id}` | Borrar un artefacto (y su blob) que ningún comando haya usado; 409 si ya se usó. Solo administradores |
 | POST | `/api/alimentadores/{id}/ota` | Lanzar una actualización con `{ "artefactoId": 1 }` (solo Dueño; 202, el resultado llega por SignalR) |
+
+### Panel de administración (`/api/admin`)
+
+Ver la sección [Administración](#administración).
 
 ### Raspberry Pi (`/api/device`)
 
@@ -126,6 +125,45 @@ Publicar artefactos OTA es exclusivo de los correos en `Ota:Administradores`; la
 Hub en `/hubs/alimentador`. La app llama `UnirseAlimentador(id)` y recibe:
 `VisitaRegistrada`, `AlertaCreada`, `ComandoActualizado`, `EstadoAlimentador`.
 
+## Administración
+
+Los usuarios tienen dos campos más: `EsAdministrador` y `Activo` (además de `UltimoAcceso`, que se actualiza en login y refresh).
+
+**Primer administrador.** Los correos en `Admin:CorreosIniciales` se vuelven administradores al registrarse, iniciar sesión o renovar tokens. Estar fuera de la lista nunca quita el rol; después se administra desde el panel. Sustituye a la antigua lista `Ota:Administradores`, que ya no existe.
+
+```bash
+cd AlimentadorInteligente.API
+dotnet user-secrets set "Admin:CorreosIniciales:0" "diego@example.com"
+```
+
+En App Service: `Admin__CorreosIniciales__0`, `Admin__CorreosIniciales__1`, etc. Después de configurarlo, cierra sesión y vuelve a entrar (o espera al siguiente refresh).
+
+**Política `Administrador`.** Todos los endpoints `/api/admin/*` la usan. En cada petición se lee de la BD que el usuario del JWT sea administrador y esté activo, así que **quitar el rol o desactivar la cuenta surte efecto de inmediato en el panel**. En los endpoints que no son de administración, una cuenta desactivada sigue funcionando hasta que vence su access token (**a más tardar 15 min**): al desactivarla se revocan sus refresh tokens y ya no puede iniciar sesión ni renovarlos.
+
+Reglas al cambiar el rol o el estado (400): nadie se quita su propio rol ni se desactiva a sí mismo, y no se puede quitar el rol ni desactivar al último administrador activo.
+
+El panel web (Vite, `http://localhost:5173`) ya está en `Cors:Origenes` de `appsettings.Development.json`; manda `Authorization: Bearer`, sin cookies.
+
+Paginación: `?pagina=1&tamano=25` (tamaño de 1 a 100). Las listas paginadas responden `{ "elementos": [...], "total": 137, "pagina": 1, "tamano": 25 }`.
+
+| Método | Ruta | Descripción |
+| --- | --- | --- |
+| GET | `/api/admin/resumen` | Cifras de usuarios, alimentadores, gateways, mascotas, alertas de 24 h, OTA, fotos por revisar y versiones de firmware/modelo instaladas |
+| GET | `/api/admin/usuarios?buscar=&pagina=&tamano=` | Usuarios; `buscar` filtra por nombre o correo |
+| GET | `/api/admin/usuarios/{id}` | Detalle con sus alimentadores (rol) y sus Raspberry Pi |
+| PUT | `/api/admin/usuarios/{id}/administrador` | Dar o quitar el rol: `{ "esAdministrador": true }` |
+| PUT | `/api/admin/usuarios/{id}/activo` | Activar o desactivar: `{ "activo": false }` (revoca sus refresh tokens) |
+| GET | `/api/admin/alimentadores?buscar=&estado=&pagina=&tamano=` | Alimentadores; `estado` = `todos` \| `enLinea` \| `sinConexion` \| `sinGateway`; `buscar` por código, nombre o correo del dueño |
+| GET | `/api/admin/alimentadores/{id}` | Detalle: miembros, mascotas (también las dadas de baja), horarios, últimos 20 comandos y 20 alertas |
+| GET | `/api/admin/gateways` | Todas las Raspberry Pi con su conexión y el estado de sus ESP32 |
+| POST | `/api/admin/gateways/{id}/regenerar-clave` | Clave nueva para cualquier Pi (se muestra una sola vez) |
+| GET | `/api/admin/eventos?alimentadorId=&tipo=&pagina=&tamano=` | Eventos `Jam` y `HopperLow`, del más reciente al más antiguo |
+| GET | `/api/admin/fotos?estado=&pagina=&tamano=` | Fotos dudosas; `estado` = `pendientes` (predeterminado) \| `revisadas` \| `todas`. `url` es un SAS de lectura de 15 min |
+| PUT | `/api/admin/fotos/{id}/revision` | Clase correcta de una foto ya subida: `{ "clase": "Perro" }` |
+| POST | `/api/admin/ota/despliegues` | Actualizar varios alimentadores: `{ "artefactoId": 3, "alimentadorIds": [4, 5], "omitirSiYaTieneVersion": true }` (1 a 200 ids sin repetir). Responde `creados` y `omitidos` con su motivo (no existe, OTA en curso, ya tiene esa versión) |
+| GET | `/api/admin/ota/despliegues?estado=&artefactoId=&alimentadorId=&pagina=&tamano=` | Comandos OTA |
+| POST | `/api/admin/ota/despliegues/{id}/cancelar` | Cancelar una OTA `Pendiente` (409 si ya se entregó o terminó); queda `Fallido` con `error = "Cancelado por un administrador."` |
+
 ## Tareas programadas
 
 | Tarea | Frecuencia | Qué hace |
@@ -138,6 +176,6 @@ Los días se calculan en la zona horaria de cada alimentador (`America/Mexico_Ci
 
 ## Pendientes
 
-- Revisar las fotos dudosas y borrarlas después de reentrenar (RNF-10).
+- Borrar las fotos dudosas después de reentrenar (RNF-10); la revisión ya se hace en el panel.
 - Guardar la ración recomendada de cada día; hoy la gráfica usa la actual para todo el rango.
 - Limpiar tokens de Expo inválidos.

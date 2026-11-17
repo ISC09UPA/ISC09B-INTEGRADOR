@@ -16,6 +16,10 @@ Content-Type: application/json
 
 { "email": "diego@example.com", "password": "contrasena123" }
 
+### Usuario de la sesión (incluye esAdministrador)
+GET {{host}}/api/auth/yo
+Authorization: Bearer {{token}}
+
 ### Mis alimentadores
 GET {{host}}/api/alimentadores
 Authorization: Bearer {{token}}
@@ -70,7 +74,7 @@ Content-Type: application/json
 GET {{host}}/api/ota/artefactos
 Authorization: Bearer {{token}}
 
-### Publicar firmware (solo correos en Ota:Administradores; tipo: firmware | modelo)
+### Publicar firmware (solo administradores; tipo: firmware | modelo)
 POST {{host}}/api/ota/artefactos
 Authorization: Bearer {{token}}
 Content-Type: multipart/form-data; boundary=LimiteOta
@@ -100,6 +104,78 @@ Authorization: Bearer {{token}}
 Content-Type: application/json
 
 { "artefactoId": 1 }
+
+### [Admin] Resumen
+GET {{host}}/api/admin/resumen
+Authorization: Bearer {{token}}
+
+### [Admin] Usuarios (buscar por nombre o correo)
+GET {{host}}/api/admin/usuarios?buscar=diego&pagina=1&tamano=25
+Authorization: Bearer {{token}}
+
+### [Admin] Detalle de un usuario
+GET {{host}}/api/admin/usuarios/2
+Authorization: Bearer {{token}}
+
+### [Admin] Dar el rol de administrador
+PUT {{host}}/api/admin/usuarios/2/administrador
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "esAdministrador": true }
+
+### [Admin] Desactivar una cuenta (revoca sus refresh tokens)
+PUT {{host}}/api/admin/usuarios/2/activo
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "activo": false }
+
+### [Admin] Alimentadores sin conexión (estado: todos | enLinea | sinConexion | sinGateway)
+GET {{host}}/api/admin/alimentadores?estado=sinConexion&pagina=1&tamano=25
+Authorization: Bearer {{token}}
+
+### [Admin] Detalle de un alimentador
+GET {{host}}/api/admin/alimentadores/1
+Authorization: Bearer {{token}}
+
+### [Admin] Raspberry Pi y sus ESP32
+GET {{host}}/api/admin/gateways
+Authorization: Bearer {{token}}
+
+### [Admin] Regenerar la clave de cualquier Pi
+POST {{host}}/api/admin/gateways/1/regenerar-clave
+Authorization: Bearer {{token}}
+
+### [Admin] Eventos de atasco
+GET {{host}}/api/admin/eventos?tipo=Jam&pagina=1&tamano=25
+Authorization: Bearer {{token}}
+
+### [Admin] Fotos dudosas por revisar (estado: pendientes | revisadas | todas)
+GET {{host}}/api/admin/fotos?estado=pendientes
+Authorization: Bearer {{token}}
+
+### [Admin] Revisar una foto
+PUT {{host}}/api/admin/fotos/1/revision
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "clase": "Perro" }
+
+### [Admin] Desplegar una OTA en varios alimentadores
+POST {{host}}/api/admin/ota/despliegues
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "artefactoId": 1, "alimentadorIds": [1, 2, 3], "omitirSiYaTieneVersion": true }
+
+### [Admin] Despliegues OTA pendientes
+GET {{host}}/api/admin/ota/despliegues?estado=Pendiente&pagina=1&tamano=25
+Authorization: Bearer {{token}}
+
+### [Admin] Cancelar una OTA pendiente
+POST {{host}}/api/admin/ota/despliegues/1/cancelar
+Authorization: Bearer {{token}}
 
 ### [Pi] Configuración
 GET {{host}}/api/device/config?version=0
