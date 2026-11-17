@@ -1,0 +1,11 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+    "ServiceBusConnection": "PEGAR_AQUI_LA_CADENA_DE_SERVICE_BUS"
+  },
+  "ConnectionStrings": {
+    "AlmacenDb": "PEGAR_AQUI_LA_CADENA_DE_DB_ALMACEN"
+  }
+}

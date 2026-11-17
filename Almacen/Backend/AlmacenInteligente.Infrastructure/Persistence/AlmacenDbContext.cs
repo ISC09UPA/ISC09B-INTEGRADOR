@@ -16,6 +16,7 @@ public class AlmacenDbContext(DbContextOptions<AlmacenDbContext> options) : DbCo
     public DbSet<ConteoVisual> ConteosVisuales => Set<ConteoVisual>();
     public DbSet<Alerta> Alertas => Set<Alerta>();
     public DbSet<Estadistica> Estadisticas => Set<Estadistica>();
+    public DbSet<LecturaDispositivo> LecturasDispositivo => Set<LecturaDispositivo>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -96,6 +97,20 @@ public class AlmacenDbContext(DbContextOptions<AlmacenDbContext> options) : DbCo
             e.Property(x => x.ProductoId).HasMaxLength(20).IsRequired();
             e.Property(x => x.Estado).HasMaxLength(10).IsRequired();
             e.HasOne(x => x.Producto).WithMany(p => p.Alertas).HasForeignKey(x => x.ProductoId);
+        });
+
+        // Tabla nueva: la crea Database/002_lecturas_dispositivo.sql. Sin llave foránea: es una bitácora
+        // y también guarda lecturas de espacios que no existen (marcadas como IGNORADA).
+        modelBuilder.Entity<LecturaDispositivo>(e =>
+        {
+            e.ToTable("LecturasDispositivo");
+            e.HasKey(x => x.LecturaId);
+            e.Property(x => x.LecturaId).HasMaxLength(64);
+            e.Property(x => x.DispositivoId).HasMaxLength(50).IsRequired();
+            e.Property(x => x.EspacioId).HasMaxLength(10).IsRequired();
+            e.Property(x => x.TipoSensor).HasMaxLength(10).IsRequired();
+            e.Property(x => x.Evento).HasMaxLength(10);
+            e.Property(x => x.Resultado).HasMaxLength(200).IsRequired();
         });
 
         modelBuilder.Entity<Estadistica>(e =>

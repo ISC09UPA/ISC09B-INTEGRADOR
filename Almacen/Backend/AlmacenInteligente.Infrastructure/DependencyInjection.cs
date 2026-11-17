@@ -19,6 +19,7 @@ public static class DependencyInjection
         services.AddScoped<IUsuarioRepository, UsuarioRepository>();
         services.AddScoped<IMovimientoRepository, MovimientoRepository>();
         services.AddScoped<IEspacioRepository, EspacioRepository>();
+        services.AddScoped<ILecturaRepository, LecturaRepository>();
         services.AddSingleton<IServicioContrasena, ServicioContrasenaBcrypt>();
         return services;
     }

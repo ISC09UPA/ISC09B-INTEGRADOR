@@ -1,0 +1,55 @@
+# Pruebas de las Functions desde Visual Studio.
+# En local (F5) la clave no se revisa. En Azure: @host = https://<function-app>.azurewebsites.net
+# y @clave = la clave "default" de Function App > App keys. No subir la clave real al repo.
+@host = http://localhost:7071
+@clave = CAMBIAR_POR_LA_CLAVE_DE_LA_FUNCTION_APP
+
+### Salud (sin clave)
+GET {{host}}/api/salud
+
+### IR: entran 5 piezas a A1-E1
+POST {{host}}/api/lecturas
+Content-Type: application/json
+x-functions-key: {{clave}}
+
+{
+  "dispositivoId": "rpi-almacen-01",
+  "espacioId": "A1-E1",
+  "tipoSensor": "IR",
+  "evento": "ENTRADA",
+  "cantidad": 5
+}
+
+### IR: sale 1 pieza de A1-E1
+POST {{host}}/api/lecturas
+Content-Type: application/json
+x-functions-key: {{clave}}
+
+{
+  "dispositivoId": "rpi-almacen-01",
+  "espacioId": "A1-E1",
+  "tipoSensor": "IR",
+  "evento": "SALIDA"
+}
+
+### PESO: 523 g en A1-E1 (piezas = (peso - tara) / peso unitario)
+POST {{host}}/api/lecturas
+Content-Type: application/json
+x-functions-key: {{clave}}
+
+{
+  "dispositivoId": "rpi-almacen-01",
+  "espacioId": "A1-E1",
+  "tipoSensor": "PESO",
+  "pesoGramos": 523
+}
+
+### Lote (así reenvía la Raspberry lo que guardó sin conexión). La segunda es inválida y se rechaza sola.
+POST {{host}}/api/lecturas
+Content-Type: application/json
+x-functions-key: {{clave}}
+
+[
+  { "lecturaId": "prueba-lote-001", "dispositivoId": "rpi-almacen-01", "espacioId": "A1-E1", "tipoSensor": "IR", "evento": "ENTRADA", "cantidad": 2, "fechaHora": "2026-11-17T18:00:00Z" },
+  { "lecturaId": "prueba-lote-002", "dispositivoId": "rpi-almacen-01", "espacioId": "A1-E1", "tipoSensor": "LUZ" }
+]

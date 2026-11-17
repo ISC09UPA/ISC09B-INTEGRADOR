@@ -7,3 +7,9 @@ obj/
 # Configuración local con secretos (nunca subir)
 appsettings.*.local.json
 local.settings.json
+# Lecturas que el simulador guardó sin conexión
+Simulador/pendientes.jsonl
+# Perfiles y dependencias que genera Visual Studio al publicar (propios de cada máquina)
+**/Properties/PublishProfiles/
+**/Properties/ServiceDependencies/
+**/Properties/serviceDependencies*.json

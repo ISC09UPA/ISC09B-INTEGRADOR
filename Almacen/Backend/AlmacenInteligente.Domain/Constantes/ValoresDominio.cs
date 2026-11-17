@@ -25,3 +25,10 @@ public static class EstadosAlerta
     public const string Activa = "ACTIVA";
     public const string Atendida = "ATENDIDA";
 }
+
+// Sensores que mandan lecturas desde la Raspberry (tabla LecturasDispositivo).
+public static class TiposSensor
+{
+    public const string Infrarrojo = "IR";   // evento ENTRADA/SALIDA con cantidad
+    public const string Peso = "PESO";       // peso total del espacio en gramos
+}
