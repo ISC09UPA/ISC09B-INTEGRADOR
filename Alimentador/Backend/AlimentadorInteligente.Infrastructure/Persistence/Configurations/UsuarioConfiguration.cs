@@ -12,6 +12,8 @@ public class UsuarioConfiguration : IEntityTypeConfiguration<Usuario>
         b.Property(u => u.Email).HasMaxLength(200).IsRequired();
         b.HasIndex(u => u.Email).IsUnique();
         b.Property(u => u.ExpoPushToken).HasMaxLength(200);
+        // Activo no lleva HasDefaultValue(true): EF omitiría el false al insertar (es el valor por omisión del bool)
+        // y la BD guardaría true. La migración AdministracionUsuarios sí usa true para las cuentas que ya existían.
     }
 }
 

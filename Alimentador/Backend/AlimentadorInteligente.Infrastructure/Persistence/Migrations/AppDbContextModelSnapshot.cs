@@ -578,6 +578,9 @@ namespace AlimentadorInteligente.Infrastructure.Persistence.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<bool>("Activo")
+                        .HasColumnType("boolean");
+
                     b.Property<DateTimeOffset>("CreadoEn")
                         .HasColumnType("timestamp with time zone");
 
@@ -585,6 +588,9 @@ namespace AlimentadorInteligente.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<bool>("EsAdministrador")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("ExpoPushToken")
                         .HasMaxLength(200)
@@ -598,6 +604,9 @@ namespace AlimentadorInteligente.Infrastructure.Persistence.Migrations
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("UltimoAcceso")
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
