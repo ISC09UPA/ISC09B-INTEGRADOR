@@ -1,4 +1,4 @@
-import {
+\import {
   Pressable,
   ScrollView,
   Switch,
@@ -8,6 +8,8 @@ import {
 } from 'react-native';
 import { ActionButton, SectionTitle } from './components';
 import { colors, styles } from './styles';
+import MapaCasa from './MapaCasa'; // azure maps
+
 
 export default function HomeScreen({
   dashboard,
@@ -25,6 +27,7 @@ export default function HomeScreen({
   onToggleLight,
   onRemovePerson,
   onAddPerson,
+  apiUrl, // azure maps
 }) {
   const { panel, people } = dashboard;
   const lights = Object.entries(panel.luces);
@@ -99,6 +102,10 @@ export default function HomeScreen({
         onPress={onOpenDoor}
       />
 
+      {/* azure maps */}
+      <SectionTitle>Mi casa en el mapa</SectionTitle>
+      <MapaCasa apiUrl={apiUrl} />
+
       <SectionTitle>Iluminación · {enabledLights} de {lights.length} encendidas</SectionTitle>
       <View style={styles.card}>
         {lights.map(([name, enabled], index) => (
@@ -116,38 +123,3 @@ export default function HomeScreen({
       </View>
 
       <SectionTitle>Personas con acceso</SectionTitle>
-      <View style={styles.card}>
-        {people.length ? people.map((name, index) => (
-          <View key={`${name}-${index}`} style={[styles.row, index > 0 && styles.listItem]}>
-            <Text style={styles.bodyText}>{name}</Text>
-            <Pressable
-              accessibilityRole="button"
-              disabled={working}
-              onPress={() => onRemovePerson(name)}
-            >
-              <Text style={styles.removeText}>Quitar</Text>
-            </Pressable>
-          </View>
-        )) : <Text style={styles.mutedText}>No hay personas agregadas.</Text>}
-      </View>
-      <View style={styles.addPerson}>
-        <TextInput
-          editable={!working}
-          onChangeText={onChangeNewPerson}
-          onSubmitEditing={onAddPerson}
-          placeholder="Nombre de la persona"
-          placeholderTextColor={colors.muted}
-          returnKeyType="done"
-          style={[styles.input, styles.personInput]}
-          value={newPerson}
-        />
-        <ActionButton
-          title="Agregar"
-          disabled={working || !newPerson.trim()}
-          onPress={onAddPerson}
-        />
-      </View>
-      <Text style={styles.footer}>Actualizado automáticamente cada 5 segundos</Text>
-    </ScrollView>
-  );
-}
