@@ -51,7 +51,7 @@ const PESTANAS: Record<string, { etiqueta: string; icono: () => ReactNode }> = {
 };
 
 /** Barra inferior de 5 pestañas solo con iconos; la activa lleva una píldora gris. */
-export function TabBar({ state, navigation, insets }: BottomTabBarProps) {
+export function TabBar({ state, emitter, navigateToTab, insets }: BottomTabBarProps) {
   const { noLeidas } = useAlimentador();
 
   return (
@@ -70,8 +70,8 @@ export function TabBar({ state, navigation, insets }: BottomTabBarProps) {
             accessibilityLabel={insignia ? `${config.etiqueta}, ${insignia} alertas` : config.etiqueta}
             accessibilityState={{ selected: activa }}
             onPress={() => {
-              const evento = navigation.emit({ type: 'tabPress', target: ruta.key, canPreventDefault: true });
-              if (!activa && !evento.defaultPrevented) navigation.navigate(ruta.name, ruta.params);
+              const evento = emitter.emit({ type: 'tabPress', target: ruta.key, canPreventDefault: true });
+              if (!activa && !evento.defaultPrevented) navigateToTab(ruta.key);
             }}
             style={styles.boton}>
             <View style={[styles.pildora, activa && styles.activa]}>

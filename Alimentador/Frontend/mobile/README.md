@@ -1,6 +1,6 @@
 # Alimentador Inteligente — App móvil
 
-App en Expo (SDK 57, React Native, expo-router) para el comedero de perro y gato. Consume la API .NET de la rama `AlimentadorBack`.
+App en Expo (SDK 58, React Native, expo-router) para el comedero de perro y gato. Consume la API .NET de la rama `AlimentadorBack`.
 
 ## Ejecutar
 
