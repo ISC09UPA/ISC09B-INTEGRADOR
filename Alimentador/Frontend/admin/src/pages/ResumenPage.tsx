@@ -179,7 +179,7 @@ function EsqueletoResumen() {
     <div className={s.rejilla} aria-busy="true">
       {Array.from({ length: 8 }, (_, i) => (
         <Card key={i} className={s.tarjeta}>
-          <Skeleton aria-label={i === 0 ? 'Cargando indicadores' : undefined} className={s.esqueleto}>
+          <Skeleton aria-label={`Cargando indicador ${i + 1} de 8`} className={s.esqueleto}>
             <SkeletonItem size={16} />
             <SkeletonItem size={40} style={{ width: '40%' }} />
             <SkeletonItem size={12} />
@@ -255,7 +255,7 @@ export default function ResumenPage() {
               icono={<PlugDisconnectedRegular />}
               valor={r.alimentadores.sinGateway}
               tono={r.alimentadores.sinGateway > 0 ? 'aviso' : 'normal'}
-              detalle="Alimentadores sin gateway ligado."
+              detalle="Alimentadores sin una Pi ligada."
             />
             <TarjetaKpi
               titulo="Raspberry Pi en línea"

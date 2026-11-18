@@ -83,7 +83,6 @@ export function DetalleUsuario({ id, esYo, onCerrar, onAccion }: Props) {
 
   return (
     <OverlayDrawer
-      as="aside"
       position="end"
       size={movil ? 'full' : 'medium'}
       open={id !== null}

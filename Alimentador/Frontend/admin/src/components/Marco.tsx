@@ -194,9 +194,16 @@ export function Marco() {
   const principal = useRef<HTMLElement>(null);
   const restaurarFoco = useRestoreFocusTarget();
 
-  // Al cambiar de página, el foco va al contenido y el scroll vuelve arriba.
+  // Al cambiar de página (no de filtros), el scroll vuelve arriba y el foco pasa al contenido
+  // para que el lector de pantalla empiece por la nueva vista.
+  const primeraVista = useRef(true);
   useEffect(() => {
     principal.current?.scrollTo({ top: 0 });
+    if (primeraVista.current) {
+      primeraVista.current = false;
+      return;
+    }
+    principal.current?.focus({ preventScroll: true });
   }, [ubicacion.pathname]);
 
   const alternar = () => (escritorio ? setAbiertoEscritorio((v) => !v) : setAbiertoMovil((v) => !v));

@@ -1,4 +1,4 @@
-import { Fragment } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import {
   Checkbox,
@@ -40,7 +40,7 @@ interface Props<T> {
   items: T[];
   columnas: Columna<T>[];
   getId: (item: T) => IdFila;
-  /** Nombre accesible de la tabla y de su región desplazable. */
+  /** Nombre accesible de la tabla (y de su región cuando hay que desplazarla). */
   etiqueta: string;
   /** Ancho mínimo antes de activar el desplazamiento horizontal. */
   anchoMinimo?: number;
@@ -98,6 +98,19 @@ export function Tabla<T>({ items, columnas, getId, etiqueta, anchoMinimo = 720, 
   const s = useEstilos();
   const escritorio = useMediaQuery(CONSULTA_ESCRITORIO);
   const movil = useMediaQuery(CONSULTA_MOVIL);
+  const contenedor = useRef<HTMLDivElement>(null);
+  const [desplazable, setDesplazable] = useState(false);
+
+  // Solo cuando la tabla no cabe, el contenedor se vuelve una región enfocable para desplazarla con teclado.
+  useEffect(() => {
+    const el = contenedor.current;
+    if (!el) return;
+    const medir = () => setDesplazable(el.scrollWidth > el.clientWidth + 1);
+    medir();
+    const observador = new ResizeObserver(medir);
+    observador.observe(el);
+    return () => observador.disconnect();
+  }, [movil, items.length]);
   const visibles = escritorio ? columnas : columnas.filter((c) => !c.secundaria);
 
   const seleccionables = seleccion ? items.filter((i) => !seleccion.deshabilitada?.(i)) : [];
@@ -174,7 +187,11 @@ export function Tabla<T>({ items, columnas, getId, etiqueta, anchoMinimo = 720, 
   }
 
   return (
-    <div className={s.region} role="region" aria-label={etiqueta} tabIndex={0}>
+    <div
+      ref={contenedor}
+      className={s.region}
+      {...(desplazable ? { role: 'region', 'aria-label': `${etiqueta} (desplazable)`, tabIndex: 0 } : {})}
+    >
       <Table
         className={s.tabla}
         aria-label={etiqueta}
