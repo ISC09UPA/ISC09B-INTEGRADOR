@@ -30,7 +30,20 @@ builder.Services
 builder.Services.AddSignalR()
     .AddJsonProtocol(o => o.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
-builder.Services.AddProblemDetails();
+// Los 401 y 403 de la autorización llegan sin cuerpo; UseStatusCodePages les da el mismo formato que a los demás errores
+builder.Services.AddProblemDetails(o => o.CustomizeProblemDetails = c =>
+{
+    if (c.ProblemDetails.Status == StatusCodes.Status401Unauthorized)
+    {
+        c.ProblemDetails.Title = "No autorizado";
+        c.ProblemDetails.Detail ??= "Inicia sesión para continuar.";
+    }
+    else if (c.ProblemDetails.Status == StatusCodes.Status403Forbidden)
+    {
+        c.ProblemDetails.Title = "Acceso denegado";
+        c.ProblemDetails.Detail ??= "No tienes permiso para esta acción.";
+    }
+});
 builder.Services.AddExceptionHandler<ManejadorErrores>();
 builder.Services.AddOpenApi();
 builder.Services.AddHealthChecks();
@@ -82,6 +95,7 @@ builder.Services.AddAuthorization(o => o.AddPolicy(RequisitoAdministrador.Politi
 var app = builder.Build();
 
 app.UseExceptionHandler();
+app.UseStatusCodePages();
 
 if (app.Environment.IsDevelopment())
 {

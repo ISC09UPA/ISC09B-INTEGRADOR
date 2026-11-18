@@ -142,7 +142,7 @@ En App Service: `Admin__CorreosIniciales__0`, `Admin__CorreosIniciales__1`, etc.
 
 Reglas al cambiar el rol o el estado (400): nadie se quita su propio rol ni se desactiva a sí mismo, y no se puede quitar el rol ni desactivar al último administrador activo.
 
-El panel web (Vite, `http://localhost:5173`) ya está en `Cors:Origenes` de `appsettings.Development.json`; manda `Authorization: Bearer`, sin cookies.
+El panel web (Vite, `http://localhost:5173`) ya está en `Cors:Origenes` de `appsettings.Development.json`; manda `Authorization: Bearer`, sin cookies. Los 401 y 403 que genera la autorización (sin sesión o sin el rol) también responden con ProblemDetails.
 
 Paginación: `?pagina=1&tamano=25` (tamaño de 1 a 100). Las listas paginadas responden `{ "elementos": [...], "total": 137, "pagina": 1, "tamano": 25 }`.
 

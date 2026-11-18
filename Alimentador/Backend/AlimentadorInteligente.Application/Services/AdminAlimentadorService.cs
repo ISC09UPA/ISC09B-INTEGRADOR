@@ -1,3 +1,4 @@
+using System.Globalization;
 using AlimentadorInteligente.Application.Abstractions;
 using AlimentadorInteligente.Application.DTOs;
 using AlimentadorInteligente.Application.Exceptions;
@@ -90,7 +91,7 @@ public class AdminAlimentadorService(IAppDbContext db) : IAdminAlimentadorServic
                 m.Id, m.Nombre, m.Especie, m.Tolva, m.PesoKg, m.EdadMeses, m.ComidasPorDia, m.EtiquetaRfid,
                 m.AjustePorcentaje, Math.Round(CalculadoraRacion.GramosPorDia(m, alimentador.KcalPorGramo), 1),
                 m.Activa, ultimasVisitas.GetValueOrDefault(m.Id))).ToList(),
-            horarios.Select(h => new HorarioAdminDto(h.Id, h.Hora.ToString("HH:mm"), h.MascotaId, h.Activo)).ToList(),
+            horarios.Select(h => new HorarioAdminDto(h.Id, h.Hora.ToString("HH:mm", CultureInfo.InvariantCulture), h.MascotaId, h.Activo)).ToList(),
             comandos,
             alertas);
     }
