@@ -4,7 +4,7 @@ import { porciento } from '../utils/formato';
 const useEstilos = makeStyles({
   compacto: { display: 'flex', alignItems: 'center', columnGap: tokens.spacingHorizontalS, minWidth: '96px' },
   barra: { flexGrow: 1, minWidth: '48px' },
-  valor: { fontVariantNumeric: 'tabular-nums', minWidth: '3.5ch', textAlign: 'end' },
+  valor: { fontVariantNumeric: 'tabular-nums', minWidth: '4.5ch', textAlign: 'end', whiteSpace: 'nowrap' },
 });
 
 /** Umbral visual de tolva baja (el backend alerta con HOPPER_LOW del ESP32). */

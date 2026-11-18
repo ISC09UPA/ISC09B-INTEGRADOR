@@ -31,7 +31,6 @@ import { CargandoTabla, EstadoError, EstadoVacio } from '../components/Estados';
 import { FiltroOpciones } from '../components/FiltroOpciones';
 import { InsigniaComando, InsigniaConexion, InsigniaSinGateway } from '../components/Insignias';
 import { Migas } from '../components/Migas';
-import { useNotificar } from '../components/Notificaciones';
 import { Paginador } from '../components/Paginador';
 import { Seccion } from '../components/Seccion';
 import { Tabla } from '../components/Tabla';
@@ -56,6 +55,7 @@ const useEstilos = makeStyles({
     bottom: 0,
     zIndex: 1,
     display: 'flex',
+    flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -84,6 +84,11 @@ const useEstilos = makeStyles({
 
 function textoArtefacto(a: ArtefactoOtaDto) {
   return `${a.tipo === 'Firmware' ? 'Firmware' : 'Modelo'} ${a.version}`;
+}
+
+/** "el firmware 1.3.0" / "el modelo m-2026-11-01" para usar dentro de una frase. */
+function artefactoEnFrase(a: ArtefactoOtaDto) {
+  return `${a.tipo === 'Firmware' ? 'el firmware' : 'el modelo'} ${a.version}`;
 }
 
 function versionActual(a: AlimentadorAdminDto, art: ArtefactoOtaDto | undefined) {
@@ -116,7 +121,7 @@ function Resultado({
           <MessageBarBody className={s.cuerpo}>
             <MessageBarTitle>
               {r.creados.length > 0
-                ? `Se lanzó ${artefacto ? textoArtefacto(artefacto) : 'la actualización'} a ${plural(r.creados.length, 'alimentador', 'alimentadores')}`
+                ? `Se lanzó ${artefacto ? artefactoEnFrase(artefacto) : 'la actualización'} a ${plural(r.creados.length, 'alimentador', 'alimentadores')}`
                 : 'No se creó ninguna actualización'}
             </MessageBarTitle>
             {r.omitidos.length > 0
@@ -182,7 +187,6 @@ export default function DesplegarPage() {
   const f = useEstilosFiltros();
   useTitulo('Lanzar despliegue');
   const queryClient = useQueryClient();
-  const notificar = useNotificar();
   const { texto, numero, numeroOpcional, cambiar } = useParametros();
   const pagina = numero('pagina', 1);
   const estadoUrl = texto('estado', 'todos');
@@ -225,7 +229,6 @@ export default function DesplegarPage() {
       setResultado(r);
       void queryClient.invalidateQueries({ queryKey: claves.despliegues });
       void queryClient.invalidateQueries({ queryKey: claves.resumen });
-      if (r.creados.length > 0) notificar.exito(`Se crearon ${plural(r.creados.length, 'actualización', 'actualizaciones')}`);
     },
   });
 
@@ -432,7 +435,7 @@ export default function DesplegarPage() {
         onConfirmar={() => lanzar.mutateAsync()}
       >
         <Body1>
-          {artefacto ? textoArtefacto(artefacto) : ''} se enviará a {plural(cuantos, 'alimentador', 'alimentadores')}.{' '}
+          Se enviará {artefacto ? artefactoEnFrase(artefacto) : ''} a {plural(cuantos, 'alimentador', 'alimentadores')}.{' '}
           {omitir ? 'Se omitirán los que ya tengan esa versión. ' : ''}
           También se omiten los que ya tienen una actualización en curso.
         </Body1>

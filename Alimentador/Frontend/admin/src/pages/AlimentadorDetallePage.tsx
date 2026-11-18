@@ -54,7 +54,7 @@ const useEstilos = makeStyles({
   },
   datos: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
     gap: `${tokens.spacingVerticalM} ${tokens.spacingHorizontalL}`,
     margin: 0,
   },

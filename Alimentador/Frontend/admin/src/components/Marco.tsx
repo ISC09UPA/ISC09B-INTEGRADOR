@@ -104,6 +104,7 @@ const useEstilos = makeStyles({
   producto: {
     fontWeight: tokens.fontWeightSemibold,
     fontSize: tokens.fontSizeBase400,
+    '@media (max-width: 639px)': { fontSize: tokens.fontSizeBase300 },
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
@@ -111,6 +112,7 @@ const useEstilos = makeStyles({
   },
   separadorProducto: { color: tokens.colorNeutralForeground3, fontWeight: tokens.fontWeightRegular },
   espacio: { flexGrow: 1 },
+  botonCuenta: { minWidth: 'auto', paddingLeft: tokens.spacingHorizontalXS, paddingRight: tokens.spacingHorizontalXS },
   usuario: {
     display: 'flex',
     alignItems: 'center',
@@ -124,7 +126,7 @@ const useEstilos = makeStyles({
     whiteSpace: 'nowrap',
   },
   cuerpo: { display: 'flex', minHeight: 0, minWidth: 0 },
-  nav: { height: '100%' },
+  nav: { height: '100%', width: '260px', flexShrink: 0 },
   navOverlay: { height: '100dvh' },
   principal: {
     flexGrow: 1,
@@ -216,12 +218,13 @@ export function Marco() {
         <Text className={s.producto}>
           Alimentador <span className={s.separadorProducto} aria-hidden>·</span> Administración
         </Text>
-        {MODO_DEMO && (
+        {MODO_DEMO && escritorio && (
           <Badge appearance="tint" color="warning" size="small">
             Demo
           </Badge>
         )}
         <span className={s.espacio} />
+        {escritorio && (
         <Menu checkedValues={{ tema: [preferencia] }} onCheckedValueChange={cambiarTema} hasCheckmarks>
           <MenuTrigger disableButtonEnhancement>
             <Tooltip content="Tema" relationship="label">
@@ -245,9 +248,15 @@ export function Marco() {
             </MenuList>
           </MenuPopover>
         </Menu>
-        <Menu positioning={{ autoSize: true }}>
+        )}
+        <Menu
+          positioning={{ autoSize: true }}
+          checkedValues={{ tema: [preferencia] }}
+          onCheckedValueChange={cambiarTema}
+          hasCheckmarks={!escritorio}
+        >
           <MenuTrigger disableButtonEnhancement>
-            <Button appearance="subtle" aria-label={`Cuenta de ${sesion?.nombre ?? 'usuario'}`}>
+            <Button appearance="subtle" className={s.botonCuenta} aria-label={`Cuenta de ${sesion?.nombre ?? 'usuario'}`}>
               <span className={s.usuario}>
                 <Avatar name={sesion?.nombre} size={28} color="colorful" aria-hidden />
                 {escritorio && <span className={s.nombreUsuario}>{sesion?.nombre}</span>}
@@ -260,6 +269,23 @@ export function Marco() {
                 <MenuGroupHeader>{sesion?.nombre}</MenuGroupHeader>
               </MenuGroup>
               <MenuDivider />
+              {!escritorio && (
+                <>
+                  <MenuGroup>
+                    <MenuGroupHeader>Tema</MenuGroupHeader>
+                    <MenuItemRadio name="tema" value="sistema">
+                      Igual que el sistema
+                    </MenuItemRadio>
+                    <MenuItemRadio name="tema" value="claro">
+                      Claro
+                    </MenuItemRadio>
+                    <MenuItemRadio name="tema" value="oscuro">
+                      Oscuro
+                    </MenuItemRadio>
+                  </MenuGroup>
+                  <MenuDivider />
+                </>
+              )}
               <MenuItem icon={<SignOutRegular />} onClick={() => void cerrarSesion()}>
                 Cerrar sesión
               </MenuItem>

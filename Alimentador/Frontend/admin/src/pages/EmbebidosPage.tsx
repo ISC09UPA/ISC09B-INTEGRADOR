@@ -1,6 +1,7 @@
 import { makeStyles, Tab, TabList, tokens } from '@fluentui/react-components';
 import { CameraRegular, DeveloperBoardRegular, WarningRegular } from '@fluentui/react-icons';
 import { Encabezado } from '../components/Encabezado';
+import { CONSULTA_MOVIL, useMediaQuery } from '../hooks/useMediaQuery';
 import { useParametros } from '../hooks/useParametros';
 import { useTitulo } from '../hooks/useTitulo';
 import { PestanaEventos } from './embebidos/PestanaEventos';
@@ -15,6 +16,7 @@ const useEstilos = makeStyles({
 
 export default function EmbebidosPage() {
   const s = useEstilos();
+  const movil = useMediaQuery(CONSULTA_MOVIL);
   const { texto, cambiar } = useParametros();
   const valor = texto('pestana', 'gateways');
   const pestana: Pestana = valor === 'eventos' || valor === 'fotos' ? valor : 'gateways';
@@ -28,6 +30,7 @@ export default function EmbebidosPage() {
       />
       <TabList
         className={s.pestanas}
+        size={movil ? 'small' : 'medium'}
         selectedValue={pestana}
         onTabSelect={(_, d) =>
           // Al cambiar de pestaña se limpian los filtros de la anterior.

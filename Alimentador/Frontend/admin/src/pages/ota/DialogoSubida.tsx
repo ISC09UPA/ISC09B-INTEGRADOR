@@ -17,9 +17,10 @@ import {
   ProgressBar,
   Radio,
   RadioGroup,
+  Text,
   tokens,
 } from '@fluentui/react-components';
-import { ErrorCircleFilled } from '@fluentui/react-icons';
+import { DocumentRegular, ErrorCircleFilled } from '@fluentui/react-icons';
 import type { Subida } from '../../api/cliente';
 import { mensajeDeError } from '../../api/cliente';
 import { claves, ota } from '../../api/endpoints';
@@ -30,13 +31,9 @@ import { porciento, tamanoLegible } from '../../utils/formato';
 
 const useEstilos = makeStyles({
   contenido: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalL },
-  archivo: {
-    fontFamily: tokens.fontFamilyBase,
-    fontSize: tokens.fontSizeBase300,
-    color: tokens.colorNeutralForeground1,
-    padding: `${tokens.spacingVerticalXS} 0`,
-    maxWidth: '100%',
-  },
+  selector: { display: 'flex', alignItems: 'center', columnGap: tokens.spacingHorizontalM, minWidth: 0 },
+  nombreArchivo: { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, color: tokens.colorNeutralForeground2 },
+  oculto: { display: 'none' },
 });
 
 interface Props {
@@ -56,6 +53,7 @@ export function DialogoSubida({ abierto, onCerrar }: Props) {
   const [progreso, setProgreso] = useState<number | null>(null);
   const [error, setError] = useState<unknown>(null);
   const subida = useRef<Subida<ArtefactoOtaDto> | null>(null);
+  const entrada = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (abierto) {
@@ -138,19 +136,27 @@ export function DialogoSubida({ abierto, onCerrar }: Props) {
               <Field
                 label="Archivo"
                 required
-                hint={!errorArchivo ? (archivo ? `${archivo.name} · ${tamanoLegible(archivo.size)}` : 'Máximo 32 MB.') : undefined}
+                hint={!errorArchivo ? (archivo ? `${tamanoLegible(archivo.size)} de 32 MB como máximo.` : 'Máximo 32 MB.') : undefined}
                 validationState={errorArchivo ? 'error' : 'none'}
                 validationMessage={errorArchivo}
               >
-                {(props) => (
-                  <input
-                    {...props}
-                    type="file"
-                    className={s.archivo}
-                    disabled={subiendo}
-                    accept=".bin,.tflite,.onnx,.hef,.pt,application/octet-stream"
-                    onChange={(e: ChangeEvent<HTMLInputElement>) => setArchivo(e.target.files?.[0] ?? null)}
-                  />
+                {({ 'aria-required': _requerido, 'aria-invalid': _invalido, ...props }) => (
+                  <div className={s.selector}>
+                    {/* El input nativo queda oculto; el botón de Fluent lo abre y recibe la etiqueta del Field. */}
+                    <Button {...props} icon={<DocumentRegular />} disabled={subiendo} onClick={() => entrada.current?.click()}>
+                      {archivo ? 'Cambiar archivo' : 'Elegir archivo'}
+                    </Button>
+                    <Text className={s.nombreArchivo}>{archivo ? archivo.name : 'Ningún archivo elegido'}</Text>
+                    <input
+                      ref={entrada}
+                      type="file"
+                      className={s.oculto}
+                      tabIndex={-1}
+                      aria-hidden
+                      accept=".bin,.tflite,.onnx,.hef,.pt,application/octet-stream"
+                      onChange={(e: ChangeEvent<HTMLInputElement>) => setArchivo(e.target.files?.[0] ?? null)}
+                    />
+                  </div>
                 )}
               </Field>
               {subiendo && (
