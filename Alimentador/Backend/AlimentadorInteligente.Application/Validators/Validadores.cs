@@ -114,3 +114,84 @@ public class LoteEventosValidator : AbstractValidator<List<EventoDispositivoDto>
 {
     public LoteEventosValidator() => RuleFor(x => x.Count).LessThanOrEqualTo(Constantes.MaxLote);
 }
+
+// --- Panel de administración ---
+
+internal static class ReglasConsulta
+{
+    /// <summary>pagina ≥ 1 y tamano entre 1 y 100.</summary>
+    public static void ValidarPaginacion<T>(this AbstractValidator<T> validador) where T : ConsultaPaginada
+    {
+        validador.RuleFor(x => x.Pagina).GreaterThanOrEqualTo(1);
+        validador.RuleFor(x => x.Tamano).InclusiveBetween(1, Constantes.MaxTamanoPagina);
+    }
+
+    public static bool EsUnoDe(string? valor, params string[] permitidos)
+        => valor is null || permitidos.Contains(valor.Trim(), StringComparer.OrdinalIgnoreCase);
+}
+
+public class ConsultaUsuariosValidator : AbstractValidator<ConsultaUsuarios>
+{
+    public ConsultaUsuariosValidator()
+    {
+        this.ValidarPaginacion();
+        RuleFor(x => x.Buscar).MaximumLength(200);
+    }
+}
+
+public class ConsultaAlimentadoresValidator : AbstractValidator<ConsultaAlimentadores>
+{
+    public ConsultaAlimentadoresValidator()
+    {
+        this.ValidarPaginacion();
+        RuleFor(x => x.Buscar).MaximumLength(200);
+        RuleFor(x => x.Estado).Must(e => ReglasConsulta.EsUnoDe(e, "todos", "enLinea", "sinConexion", "sinGateway"))
+            .WithMessage("El estado debe ser todos, enLinea, sinConexion o sinGateway.");
+    }
+}
+
+public class ConsultaEventosValidator : AbstractValidator<ConsultaEventos>
+{
+    public ConsultaEventosValidator()
+    {
+        this.ValidarPaginacion();
+        RuleFor(x => x.Tipo).IsInEnum().When(x => x.Tipo is not null);
+    }
+}
+
+public class ConsultaFotosValidator : AbstractValidator<ConsultaFotos>
+{
+    public ConsultaFotosValidator()
+    {
+        this.ValidarPaginacion();
+        RuleFor(x => x.Estado).Must(e => ReglasConsulta.EsUnoDe(e, "pendientes", "revisadas", "todas"))
+            .WithMessage("El estado debe ser pendientes, revisadas o todas.");
+    }
+}
+
+public class ConsultaDesplieguesValidator : AbstractValidator<ConsultaDespliegues>
+{
+    public ConsultaDesplieguesValidator()
+    {
+        this.ValidarPaginacion();
+        RuleFor(x => x.Estado).IsInEnum().When(x => x.Estado is not null);
+    }
+}
+
+public class RevisarFotoValidator : AbstractValidator<RevisarFotoRequest>
+{
+    public RevisarFotoValidator() => RuleFor(x => x.Clase).IsInEnum();
+}
+
+public class CrearDespliegueOtaValidator : AbstractValidator<CrearDespliegueOtaRequest>
+{
+    public CrearDespliegueOtaValidator()
+    {
+        RuleFor(x => x.ArtefactoId).GreaterThan(0);
+        RuleFor(x => x.AlimentadorIds).Cascade(CascadeMode.Stop).NotNull()
+            .Must(ids => ids.Count is >= 1 and <= Constantes.MaxAlimentadoresDespliegue)
+            .WithMessage($"Indica de 1 a {Constantes.MaxAlimentadoresDespliegue} alimentadores.")
+            .Must(ids => ids.Distinct().Count() == ids.Count)
+            .WithMessage("La lista de alimentadores tiene ids repetidos.");
+    }
+}

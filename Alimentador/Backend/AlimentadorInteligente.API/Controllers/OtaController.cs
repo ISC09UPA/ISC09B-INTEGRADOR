@@ -21,7 +21,7 @@ public class OtaController(IComandoService comandos, IOtaService ota) : Controll
 
     /// <summary>
     /// Publica un firmware o modelo (multipart: tipo = firmware | modelo, version, archivo).
-    /// Solo los correos configurados en Ota:Administradores.
+    /// Solo administradores.
     /// </summary>
     [HttpPost("artefactos")]
     [Consumes("multipart/form-data")]

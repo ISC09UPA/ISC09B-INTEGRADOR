@@ -11,6 +11,7 @@ using AlimentadorInteligente.Infrastructure;
 using AlimentadorInteligente.Infrastructure.Options;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 
@@ -29,7 +30,20 @@ builder.Services
 builder.Services.AddSignalR()
     .AddJsonProtocol(o => o.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
-builder.Services.AddProblemDetails();
+// Los 401 y 403 de la autorización llegan sin cuerpo; UseStatusCodePages les da el mismo formato que a los demás errores
+builder.Services.AddProblemDetails(o => o.CustomizeProblemDetails = c =>
+{
+    if (c.ProblemDetails.Status == StatusCodes.Status401Unauthorized)
+    {
+        c.ProblemDetails.Title = "No autorizado";
+        c.ProblemDetails.Detail ??= "Inicia sesión para continuar.";
+    }
+    else if (c.ProblemDetails.Status == StatusCodes.Status403Forbidden)
+    {
+        c.ProblemDetails.Title = "Acceso denegado";
+        c.ProblemDetails.Detail ??= "No tienes permiso para esta acción.";
+    }
+});
 builder.Services.AddExceptionHandler<ManejadorErrores>();
 builder.Services.AddOpenApi();
 builder.Services.AddHealthChecks();
@@ -71,11 +85,17 @@ builder.Services
         };
     })
     .AddScheme<AuthenticationSchemeOptions, DeviceKeyAuthenticationHandler>(DeviceKeyAuthenticationHandler.Esquema, null);
-builder.Services.AddAuthorization();
+// Administración: el rol se consulta en la BD en cada petición, no se guarda en el JWT
+builder.Services.AddScoped<IAuthorizationHandler, AdministradorAuthorizationHandler>();
+builder.Services.AddAuthorization(o => o.AddPolicy(RequisitoAdministrador.Politica, p => p
+    .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
+    .RequireAuthenticatedUser()
+    .AddRequirements(new RequisitoAdministrador())));
 
 var app = builder.Build();
 
 app.UseExceptionHandler();
+app.UseStatusCodePages();
 
 if (app.Environment.IsDevelopment())
 {

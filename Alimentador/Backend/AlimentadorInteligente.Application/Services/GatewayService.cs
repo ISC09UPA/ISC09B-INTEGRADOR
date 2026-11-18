@@ -40,9 +40,19 @@ public class GatewayService(IAppDbContext db, IUsuarioActual usuario, ITokenServ
         if (gateway.PropietarioId != usuario.Id)
             throw new ProhibidoException();
 
-        var clave = tokens.GenerarRefreshToken();
-        gateway.DeviceKeyHash = tokens.Hash(clave);
+        var respuesta = AsignarClaveNueva(gateway, tokens);
         await db.SaveChangesAsync(ct);
+        return respuesta;
+    }
+
+    /// <summary>
+    /// Reemplaza la clave de una Pi ya guardada; solo queda su hash y la clave se devuelve una sola vez.
+    /// También la usa el panel de administración, sin la restricción de propietario.
+    /// </summary>
+    internal static GatewayClaveResponse AsignarClaveNueva(Gateway gateway, ITokenService generador)
+    {
+        var clave = generador.GenerarRefreshToken();
+        gateway.DeviceKeyHash = generador.Hash(clave);
         return new GatewayClaveResponse(gateway.Id, gateway.DeviceId, clave);
     }
 }

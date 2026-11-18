@@ -10,8 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AlimentadorInteligente.Application.Services;
 
-public partial class OtaService(
-    IAppDbContext db, IUsuarioActual usuario, IAlmacenamientoArchivos archivos, OtaOpciones opciones) : IOtaService
+public partial class OtaService(IAppDbContext db, IUsuarioActual usuario, IAlmacenamientoArchivos archivos) : IOtaService
 {
     private const int MaxVersion = 30;
 
@@ -102,11 +101,9 @@ public partial class OtaService(
 
     private async Task RequerirAdministradorAsync(CancellationToken ct)
     {
-        var email = await db.Usuarios.AsNoTracking()
-            .Where(u => u.Id == usuario.Id)
-            .Select(u => u.Email)
-            .FirstOrDefaultAsync(ct);
-        if (email is null || !opciones.EsAdministrador(email))
+        bool esAdministrador = await db.Usuarios.AsNoTracking()
+            .AnyAsync(u => u.Id == usuario.Id && u.EsAdministrador && u.Activo, ct);
+        if (!esAdministrador)
             throw new ProhibidoException("Solo los administradores pueden publicar o borrar artefactos OTA.");
     }
 

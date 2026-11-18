@@ -11,6 +11,8 @@ public class Comando : EntidadBase
     public static readonly TimeSpan EsperaResultadoOta = TimeSpan.FromMinutes(30);
     /// <summary>Error con el que se cierra un comando entregado que nunca tuvo respuesta.</summary>
     public const string ErrorSinRespuesta = "El alimentador no respondió.";
+    /// <summary>Error de una actualización pendiente que un administrador canceló.</summary>
+    public const string ErrorCancelado = "Cancelado por un administrador.";
 
     public int AlimentadorId { get; set; }
     public Alimentador Alimentador { get; set; } = null!;

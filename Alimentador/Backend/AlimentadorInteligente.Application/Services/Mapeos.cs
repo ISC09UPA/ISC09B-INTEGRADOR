@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using AlimentadorInteligente.Application.DTOs;
 using AlimentadorInteligente.Domain.Entities;
 using AlimentadorInteligente.Domain.Services;
@@ -31,15 +32,31 @@ internal static class Mapeos
     public static ComandoDto ADto(this Comando c) => new(
         c.Id, c.AlimentadorId, c.Tipo, c.Estado, c.MascotaId, c.Tolva, c.Gramos, c.DispensadoG, c.Error, c.CreadoEn);
 
-    public static EstadoAlimentadorDto Estado(this Alimentador a)
+    /// <summary>Proyección traducible a SQL de un comando para el panel de administración.</summary>
+    public static readonly Expression<Func<Comando, ComandoAdminDto>> ComandoAdmin = c => new ComandoAdminDto(
+        c.Id, c.AlimentadorId, c.Alimentador.Codigo, c.Alimentador.Nombre, c.Tipo, c.Estado,
+        c.ArtefactoOta == null ? null : new ArtefactoResumenDto(c.ArtefactoOta.Id, c.ArtefactoOta.Tipo, c.ArtefactoOta.Version),
+        c.SolicitadoPor == null ? null : new UsuarioMinimoDto(c.SolicitadoPor.Id, c.SolicitadoPor.Nombre),
+        c.CreadoEn, c.EntregadoEn, c.CompletadoEn, c.Gramos, c.DispensadoG, c.Error);
+
+    /// <summary>
+    /// Una Pi está en línea si no reportó un periodo sin conexión y su último heartbeat es posterior a este
+    /// límite. Es la misma regla de Estado(), escrita para que EF la traduzca a SQL.
+    /// </summary>
+    public static DateTimeOffset LimiteHeartbeat(DateTimeOffset ahora) => ahora - Constantes.ToleranciaHeartbeat;
+
+    public static EstadoAlimentadorDto Estado(this Alimentador a) => a.Estado(a.Gateway);
+
+    /// <summary>Para consultas sin seguimiento donde la Pi se proyecta aparte del alimentador.</summary>
+    public static EstadoAlimentadorDto Estado(this Alimentador a, Gateway? gateway)
     {
-        bool gatewayEnLinea = a.Gateway is { SinConexionDesde: null, UltimoHeartbeat: { } ultimo }
+        bool gatewayEnLinea = gateway is { SinConexionDesde: null, UltimoHeartbeat: { } ultimo }
                               && DateTimeOffset.UtcNow - ultimo < Constantes.ToleranciaHeartbeat;
         return new EstadoAlimentadorDto(
             a.EnLinea, gatewayEnLinea,
             a.NivelTolvaPerroPorcentaje, a.NivelTolvaGatoPorcentaje,
             a.PesoPlatoPerroG, a.PesoPlatoGatoG,
-            a.VersionFirmware, a.VersionModelo, a.Gateway?.UltimoHeartbeat,
+            a.VersionFirmware, a.VersionModelo, gateway?.UltimoHeartbeat,
             // RF-25: sin conexión se desactiva el dispensado remoto
             DispensadoRemotoDisponible: a.EnLinea && gatewayEnLinea);
     }

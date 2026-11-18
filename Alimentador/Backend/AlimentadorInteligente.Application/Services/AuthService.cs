@@ -8,9 +8,11 @@ using Microsoft.EntityFrameworkCore;
 namespace AlimentadorInteligente.Application.Services;
 
 public class AuthService(
-    IAppDbContext db, ITokenService tokens, IPasswordHasher hasher, IUsuarioActual usuarioActual) : IAuthService
+    IAppDbContext db, ITokenService tokens, IPasswordHasher hasher, IUsuarioActual usuarioActual,
+    AdminOpciones adminOpciones) : IAuthService
 {
     private static readonly TimeSpan VigenciaRefresh = TimeSpan.FromDays(30);
+    public const string MensajeCuentaDesactivada = "Tu cuenta está desactivada. Contacta a un administrador.";
 
     public async Task<AuthResponse> RegistrarAsync(RegistroRequest request, CancellationToken ct = default)
     {
@@ -24,6 +26,7 @@ public class AuthService(
             Email = email,
             PasswordHash = hasher.Hash(request.Password)
         };
+        RegistrarAcceso(usuario);
         db.Usuarios.Add(usuario);
         await db.SaveChangesAsync(ct);
         return await EmitirTokensAsync(usuario, ct);
@@ -35,6 +38,11 @@ public class AuthService(
         var usuario = await db.Usuarios.FirstOrDefaultAsync(u => u.Email == email, ct);
         if (usuario is null || !hasher.Verificar(request.Password, usuario.PasswordHash))
             throw new NoAutorizadoException();
+        // Solo después de validar la contraseña, para no revelar qué cuentas existen
+        if (!usuario.Activo)
+            throw new ProhibidoException(MensajeCuentaDesactivada);
+
+        RegistrarAcceso(usuario);
         return await EmitirTokensAsync(usuario, ct);
     }
 
@@ -45,9 +53,12 @@ public class AuthService(
             .FirstOrDefaultAsync(r => r.TokenHash == hash, ct);
         if (actual is null || !actual.EstaActivo)
             throw new NoAutorizadoException("Refresh token inválido o vencido.");
+        if (!actual.Usuario.Activo)
+            throw new NoAutorizadoException(MensajeCuentaDesactivada);
 
         // Rotación: el token usado se revoca y se emite uno nuevo
         actual.RevocadoEn = DateTimeOffset.UtcNow;
+        RegistrarAcceso(actual.Usuario);
         return await EmitirTokensAsync(actual.Usuario, ct);
     }
 
@@ -70,6 +81,21 @@ public class AuthService(
         await db.SaveChangesAsync(ct);
     }
 
+    public async Task<YoDto> ObtenerYoAsync(CancellationToken ct = default)
+        => await db.Usuarios.AsNoTracking()
+               .Where(u => u.Id == usuarioActual.Id)
+               .Select(u => new YoDto(u.Id, u.Nombre, u.Email, u.EsAdministrador))
+               .FirstOrDefaultAsync(ct)
+           ?? throw new NoEncontradoException("Usuario", usuarioActual.Id);
+
+    /// <summary>Marca el último acceso y da el rol a los correos de Admin:CorreosIniciales (nunca lo quita).</summary>
+    private void RegistrarAcceso(Usuario usuario)
+    {
+        usuario.UltimoAcceso = DateTimeOffset.UtcNow;
+        if (!usuario.EsAdministrador && adminOpciones.EsCorreoInicial(usuario.Email))
+            usuario.EsAdministrador = true;
+    }
+
     private async Task<AuthResponse> EmitirTokensAsync(Usuario usuario, CancellationToken ct)
     {
         var (access, expira) = tokens.GenerarAccessToken(usuario);
@@ -81,6 +107,6 @@ public class AuthService(
             ExpiraEn = DateTimeOffset.UtcNow.Add(VigenciaRefresh)
         });
         await db.SaveChangesAsync(ct);
-        return new AuthResponse(usuario.Id, usuario.Nombre, access, expira, refresh);
+        return new AuthResponse(usuario.Id, usuario.Nombre, access, expira, refresh, usuario.EsAdministrador);
     }
 }
