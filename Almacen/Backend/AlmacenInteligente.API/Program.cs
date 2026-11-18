@@ -26,6 +26,8 @@ builder.Services.AddScoped<IProductoService, ProductoService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IMovimientoService, MovimientoService>();
 builder.Services.AddScoped<IEspacioService, EspacioService>();
+builder.Services.AddScoped<IUsuarioService, UsuarioService>();
+builder.Services.AddScoped<IAlertaService, AlertaService>();
 builder.Services.AddSingleton(jwt);
 builder.Services.AddSingleton<IGeneradorToken, GeneradorTokenJwt>();
 

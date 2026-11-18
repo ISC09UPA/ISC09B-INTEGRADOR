@@ -15,5 +15,6 @@ public record MovimientoDto(
     string? UsuarioNombre,
     DateTime FechaHora);
 
-// Respuesta del registro: el movimiento y el producto con la existencia ya ajustada.
-public record MovimientoRegistradoDto(MovimientoDto Movimiento, ProductoDto Producto);
+// Respuesta del registro: el movimiento, el producto con la existencia ya ajustada y la alerta de reorden
+// que se creó o se atendió con este movimiento (null si no cambió ninguna).
+public record MovimientoRegistradoDto(MovimientoDto Movimiento, ProductoDto Producto, AlertaDto? Alerta);

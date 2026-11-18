@@ -120,35 +120,15 @@ public class LecturaService(ILecturaRepository repositorio) : ILecturaService
         return (cambio, $"OK: {gramos} g en {espacio.Id} = {piezas} pieza(s) (cambio {cambio:+0;-0;0}).");
     }
 
-    // Crea la alerta si el producto llegó a su punto de reorden y no había una activa.
-    // Si ya se repuso, la alerta activa queda como atendida.
+    // Punto de reorden con la regla compartida (la misma de los movimientos manuales).
+    // Devuelve la alerta nueva para publicarla en la cola "alertas-reorden"; null si no se creó ninguna.
     private async Task<Alerta?> RevisarReordenAsync(Producto producto, int existenciaTotal, DateTime ahora, CancellationToken ct)
     {
         var activa = await repositorio.ObtenerAlertaActivaAsync(producto.Id, ct);
-
-        if (existenciaTotal <= producto.PuntoReorden)
-        {
-            if (activa is not null)
-                return null;
-
-            var alerta = new Alerta
-            {
-                ProductoId = producto.Id,
-                Existencia = existenciaTotal,
-                PuntoReorden = producto.PuntoReorden,
-                Estado = EstadosAlerta.Activa,
-                CreadaEn = ahora
-            };
-            repositorio.Agregar(alerta);
-            return alerta;
-        }
-
-        if (activa is not null)
-        {
-            activa.Estado = EstadosAlerta.Atendida;
-            activa.AtendidaEn = ahora;
-        }
-        return null;
+        var reorden = ReglaReorden.Evaluar(producto, existenciaTotal, activa, ahora);
+        if (reorden.Nueva is not null)
+            repositorio.Agregar(reorden.Nueva);
+        return reorden.Nueva;
     }
 
     private async Task<Resultado<LecturaProcesadaDto>> TerminarAsync(LecturaDispositivo registro, string resultado, CancellationToken ct)

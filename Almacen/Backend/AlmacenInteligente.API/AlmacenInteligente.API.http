@@ -2,6 +2,8 @@
 # Usar https: con http la redirección quita el encabezado Authorization.
 @host = https://localhost:7276
 @contrasena = CAMBIAR_POR_LA_CONTRASENA_TEMPORAL
+# Solo para el alta de usuario de prueba. No subir contraseñas reales.
+@contrasenaNueva = CAMBIAR_POR_UNA_CONTRASENA_DE_PRUEBA
 
 ### Estado de la API y de la base (sin sesión; despierta la base)
 GET {{host}}/api/salud
@@ -51,7 +53,7 @@ POST {{host}}/api/movimientos
 Authorization: Bearer {{login.response.body.$.token}}
 Content-Type: application/json
 
-{ "productoId": "PROD-001", "tipoMovimiento": "salida", "cantidad": 3 }
+{ "productoId": "PROD-001", "tipoMovimiento": "salida", "cantidad":11 }
 
 ### Mi historial
 GET {{host}}/api/movimientos/mios?limite=20
@@ -59,4 +61,43 @@ Authorization: Bearer {{login.response.body.$.token}}
 
 ### Historial general (admin)
 GET {{host}}/api/movimientos?productoId=PROD-001
+Authorization: Bearer {{login.response.body.$.token}}
+
+### Movimiento manual que llega al punto de reorden (la respuesta trae "alerta")
+POST {{host}}/api/movimientos
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{ "productoId": "PROD-001", "tipoMovimiento": "SALIDA", "cantidad": 8 }
+
+### Alertas activas
+GET {{host}}/api/alertas?estado=ACTIVA
+Authorization: Bearer {{login.response.body.$.token}}
+
+### Todas las alertas (activas y atendidas)
+GET {{host}}/api/alertas?limite=20
+Authorization: Bearer {{login.response.body.$.token}}
+
+### Marcar una alerta como atendida (admin) — cambiar 1 por el id de una alerta ACTIVA
+PUT {{host}}/api/alertas/1/atender
+Authorization: Bearer {{login.response.body.$.token}}
+
+### Usuarios activos (admin)
+GET {{host}}/api/usuarios
+Authorization: Bearer {{login.response.body.$.token}}
+
+### Alta de usuario de prueba (admin)
+# @name altaUsuario
+POST {{host}}/api/usuarios
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{ "nombre": "Operador de prueba", "usuario": "prueba.operador", "contrasena": "{{contrasenaNueva}}", "rol": "operador" }
+
+### Baja del usuario de prueba (admin) — usa el id que devolvió el alta
+DELETE {{host}}/api/usuarios/{{altaUsuario.response.body.$.id}}
+Authorization: Bearer {{login.response.body.$.token}}
+
+### Darse de baja a uno mismo (debe responder 409)
+DELETE {{host}}/api/usuarios/{{login.response.body.$.usuario.id}}
 Authorization: Bearer {{login.response.body.$.token}}
