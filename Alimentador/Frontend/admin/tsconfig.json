@@ -17,7 +17,7 @@
     "isolatedModules": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "allowImportingTsExtensions": false,
+    "allowImportingTsExtensions": true,
     "resolveJsonModule": true
   },
   "include": ["src", "demo", "vite.config.ts"]

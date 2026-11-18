@@ -6,10 +6,11 @@
   "scripts": {
     "dev": "vite",
     "demo": "vite --mode demo",
-    "build": "tsc -b && vite build",
-    "build:demo": "tsc -b && vite build --mode demo",
+    "build": "tsc --noEmit && vite build",
+    "build:demo": "tsc --noEmit && vite build --mode demo",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit -p tsconfig.app.json"
+    "preview:demo": "vite preview --mode demo",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@fluentui/react-components": "^9.75.2",
