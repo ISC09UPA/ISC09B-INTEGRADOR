@@ -60,7 +60,7 @@ const useEstilos = makeStyles({
   dato: { display: 'flex', flexDirection: 'column', rowGap: '2px', minWidth: 0 },
   termino: { color: tokens.colorNeutralForeground3 },
   definicion: { margin: 0, overflowWrap: 'anywhere' },
-  pila: { display: 'flex', flexDirection: 'column', rowGap: '2px', minWidth: 0 },
+  pila: { display: 'flex', flexDirection: 'column', alignItems: 'flex-start', rowGap: '2px', minWidth: 0 },
   secundario: { color: tokens.colorNeutralForeground3 },
   mono: { fontFamily: tokens.fontFamilyMonospace },
   sinEsp: { color: tokens.colorNeutralForeground3 },

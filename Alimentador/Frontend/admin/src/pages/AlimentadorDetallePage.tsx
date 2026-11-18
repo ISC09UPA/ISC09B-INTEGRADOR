@@ -62,7 +62,7 @@ const useEstilos = makeStyles({
   termino: { color: tokens.colorNeutralForeground3 },
   definicion: { margin: 0, overflowWrap: 'anywhere' },
   mono: { fontFamily: tokens.fontFamilyMonospace },
-  pila: { display: 'flex', flexDirection: 'column', rowGap: '2px', minWidth: 0 },
+  pila: { display: 'flex', flexDirection: 'column', alignItems: 'flex-start', rowGap: '2px', minWidth: 0 },
   linea: { display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: tokens.spacingHorizontalS },
   secundario: { color: tokens.colorNeutralForeground3 },
   filaBaja: { opacity: 0.72 },

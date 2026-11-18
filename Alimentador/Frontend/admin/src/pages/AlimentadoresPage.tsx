@@ -32,7 +32,7 @@ export function esFiltroEstado(v: string): v is FiltroEstadoAlimentador {
 }
 
 const useEstilos = makeStyles({
-  pila: { display: 'flex', flexDirection: 'column', rowGap: '2px', minWidth: 0 },
+  pila: { display: 'flex', flexDirection: 'column', alignItems: 'flex-start', rowGap: '2px', minWidth: 0 },
   secundario: { color: tokens.colorNeutralForeground3, overflowWrap: 'anywhere' },
   mono: { fontFamily: tokens.fontFamilyMonospace },
   tolvas: { display: 'grid', gridTemplateColumns: 'auto minmax(64px, 1fr)', alignItems: 'center', columnGap: tokens.spacingHorizontalS, rowGap: '2px' },
