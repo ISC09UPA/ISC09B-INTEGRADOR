@@ -181,14 +181,14 @@ Roles: 👤 usuario · 🛠 administrador · ✅ ambos.
 
 ## 5. Tiempo real (SignalR)
 
-El hub está en `/hubs/estacionamiento` y pide JWT (por query string `access_token`). Los administradores se unen al grupo `administradores`.
+El hub está en `/hubs/estacionamiento` y pide JWT (por query string `access_token`). Los administradores se unen al grupo `administradores` y cada usuario a `usuario-{id}`. La app solo escucha. Los enums llegan como texto (`"Ocupado"`).
 
 | Evento | Quién lo recibe | Contenido |
 |---|---|---|
 | `CajonActualizado` | todos | `{numero, estado, libres, total}` |
 | `PlumaActualizada` | todos | `{abierta, fecha}` |
 | `AccesoRegistrado` | admins y el dueño del auto | `{tipo, placa, cajon, hora}` |
-| `AlertaCreada` | admins | `{id, tipo, mensaje, fecha}` |
+| `AlertaCreada` | admins | el mismo `AlertaDto` que devuelve `GET /api/alertas` |
 
 ---
 

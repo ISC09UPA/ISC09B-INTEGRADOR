@@ -67,7 +67,7 @@ public static class DependencyInjection
         services.AddSingleton<IAlmacenFotos, AlmacenFotosLocal>();
         services.AddSingleton<ILectorPlacas, LectorPlacasSinAzure>();
         services.AddSingleton<IComandosMaqueta, ComandosMaquetaLocal>();
-        services.AddSingleton<INotificadorTiempoReal, NotificadorSinTiempoReal>();
+        // INotificadorTiempoReal no va aquí: lo registra la API porque usa su hub de SignalR.
 
         // Procesos en segundo plano.
         services.AddHostedService<RevisionAutosSinCajon>();

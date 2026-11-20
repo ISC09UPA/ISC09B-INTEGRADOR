@@ -1,6 +1,8 @@
 using System.Text.Json.Serialization;
+using EstacionamientoInteligente.API.Hubs;
 using EstacionamientoInteligente.API.Middleware;
 using EstacionamientoInteligente.Application;
+using EstacionamientoInteligente.Application.Interfaces.Externos;
 using EstacionamientoInteligente.Infrastructure;
 using EstacionamientoInteligente.Infrastructure.Data;
 using EstacionamientoInteligente.Infrastructure.Locales;
@@ -24,7 +26,13 @@ builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<ManejadorExcepciones>();
 
 // Para que el front pueda probar desde el navegador o un emulador en desarrollo.
-builder.Services.AddCors(o => o.AddDefaultPolicy(p => p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
+// Acepta cualquier origen con credenciales porque el cliente de SignalR del navegador las manda
+// (AllowAnyOrigin no se puede combinar con credenciales). Solo se activa en desarrollo.
+builder.Services.AddCors(o => o.AddDefaultPolicy(p => p
+    .SetIsOriginAllowed(_ => true)
+    .AllowAnyHeader()
+    .AllowAnyMethod()
+    .AllowCredentials()));
 
 // JWT: la app manda "Authorization: Bearer <token>" y aquí se valida en cada petición.
 // Firma, emisor, audiencia y expiración deben coincidir; si no, responde 401.
@@ -47,6 +55,19 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             NameClaimType = ClaimesJwt.Nombre,
             RoleClaimType = ClaimesJwt.Rol   // Para [Authorize(Roles = "Administrador")]
         };
+
+        // SignalR: el navegador no puede mandar el encabezado Authorization al abrir el WebSocket,
+        // así que para el hub el token llega como ?access_token=...
+        o.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = contexto =>
+            {
+                var token = contexto.Request.Query["access_token"];
+                if (!string.IsNullOrEmpty(token) && contexto.HttpContext.Request.Path.StartsWithSegments(EstacionamientoHub.Ruta))
+                    contexto.Token = token;
+                return Task.CompletedTask;
+            }
+        };
     });
 builder.Services.AddAuthorization();
 
@@ -54,7 +75,16 @@ builder.Services.AddAuthorization();
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
-// PENDIENTE (Fase 4): SignalR (/hubs/estacionamiento).
+// Tiempo real (CU-27): hub /hubs/estacionamiento. Los enums viajan como texto, igual que en los controllers.
+var signalR = builder.Services.AddSignalR()
+    .AddJsonProtocol(o => o.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+
+// Con la cadena de Azure SignalR Service las conexiones pasan por Azure; sin ella, SignalR corre dentro de la API.
+var cadenaSignalR = builder.Configuration["Azure:SignalR:ConnectionString"];
+if (!string.IsNullOrWhiteSpace(cadenaSignalR))
+    signalR.AddAzureSignalR(cadenaSignalR);
+
+builder.Services.AddSingleton<INotificadorTiempoReal, NotificadorSignalR>();
 
 var app = builder.Build();
 
@@ -88,5 +118,6 @@ app.UseAuthentication();   // ¿Quién eres? (lee y valida el token)
 app.UseAuthorization();    // ¿Puedes hacer esto? (revisa el rol)
 
 app.MapControllers();
+app.MapHub<EstacionamientoHub>(EstacionamientoHub.Ruta);
 
 app.Run();
