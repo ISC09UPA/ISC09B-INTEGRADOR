@@ -120,6 +120,8 @@ namespace ProyectoInteligente.Infrastructure.Migrations
 
                     b.HasIndex("AccesoId");
 
+                    b.HasIndex("Leida");
+
                     b.ToTable("alertas", (string)null);
                 });
 
@@ -411,9 +413,9 @@ namespace ProyectoInteligente.Infrastructure.Migrations
 
                     b.HasIndex("CitaId");
 
-                    b.HasIndex("ConsultorioId");
-
                     b.HasIndex("PacienteId");
+
+                    b.HasIndex("ConsultorioId", "Estado", "LlegadaEn");
 
                     b.ToTable("turnos", (string)null);
                 });

@@ -24,6 +24,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     protected override void ConfigureConventions(ModelConfigurationBuilder c)
     {
+        c.Properties<DateTime>().HaveConversion<UtcConverter>();   // NEW
         c.Properties<string>().HaveMaxLength(200);
         c.Properties<EstadoCita>().HaveConversion<string>().HaveMaxLength(20);
         c.Properties<EstadoTurno>().HaveConversion<string>().HaveMaxLength(20);
@@ -40,10 +41,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         b.Entity<Doctor>().HasOne(x => x.Usuario).WithOne().HasForeignKey<Doctor>(x => x.UsuarioId);
         b.Entity<Consultorio>().ToTable("consultorios");
         b.Entity<Cita>().ToTable("citas");
-        b.Entity<Turno>().ToTable("turnos");
+        b.Entity<Turno>().ToTable("turnos").HasIndex(x => new { x.ConsultorioId, x.Estado, x.LlegadaEn });   // CHANGED
         b.Entity<TagRfid>().ToTable("tags_rfid").HasIndex(x => x.Uid).IsUnique();
         b.Entity<Acceso>().ToTable("accesos").HasIndex(x => x.CreadoEn);
-        b.Entity<Alerta>().ToTable("alertas");
+        b.Entity<Alerta>().ToTable("alertas").HasIndex(x => x.Leida);   // CHANGED
         b.Entity<Configuracion>().ToTable("configuracion").HasKey(x => x.Clave);
         b.Entity<EventoPendiente>().ToTable("eventos_pendientes").Property(x => x.Payload).HasColumnType("nvarchar(max)");
         b.Entity<OcupacionSala>().ToTable("ocupacion_sala");
