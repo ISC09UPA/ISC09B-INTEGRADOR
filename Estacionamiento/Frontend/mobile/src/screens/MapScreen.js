@@ -2,22 +2,19 @@ import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import ParkingSlot from '../components/ParkingSlot';
 import { Cargando, ErrorCarga } from '../components/EstadoCarga';
-import { cajones, historial } from '../api';
+import { cajones, historial, EVENTOS } from '../api';
 import { useCarga } from '../hooks/useCarga';
 import { hora, duracion } from '../utils/formato';
 import { colors, radius } from '../theme';
 
-// "En vivo": mientras no exista SignalR en el back, el mapa se recarga solo cada 10 s.
-const RECARGA_MS = 10000;
-
 /** showMyCar: solo el rol Usuario tiene "Tu auto está en el cajón N". */
 export default function MapScreen({ name = 'Usuario', onSelectSlot, showMyCar = true }) {
-  const mapa = useCarga(() => cajones.mapa(), [], { cadaMs: RECARGA_MS });
+  const mapa = useCarga(() => cajones.mapa(), [], { enVivo: [EVENTOS.cajon, EVENTOS.pluma] });
   // GET /api/historial/actual responde 204 (null) si el usuario no tiene auto dentro.
   const actual = useCarga(
     () => (showMyCar ? historial.actual() : Promise.resolve(null)),
     [showMyCar],
-    { cadaMs: RECARGA_MS }
+    { enVivo: [EVENTOS.acceso, EVENTOS.cajon] }
   );
 
   return (

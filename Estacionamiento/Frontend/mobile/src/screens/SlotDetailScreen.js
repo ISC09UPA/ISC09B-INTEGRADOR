@@ -2,7 +2,7 @@ import { View, Text, ScrollView, Pressable, Image, StyleSheet } from 'react-nati
 import { Ionicons } from '@expo/vector-icons';
 import { varianteCajon } from '../components/ParkingSlot';
 import { Cargando, ErrorCarga } from '../components/EstadoCarga';
-import { cajones } from '../api';
+import { cajones, EVENTOS } from '../api';
 import { useCarga } from '../hooks/useCarga';
 import { hora, duracion, fechaLarga, etiquetaTipo } from '../utils/formato';
 import { colors, radius } from '../theme';
@@ -19,7 +19,7 @@ const BADGES = {
 
 /** numero: número del cajón. El back decide qué datos del vehículo se pueden ver. */
 export default function SlotDetailScreen({ numero, onBack }) {
-  const { datos, cargando, error, recargar } = useCarga(() => cajones.detalle(numero), [numero]);
+  const { datos, cargando, error, recargar } = useCarga(() => cajones.detalle(numero), [numero], { enVivo: [EVENTOS.cajon, EVENTOS.acceso] });
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>

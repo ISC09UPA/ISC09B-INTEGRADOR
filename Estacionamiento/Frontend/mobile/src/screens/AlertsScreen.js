@@ -3,7 +3,7 @@ import { View, Text, ScrollView, Pressable, Image, ActivityIndicator, StyleSheet
 import { Ionicons } from '@expo/vector-icons';
 import { Cargando, ErrorCarga, MensajeError } from '../components/EstadoCarga';
 import PlacaModal from '../components/PlacaModal';
-import { alertas, vehiculos } from '../api';
+import { alertas, vehiculos, EVENTOS } from '../api';
 import { useCarga } from '../hooks/useCarga';
 import { hora, fechaLarga, TITULOS_ALERTA } from '../utils/formato';
 import { colors, radius } from '../theme';
@@ -28,7 +28,8 @@ export default function AlertsScreen({ onBack }) {
   const [soloPendientes, setSoloPendientes] = useState(true);
   const { datos, cargando, error, recargar } = useCarga(
     () => alertas.listar(soloPendientes),
-    [soloPendientes]
+    [soloPendientes],
+    { enVivo: [EVENTOS.alerta] }
   );
   const [corrigiendo, setCorrigiendo] = useState(null); // AlertaDto de placa no legible
 

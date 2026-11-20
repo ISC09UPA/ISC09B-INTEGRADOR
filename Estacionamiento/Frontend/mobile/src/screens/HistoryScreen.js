@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { Cargando, ErrorCarga } from '../components/EstadoCarga';
-import { historial } from '../api';
+import { historial, EVENTOS } from '../api';
 import { useCarga } from '../hooks/useCarga';
 import { hora, duracion, diaYSemana, horasMinutos, mesCorto, cajonCorto } from '../utils/formato';
 import { colors, radius } from '../theme';
@@ -15,8 +15,8 @@ const FILTERS = [
 
 export default function HistoryScreen() {
   const [filter, setFilter] = useState('Semana');
-  const resumen = useCarga(() => historial.resumen(), []);
-  const lista = useCarga(() => historial.listar(filter), [filter]);
+  const resumen = useCarga(() => historial.resumen(), [], { enVivo: [EVENTOS.acceso] });
+  const lista = useCarga(() => historial.listar(filter), [filter], { enVivo: [EVENTOS.acceso] });
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>

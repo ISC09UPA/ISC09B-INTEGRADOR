@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { MensajeError } from '../components/EstadoCarga';
 import PlacaModal from '../components/PlacaModal';
-import { cajones, escaner, pluma } from '../api';
+import { cajones, escaner, pluma, EVENTOS } from '../api';
 import { useCarga } from '../hooks/useCarga';
 import { hora, duracion, etiquetaTipo, MOTIVOS } from '../utils/formato';
 import { colors, radius } from '../theme';
@@ -30,8 +30,8 @@ const MAX_BYTES = 4 * 1024 * 1024; // igual que EscanerService.TamanoMaximoBytes
  * "Abrir manualmente" es aparte: abre sin registrar entrada ni salida.
  */
 export default function ScannerScreen() {
-  const mapa = useCarga(() => cajones.mapa(), [], { cadaMs: 10000 });
-  const estadoPluma = useCarga(() => pluma.estado(), [], { cadaMs: 5000 });
+  const mapa = useCarga(() => cajones.mapa(), [], { enVivo: [EVENTOS.cajon] });
+  const estadoPluma = useCarga(() => pluma.estado(), [], { enVivo: [EVENTOS.pluma] });
 
   const [analisis, setAnalisis] = useState(null); // AnalisisPlacaDto
   const [placa, setPlaca] = useState(null); // la detectada, o la que corrigió el admin
@@ -46,7 +46,8 @@ export default function ScannerScreen() {
 
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
-  // Mientras no exista SignalR, la pluma se muestra abierta unos segundos tras abrirla desde aquí.
+  // La pluma se muestra abierta unos segundos tras abrirla desde aquí. Cuando la maqueta reporta
+  // que abrió o cerró, llega PlumaActualizada; sin maqueta conectada nadie avisa que se cerró.
   const marcarPlumaAbierta = () => {
     setPlumaAbiertaLocal(true);
     timers.current.push(setTimeout(() => setPlumaAbiertaLocal(false), GATE_OPEN_MS));

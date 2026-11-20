@@ -1,7 +1,7 @@
 import { View, Text, ScrollView, Pressable, Switch, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Cargando } from '../components/EstadoCarga';
-import { auth, historial } from '../api';
+import { auth, historial, EVENTOS } from '../api';
 import { useCarga } from '../hooks/useCarga';
 import { hora, horasMinutos, mesCorto, cajonCorto } from '../utils/formato';
 import { colors, radius } from '../theme';
@@ -10,7 +10,7 @@ import { colors, radius } from '../theme';
 export default function ProfileScreen({ usuario, onLogout, onOpenSlot }) {
   // Se vuelve a pedir para tener las placas al día (el admin pudo ligar una después del login).
   const yo = useCarga(() => auth.yo(), []);
-  const actual = useCarga(() => historial.actual(), []);
+  const actual = useCarga(() => historial.actual(), [], { enVivo: [EVENTOS.acceso, EVENTOS.cajon] });
   const resumen = useCarga(() => historial.resumen(), []);
 
   const datos = yo.datos ?? usuario;

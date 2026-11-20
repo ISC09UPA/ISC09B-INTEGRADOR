@@ -12,7 +12,7 @@ import VehiclesScreen from './src/screens/VehiclesScreen';
 import ScannerScreen from './src/screens/ScannerScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import BottomTabs from './src/components/BottomTabs';
-import { guardarToken, borrarToken } from './src/api';
+import { guardarToken, borrarToken, conectarEnVivo, desconectarEnVivo } from './src/api';
 import { colors } from './src/theme';
 
 const USER_TABS = [
@@ -38,6 +38,7 @@ export default function App() {
 
   const iniciarSesion = (s) => {
     guardarToken(s.token);
+    conectarEnVivo(s.token); // mapa, pluma y alertas se actualizan solos
     setSession(s);
     setRegistrando(false);
     setTab(s.usuario.rol === 'Administrador' ? 'panel' : 'mapa');
@@ -58,6 +59,7 @@ export default function App() {
 
   const logout = () => {
     borrarToken();
+    desconectarEnVivo();
     setSession(null);
     setTab('mapa');
     setSelectedSlot(null);

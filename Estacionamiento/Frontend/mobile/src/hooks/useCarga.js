@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { escucharEnVivo, RECONECTADO } from '../api/tiempoReal';
 
 /**
  * Carga datos de la API al abrir la pantalla.
  * const { datos, cargando, error, recargar } = useCarga(() => cajones.mapa(), []);
  * - dependencias: cuando cambian, se vuelve a cargar (por ejemplo, el filtro elegido).
- * - cadaMs: si se pasa, recarga sola cada ese tiempo (mientras llega SignalR).
+ * - enVivo: eventos de SignalR (EVENTOS.cajon, EVENTOS.pluma...) que hacen que se recargue sola.
+ *   También se recarga si la conexión en vivo se cayó y volvió, por si se perdió algún aviso.
+ * - cadaMs: si se pasa, recarga sola cada ese tiempo.
  */
-export function useCarga(cargar, dependencias, { cadaMs } = {}) {
+export function useCarga(cargar, dependencias, { cadaMs, enVivo } = {}) {
   const [estado, setEstado] = useState({ datos: null, cargando: true, error: null });
   const montado = useRef(true);
 
@@ -34,6 +37,15 @@ export function useCarga(cargar, dependencias, { cadaMs } = {}) {
     const id = setInterval(() => recargar({ silencioso: true }), cadaMs);
     return () => clearInterval(id);
   }, [recargar, cadaMs]);
+
+  // La lista se compara como texto para no volver a suscribirse en cada render.
+  const eventos = enVivo?.length ? [...enVivo, RECONECTADO].join('|') : '';
+  useEffect(() => {
+    if (!eventos) return undefined;
+    const alLlegar = () => recargar({ silencioso: true });
+    const cancelar = eventos.split('|').map((e) => escucharEnVivo(e, alLlegar));
+    return () => cancelar.forEach((fn) => fn());
+  }, [recargar, eventos]);
 
   return { ...estado, recargar };
 }

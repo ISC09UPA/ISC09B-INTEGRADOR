@@ -1,7 +1,7 @@
 import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Cargando, ErrorCarga } from '../components/EstadoCarga';
-import { estadisticas, alertas } from '../api';
+import { estadisticas, alertas, EVENTOS } from '../api';
 import { useCarga } from '../hooks/useCarga';
 import { hora, duracion, cajonCorto, TITULOS_ALERTA } from '../utils/formato';
 import { colors, radius } from '../theme';
@@ -12,14 +12,12 @@ const CHART_HEIGHT = 100;
 const PRIMERA_HORA = 7;
 const ULTIMA_HORA = 21;
 
-const RECARGA_MS = 30000;
-
 /** onSeeAlert: abre la lista de alertas. */
 export default function AdminPanelScreen({ onLogout, onSeeAlert }) {
-  const panel = useCarga(() => estadisticas.panel(), [], { cadaMs: RECARGA_MS });
-  const horas = useCarga(() => estadisticas.ocupacionPorHora(), [], { cadaMs: RECARGA_MS });
-  const uso = useCarga(() => estadisticas.usoPorCajon(), []);
-  const pendientes = useCarga(() => alertas.listar(true), [], { cadaMs: RECARGA_MS });
+  const panel = useCarga(() => estadisticas.panel(), [], { enVivo: [EVENTOS.cajon, EVENTOS.acceso, EVENTOS.alerta] });
+  const horas = useCarga(() => estadisticas.ocupacionPorHora(), [], { enVivo: [EVENTOS.cajon, EVENTOS.acceso] });
+  const uso = useCarga(() => estadisticas.usoPorCajon(), [], { enVivo: [EVENTOS.acceso] });
+  const pendientes = useCarga(() => alertas.listar(true), [], { enVivo: [EVENTOS.alerta] });
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>

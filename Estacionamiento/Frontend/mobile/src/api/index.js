@@ -7,6 +7,7 @@ import { Platform } from 'react-native';
 import { pedir } from './cliente';
 
 export { API_URL, ErrorApi, guardarToken, borrarToken } from './cliente';
+export { EVENTOS, conectarEnVivo, desconectarEnVivo, escucharEnVivo } from './tiempoReal';
 
 // ---- Auth (pantalla 1 y Perfil) ----
 export const auth = {

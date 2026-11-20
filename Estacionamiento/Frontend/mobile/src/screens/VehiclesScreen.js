@@ -12,7 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Cargando, ErrorCarga, MensajeError } from '../components/EstadoCarga';
 import PlacaModal from '../components/PlacaModal';
-import { vehiculos } from '../api';
+import { vehiculos, EVENTOS } from '../api';
 import { useCarga } from '../hooks/useCarga';
 import { hora, etiquetaTipo, iconoTipo, TIPOS_VEHICULO } from '../utils/formato';
 import { colors, radius } from '../theme';
@@ -41,7 +41,8 @@ export default function VehiclesScreen() {
   // El back busca por placa parcial ("123 a" encuentra "ABC-123-A") y filtra por chip.
   const { datos, cargando, error, recargar } = useCarga(
     () => vehiculos.listar(busqueda, filter),
-    [busqueda, filter]
+    [busqueda, filter],
+    { enVivo: [EVENTOS.acceso] } // "Dentro" / "Fuera" cambia cuando un auto pasa la pluma
   );
 
   const accion = async (llamada) => {
