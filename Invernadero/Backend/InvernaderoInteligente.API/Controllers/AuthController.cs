@@ -20,9 +20,16 @@ public class AuthController : ControllerBase
     [HttpPost("registro")]
     public async Task<IActionResult> Registrar([FromBody] RegisterRequestDto request)
     {
-        if (string.IsNullOrWhiteSpace(request.correo) || string.IsNullOrWhiteSpace(request.contrasena))
+        if (string.IsNullOrWhiteSpace(request.nombre) ||
+            string.IsNullOrWhiteSpace(request.correo) ||
+            string.IsNullOrWhiteSpace(request.contrasena))
         {
-            return BadRequest(new { mensaje = "Correo y contraseña son obligatorios." });
+            return BadRequest(new { mensaje = "Nombre, correo y contraseña son obligatorios." });
+        }
+
+        if (!request.correo.Contains('@') || !request.correo.Contains('.'))
+        {
+            return BadRequest(new { mensaje = "El correo no tiene un formato válido." });
         }
 
         var resultado = await _authService.RegisterAsync(request);

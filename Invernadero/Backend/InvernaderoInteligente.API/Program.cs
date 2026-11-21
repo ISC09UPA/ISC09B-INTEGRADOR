@@ -1,9 +1,8 @@
 using System.Text;
 using InvernaderoInteligente.Application.Interfaces;
+using InvernaderoInteligente.Infrastructure;
 using InvernaderoInteligente.Infrastructure.ExternalServices;
-using InvernaderoInteligente.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using NSwag.AspNetCore;
 
@@ -12,10 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
-var connectionString = builder.Configuration["BaseDatos:ConnectionString"];
-
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(connectionString));
+builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 

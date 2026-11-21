@@ -47,10 +47,9 @@ namespace InvernaderoInteligente.Infrastructure.ExternalServices
 
             var usuario = new Usuario
             {
-                nombre = string.IsNullOrWhiteSpace(request.nombre) ? request.correo.Split('@')[0] : request.nombre.Trim(),
+                nombre = request.nombre.Trim(),
                 correo = request.correo.Trim(),
-                contrasena = BCrypt.Net.BCrypt.HashPassword(request.contrasena),
-                fecha_Registro = DateTime.UtcNow
+                contrasena = BCrypt.Net.BCrypt.HashPassword(request.contrasena)
             };
 
             _context.Usuarios.Add(usuario);
