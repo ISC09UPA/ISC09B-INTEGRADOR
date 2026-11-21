@@ -1,0 +1,11 @@
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Domain\bin\Debug\net10.0\CasaDomotica.Domain.deps.json
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Domain\bin\Debug\net10.0\CasaDomotica.Domain.dll
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Domain\bin\Debug\net10.0\CasaDomotica.Domain.pdb
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Domain\obj\Debug\net10.0\CasaDomotica.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Domain\obj\Debug\net10.0\CasaDomotica.Domain.AssemblyInfoInputs.cache
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Domain\obj\Debug\net10.0\CasaDomotica.Domain.AssemblyInfo.cs
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Domain\obj\Debug\net10.0\CasaDomotica.Domain.csproj.CoreCompileInputs.cache
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Domain\obj\Debug\net10.0\CasaDomotica.Domain.dll
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Domain\obj\Debug\net10.0\refint\CasaDomotica.Domain.dll
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Domain\obj\Debug\net10.0\CasaDomotica.Domain.pdb
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Domain\obj\Debug\net10.0\ref\CasaDomotica.Domain.dll

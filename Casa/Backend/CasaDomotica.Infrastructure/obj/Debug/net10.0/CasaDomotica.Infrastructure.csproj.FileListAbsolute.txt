@@ -1,0 +1,17 @@
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Infrastructure\bin\Debug\net10.0\CasaDomotica.Infrastructure.deps.json
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Infrastructure\bin\Debug\net10.0\CasaDomotica.Infrastructure.dll
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Infrastructure\bin\Debug\net10.0\CasaDomotica.Infrastructure.pdb
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Infrastructure\bin\Debug\net10.0\CasaDomotica.Application.dll
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Infrastructure\bin\Debug\net10.0\CasaDomotica.Domain.dll
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Infrastructure\bin\Debug\net10.0\CasaDomotica.Application.pdb
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Infrastructure\bin\Debug\net10.0\CasaDomotica.Domain.pdb
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Infrastructure\obj\Debug\net10.0\CasaDomotica.Infrastructure.csproj.AssemblyReference.cache
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Infrastructure\obj\Debug\net10.0\CasaDomotica.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Infrastructure\obj\Debug\net10.0\CasaDomotica.Infrastructure.AssemblyInfoInputs.cache
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Infrastructure\obj\Debug\net10.0\CasaDomotica.Infrastructure.AssemblyInfo.cs
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Infrastructure\obj\Debug\net10.0\CasaDomotica.Infrastructure.csproj.CoreCompileInputs.cache
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Infrastructure\obj\Debug\net10.0\CasaDomo.48962F2E.Up2Date
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Infrastructure\obj\Debug\net10.0\CasaDomotica.Infrastructure.dll
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Infrastructure\obj\Debug\net10.0\refint\CasaDomotica.Infrastructure.dll
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Infrastructure\obj\Debug\net10.0\CasaDomotica.Infrastructure.pdb
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Infrastructure\obj\Debug\net10.0\ref\CasaDomotica.Infrastructure.dll

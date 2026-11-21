@@ -1,0 +1,15 @@
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Application\bin\Debug\net10.0\CasaDomotica.Application.deps.json
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Application\bin\Debug\net10.0\CasaDomotica.Application.dll
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Application\bin\Debug\net10.0\CasaDomotica.Application.pdb
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Application\bin\Debug\net10.0\CasaDomotica.Domain.dll
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Application\bin\Debug\net10.0\CasaDomotica.Domain.pdb
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Application\obj\Debug\net10.0\CasaDomotica.Application.csproj.AssemblyReference.cache
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Application\obj\Debug\net10.0\CasaDomotica.Application.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Application\obj\Debug\net10.0\CasaDomotica.Application.AssemblyInfoInputs.cache
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Application\obj\Debug\net10.0\CasaDomotica.Application.AssemblyInfo.cs
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Application\obj\Debug\net10.0\CasaDomotica.Application.csproj.CoreCompileInputs.cache
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Application\obj\Debug\net10.0\CasaDomo.646A532E.Up2Date
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Application\obj\Debug\net10.0\CasaDomotica.Application.dll
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Application\obj\Debug\net10.0\refint\CasaDomotica.Application.dll
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Application\obj\Debug\net10.0\CasaDomotica.Application.pdb
+C:\Users\paola\Downloads\ISC09B-INTEGRADOR\Casa\Backend\CasaDomotica.Application\obj\Debug\net10.0\ref\CasaDomotica.Application.dll
