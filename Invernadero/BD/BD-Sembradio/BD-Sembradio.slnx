@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="BD-Sembradio.sqlproj">
+    <Build />
+    <Deploy />
+  </Project>
+</Solution>
