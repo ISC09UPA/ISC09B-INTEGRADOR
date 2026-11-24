@@ -134,3 +134,13 @@ Cabecera: `Authorization: Bearer <token>`
 - El token JWT expira a las **8 horas** y contiene id, correo y rol del usuario.
 - `correo` es único en la tabla `Usuarios` (índice único).
 - CORS está abierto (`PermitirTodo`) para desarrollo; restríngelo en producción.
+
+Back- pris
+
+- **Custom Vision:** `Application/Interfaces/ICustomVisionService.cs` define el contrato y `DTOs/ImageClassificationDtos.cs` las respuestas. `Application/Services/CustomVisionService.cs` envía el stream binario a la ruta de Prediction API y mapea las predicciones. `ImageClassificationService` primero comprueba y abre el blob y luego solicita la clasificación. El endpoint está en `API/Controllers/ImagesController.cs`. Cambia el endpoint, el modelo de respuesta o el umbral de decisión ahí; credenciales y nombre de iteración vienen de configuración.
+- **Bus Services:** `Application/Interfaces/IBusServices.cs`, `DTOs/ComandoDto.cs` y `DTOs/LoteLecturas.cs` definen los contratos JSON. `Application/Services/BusSerivice.cs` publica comandos con TTL de dos minutos. `Infrastructure/BackgroundServices/LecturasWorker.cs` escucha la cola de lecturas y decide completar o enviar a dead-letter. La API de prueba de comandos está en `API/Controllers/CommandsController.cs`; el procesamiento del lote está en `Application/Services/ProcesarLecturasService.cs` (actualmente solo registra el lote; ahí se agrega persistencia o reglas de automatización).
+- **Registro de servicios:** `Application/Services/ImageClassificationRegistration.cs` enlaza configuración y registra Blob Storage, el cliente HTTP de Custom Vision y el servicio de clasificación. `API/Program.cs` compone los servicios y habilita el worker solo cuando existe la conexión de lecturas.
+- **Persistencia:** el proyecto de dominio contiene `Lectura`, `Sensor` y `TipoSensor`; `Infrastructure/Persistence/AppDbContext.cs` es el punto de partida para persistencia. Actualmente el procesamiento de lecturas no guarda en base de datos.
+
+Al cambiar propiedades de los mensajes, actualiza juntos los DTO, los productores/consumidores y los ejemplos de prueba; los nombres JSON deben coincidir con el formato que envían los dispositivos.
+

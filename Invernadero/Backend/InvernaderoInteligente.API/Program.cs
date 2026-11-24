@@ -32,12 +32,23 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddAuthorization();
+builder.Services.AddImageClassification(builder.Configuration);
+builder.Services.Configure<ServiceBusSettings>(builder.Configuration.GetSection("ServiceBus"));
+builder.Services.Configure<MachineLearningSettings>(builder.Configuration.GetSection("MachineLearning"));
+builder.Services.AddHttpClient<IMachinLearningService, MachinLearningService>();
+builder.Services.AddScoped<IProcesarLecturasService, ProcesarLecturasService>();
 
-builder.Services.AddCors(options =>
+var bus = builder.Configuration.GetSection("ServiceBus").Get<ServiceBusSettings>() ?? new ServiceBusSettings();
+if (!string.IsNullOrWhiteSpace(bus.LecturasConnectionString))
 {
-    options.AddPolicy("PermitirTodo", policy =>
-        policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
-});
+    builder.Services.AddKeyedSingleton("lecturas", (_, _) => new ServiceBusClient(bus.LecturasConnectionString));
+    builder.Services.AddHostedService<LecturasWorker>();
+}
+if (!string.IsNullOrWhiteSpace(bus.ComandosConnectionString))
+{
+    builder.Services.AddKeyedSingleton("comandos", (_, _) => new ServiceBusClient(bus.ComandosConnectionString));
+    builder.Services.AddSingleton<IBusServices, BusService>();
+}
 
 var app = builder.Build();
 

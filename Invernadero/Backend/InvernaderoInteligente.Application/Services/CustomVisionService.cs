@@ -26,7 +26,18 @@ public sealed class CustomVisionClient : ICustomVisionClient
         using var content = new StreamContent(image);
         content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
         using var response = await _http.PostAsync(url, content, ct);
-        response.EnsureSuccessStatusCode();
+        //response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode)
+        {
+            var detalle = await response.Content.ReadAsStringAsync(ct);
+
+            throw new HttpRequestException(
+                $"Custom Vision respondió {(int)response.StatusCode} " +
+                $"{response.StatusCode}. URL: {response.RequestMessage?.RequestUri}. " +
+                $"Detalle: {detalle}",
+                null,
+                response.StatusCode);
+        }
         var result = await response.Content.ReadFromJsonAsync<CvResponse>(cancellationToken: ct);
         return result?.Predictions.Select(p => new PredictionDto(p.TagName, p.Probability)).ToArray()
             ?? Array.Empty<PredictionDto>();
