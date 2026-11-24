@@ -2,10 +2,9 @@ namespace InvernaderoInteligente.Domain.Entities;
 
 public class Lectura
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
-    public Guid SensorId { get; set; }
-    public double Valor { get; set; }
-    public DateTime FechaLectura { get; set; } = DateTime.UtcNow;
-
-    public Sensor? Sensor { get; set; }
+    public int id_Lectura { get; set; }
+    public int id_Sensor { get; set; }
+    public double valor { get; set; }
+    public DateTime fecha_L_Hora { get; set; }
+    public Sensor Sensor { get; set; } = null!;
 }

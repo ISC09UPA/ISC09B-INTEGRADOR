@@ -1,9 +1,10 @@
 namespace InvernaderoInteligente.Domain.Entities;
 
-public enum TipoSensor
+public class TipoSensor
 {
-    Temperatura = 1,
-    Humedad = 2,
-    HumedadSuelo = 3,
-    Luz = 4
+    public int id_T_Sensor { get; set; }
+    public DateTime fecha_Despliegue { get; set; }
+    public string nombre { get; set; } = string.Empty;
+    public string unidad_Medida { get; set; } = string.Empty;
+    public ICollection<Sensor> Sensores { get; set; } = new List<Sensor>();
 }
