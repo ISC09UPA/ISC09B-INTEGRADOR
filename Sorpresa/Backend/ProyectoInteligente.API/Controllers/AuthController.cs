@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProyectoInteligente.Application.Common.Interfaces;
 using ProyectoInteligente.Application.DTOs;
+using ProyectoInteligente.Domain.Entities;
 
 namespace ProyectoInteligente.API.Controllers;
 
@@ -20,6 +21,27 @@ public class AuthController(IAppDbContext db, ITokenService tokens) : Controller
             return Unauthorized(new { message = "Invalid credentials" });
 
         return new LoginResponse(tokens.Create(user), user.Nombre, user.Rol.Nombre);
+    }
+
+    [HttpPost("register")]
+    public async Task<IActionResult> Register(RegisterRequest req, CancellationToken ct)
+    {
+        var correo = req.Correo.Trim().ToLowerInvariant();
+        if (await db.Usuarios.AnyAsync(u => u.Correo == correo, ct))
+            return Conflict(new { message = "El correo ya está registrado" });
+
+        var rol = await db.Roles.FirstOrDefaultAsync(r => r.Nombre == "paciente", ct);
+        if (rol == null) return StatusCode(500, new { message = "Rol paciente no existe" });
+
+        db.Usuarios.Add(new Usuario
+        {
+            Nombre = req.Nombre.Trim(),
+            Correo = correo,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(req.Password),
+            RolId = rol.Id
+        });
+        await db.SaveChangesAsync(ct);
+        return StatusCode(201, new { message = "Usuario registrado" });
     }
 
     // lets the app validate a stored token and read the role; also a quick check that roles work
