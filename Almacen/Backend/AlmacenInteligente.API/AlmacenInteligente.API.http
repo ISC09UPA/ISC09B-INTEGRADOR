@@ -101,3 +101,34 @@ Authorization: Bearer {{login.response.body.$.token}}
 ### Darse de baja a uno mismo (debe responder 409)
 DELETE {{host}}/api/usuarios/{{login.response.body.$.usuario.id}}
 Authorization: Bearer {{login.response.body.$.token}}
+
+### ===== Pedidos de reabastecimiento (admin) =====
+### Pedir 10 piezas de PROD-001 (manda el correo al proveedor; revisar "correoEnviado")
+# @name pedido
+POST {{host}}/api/pedidos
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{ "productoId": "PROD-001", "cantidad": 10 }
+
+### Pedir otra vez el mismo producto (debe responder 409: ya hay un pedido en camino)
+POST {{host}}/api/pedidos
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{ "productoId": "PROD-001", "cantidad": 5 }
+
+### Pedidos en camino (las alertas activas traen "pedidoId")
+GET {{host}}/api/pedidos?estado=SOLICITADO
+Authorization: Bearer {{login.response.body.$.token}}
+
+### Recibir el pedido (registra la ENTRADA con origen PEDIDO; cuerpo opcional)
+PUT {{host}}/api/pedidos/{{pedido.response.body.$.id}}/recibir
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{ }
+
+### Cancelar un pedido — crear otro antes con el primer bloque; si ya se recibió, responde 409
+PUT {{host}}/api/pedidos/{{pedido.response.body.$.id}}/cancelar
+Authorization: Bearer {{login.response.body.$.token}}

@@ -13,6 +13,7 @@ public class AlertaRepository(AlmacenDbContext db) : IAlertaRepository
         var consulta = db.Alertas
             .AsNoTracking()
             .Include(a => a.Producto)
+            .Include(a => a.Pedidos) // para saber si ya hay un pedido en camino (pedidoId)
             .AsQueryable();
 
         if (estado is not null)
@@ -28,6 +29,7 @@ public class AlertaRepository(AlmacenDbContext db) : IAlertaRepository
     public Task<Alerta?> ObtenerPorIdAsync(long id, CancellationToken ct = default) =>
         db.Alertas
             .Include(a => a.Producto)
+            .Include(a => a.Pedidos)
             .FirstOrDefaultAsync(a => a.Id == id, ct);
 
     public Task<Alerta?> ObtenerActivaAsync(string productoId, CancellationToken ct = default) =>

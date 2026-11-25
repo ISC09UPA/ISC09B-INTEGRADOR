@@ -18,12 +18,20 @@ public static class OrigenesMovimiento
     public const string Sensor = "SENSOR";
     public const string Camara = "CAMARA";
     public const string Manual = "MANUAL";
+    public const string Pedido = "PEDIDO"; // entrada al recibir un pedido de reabastecimiento
 }
 
 public static class EstadosAlerta
 {
     public const string Activa = "ACTIVA";
     public const string Atendida = "ATENDIDA";
+}
+
+public static class EstadosPedido
+{
+    public const string Solicitado = "SOLICITADO";
+    public const string Recibido = "RECIBIDO";
+    public const string Cancelado = "CANCELADO";
 }
 
 // Sensores que mandan lecturas desde la Raspberry (tabla LecturasDispositivo).

@@ -9,6 +9,7 @@ public class Producto
     public int PuntoReorden { get; set; }
     public string? EtiquetaVision { get; set; } // clase que devuelve el modelo de visión
     public string? ImagenUrl { get; set; }
+    public int? ProveedorId { get; set; } // null = sin proveedor (Database/003)
     public bool Activo { get; set; } = true;
     public DateTime CreadoEn { get; set; }
 
@@ -17,4 +18,5 @@ public class Producto
     public ICollection<ConteoVisual> ConteosVisuales { get; set; } = new List<ConteoVisual>();
     public ICollection<Alerta> Alertas { get; set; } = new List<Alerta>();
     public Estadistica? Estadistica { get; set; }
+    public Proveedor? Proveedor { get; set; }
 }

@@ -28,6 +28,14 @@ builder.Services.AddScoped<IMovimientoService, MovimientoService>();
 builder.Services.AddScoped<IEspacioService, EspacioService>();
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 builder.Services.AddScoped<IAlertaService, AlertaService>();
+builder.Services.AddScoped<IPedidoService, PedidoService>();
+
+// Correo al proveedor (Azure Communication Services Email). Opcional: si falta, los pedidos se crean
+// con correoEnviado = false. Va en User Secrets (local) o en App Service como Correo__ConnectionString
+// y Correo__Remitente. Nunca en appsettings.json ni en el repositorio.
+builder.Services.AddCorreo(
+    builder.Configuration["Correo:ConnectionString"],
+    builder.Configuration["Correo:Remitente"]);
 builder.Services.AddSingleton(jwt);
 builder.Services.AddSingleton<IGeneradorToken, GeneradorTokenJwt>();
 

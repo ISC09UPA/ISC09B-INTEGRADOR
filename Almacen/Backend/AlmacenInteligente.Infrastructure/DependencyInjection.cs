@@ -1,9 +1,11 @@
 using AlmacenInteligente.Application.Interfaces;
+using AlmacenInteligente.Infrastructure.Correo;
 using AlmacenInteligente.Infrastructure.Persistence;
 using AlmacenInteligente.Infrastructure.Repositories;
 using AlmacenInteligente.Infrastructure.Seguridad;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace AlmacenInteligente.Infrastructure;
 
@@ -21,7 +23,17 @@ public static class DependencyInjection
         services.AddScoped<IEspacioRepository, EspacioRepository>();
         services.AddScoped<ILecturaRepository, LecturaRepository>();
         services.AddScoped<IAlertaRepository, AlertaRepository>();
+        services.AddScoped<IPedidoRepository, PedidoRepository>();
+        services.AddScoped<IProveedorRepository, ProveedorRepository>();
         services.AddSingleton<IServicioContrasena, ServicioContrasenaBcrypt>();
+        return services;
+    }
+
+    // Correo al proveedor (Azure Communication Services Email). Solo lo usa la API.
+    public static IServiceCollection AddCorreo(this IServiceCollection services, string? cadenaConexion, string? remitente)
+    {
+        services.AddSingleton<IServicioCorreo>(sp =>
+            new ServicioCorreoAcs(cadenaConexion, remitente, sp.GetRequiredService<ILogger<ServicioCorreoAcs>>()));
         return services;
     }
 }

@@ -17,6 +17,8 @@ public class AlmacenDbContext(DbContextOptions<AlmacenDbContext> options) : DbCo
     public DbSet<Alerta> Alertas => Set<Alerta>();
     public DbSet<Estadistica> Estadisticas => Set<Estadistica>();
     public DbSet<LecturaDispositivo> LecturasDispositivo => Set<LecturaDispositivo>();
+    public DbSet<Proveedor> Proveedores => Set<Proveedor>();
+    public DbSet<Pedido> Pedidos => Set<Pedido>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -39,6 +41,8 @@ public class AlmacenDbContext(DbContextOptions<AlmacenDbContext> options) : DbCo
             e.Property(x => x.Descripcion).HasMaxLength(300);
             e.Property(x => x.EtiquetaVision).HasMaxLength(50);
             e.Property(x => x.ImagenUrl).HasMaxLength(400);
+            // Columna "proveedorId" (INT NULL): la agrega Database/003_proveedores_pedidos.sql.
+            e.HasOne(x => x.Proveedor).WithMany(p => p.Productos).HasForeignKey(x => x.ProveedorId).IsRequired(false);
         });
 
         modelBuilder.Entity<Anaquel>(e =>
@@ -111,6 +115,31 @@ public class AlmacenDbContext(DbContextOptions<AlmacenDbContext> options) : DbCo
             e.Property(x => x.TipoSensor).HasMaxLength(10).IsRequired();
             e.Property(x => x.Evento).HasMaxLength(10);
             e.Property(x => x.Resultado).HasMaxLength(200).IsRequired();
+        });
+
+        // Tablas nuevas: las crea Database/003_proveedores_pedidos.sql.
+        modelBuilder.Entity<Proveedor>(e =>
+        {
+            e.ToTable("Proveedores");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Nombre).HasMaxLength(100).IsRequired();
+            e.Property(x => x.Email).HasMaxLength(200).IsRequired();
+            e.Property(x => x.Telefono).HasMaxLength(30);
+            e.Property(x => x.Direccion).HasMaxLength(300);
+            e.Property(x => x.Lat).HasPrecision(9, 6);
+            e.Property(x => x.Lon).HasPrecision(9, 6);
+        });
+
+        modelBuilder.Entity<Pedido>(e =>
+        {
+            e.ToTable("Pedidos");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.ProductoId).HasMaxLength(20).IsRequired();
+            e.Property(x => x.Estado).HasMaxLength(10).IsRequired();
+            e.HasOne(x => x.Producto).WithMany().HasForeignKey(x => x.ProductoId);
+            e.HasOne(x => x.Proveedor).WithMany().HasForeignKey(x => x.ProveedorId);
+            e.HasOne(x => x.Alerta).WithMany(a => a.Pedidos).HasForeignKey(x => x.AlertaId).IsRequired(false);
+            e.HasOne(x => x.Usuario).WithMany().HasForeignKey(x => x.UsuarioId);
         });
 
         modelBuilder.Entity<Estadistica>(e =>

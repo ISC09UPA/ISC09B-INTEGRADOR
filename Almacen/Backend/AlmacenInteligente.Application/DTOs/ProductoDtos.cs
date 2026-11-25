@@ -17,6 +17,7 @@ public record ProductoDto(
     int Salidas30Dias,    // piezas que salieron en los últimos 30 días (todas las fuentes)
     string? EtiquetaVision,
     string? ImagenUrl,
+    int? ProveedorId,     // null = sin proveedor (no se le puede hacer pedido)
     UbicacionDto? Ubicacion,
     UltimoMovimientoDto? UltimoMovimiento);
 

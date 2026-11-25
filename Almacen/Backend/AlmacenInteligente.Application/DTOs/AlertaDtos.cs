@@ -1,10 +1,11 @@
+using AlmacenInteligente.Domain.Constantes;
 using AlmacenInteligente.Domain.Entities;
 
 namespace AlmacenInteligente.Application.DTOs;
 
 // Alerta de reorden tal como la ve la app (GET /api/alertas).
 // Existencia y PuntoReorden son los valores del momento en que se creó la alerta.
-// PedidoId queda en null hasta que existan los pedidos de reabastecimiento.
+// PedidoId: el pedido SOLICITADO (en camino) ligado a la alerta, o null.
 public record AlertaDto(
     long Id,
     string ProductoId,
@@ -27,5 +28,6 @@ public static class AlertaMapeo
         a.Estado,
         DateTime.SpecifyKind(a.CreadaEn, DateTimeKind.Utc),
         a.AtendidaEn is DateTime atendida ? DateTime.SpecifyKind(atendida, DateTimeKind.Utc) : null,
-        null);
+        // Solo trae valor si la consulta incluyó los pedidos (AlertaRepository.ListarAsync lo hace).
+        a.Pedidos.FirstOrDefault(p => p.Estado == EstadosPedido.Solicitado)?.Id);
 }

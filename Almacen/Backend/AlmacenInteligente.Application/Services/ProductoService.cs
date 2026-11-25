@@ -147,6 +147,7 @@ public class ProductoService(IProductoRepository repositorio) : IProductoService
             salidas30Dias,
             p.EtiquetaVision,
             p.ImagenUrl,
+            p.ProveedorId,
             espacio is null ? null : new UbicacionDto(espacio.AnaquelId, espacio.Id),
             ultimo is null ? null : new UltimoMovimientoDto(
                 ultimo.TipoMovimiento,

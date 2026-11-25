@@ -11,4 +11,5 @@ public class Alerta
     public DateTime? AtendidaEn { get; set; }
 
     public Producto Producto { get; set; } = null!;
+    public ICollection<Pedido> Pedidos { get; set; } = new List<Pedido>();
 }

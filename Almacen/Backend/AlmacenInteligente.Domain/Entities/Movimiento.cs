@@ -8,7 +8,7 @@ public class Movimiento
     public string ProductoId { get; set; } = string.Empty;
     public string TipoMovimiento { get; set; } = string.Empty; // ENTRADA | SALIDA
     public int Cantidad { get; set; }
-    public string Origen { get; set; } = string.Empty; // SENSOR | CAMARA | MANUAL
+    public string Origen { get; set; } = string.Empty; // SENSOR | CAMARA | MANUAL | PEDIDO
     public int? UsuarioId { get; set; } // null si lo generó el sensor o la cámara
     public DateTime FechaHora { get; set; }
 
