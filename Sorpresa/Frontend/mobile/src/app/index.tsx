@@ -1,2 +1,2 @@
-// Redirigir al App principal del Consultorio Inteligente
+// Entrada principal — Consultorio Inteligente
 export { default } from '../../App';

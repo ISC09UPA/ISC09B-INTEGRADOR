@@ -1,114 +1,70 @@
-const API_BASE_URL = 'http://localhost:5071/api';
+// Cliente HTTP para el backend de Consultorio Inteligente
+const BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5071';
+
+async function get(path) {
+  try {
+    const r = await fetch(`${BASE}${path}`);
+    if (!r.ok) return null;
+    return r.json();
+  } catch { return null; }
+}
+
+async function post(path, body) {
+  try {
+    const r = await fetch(`${BASE}${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!r.ok) return null;
+    return r.json();
+  } catch { return null; }
+}
+
+async function put(path, body) {
+  try {
+    const r = await fetch(`${BASE}${path}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!r.ok) return null;
+    return r.json();
+  } catch { return null; }
+}
+
+async function patch(path, body) {
+  try {
+    const r = await fetch(`${BASE}${path}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+    if (!r.ok) return null;
+    return r.json();
+  } catch { return null; }
+}
 
 export const api = {
-  // --- TURNOS ---
-  async getCola() {
-    try {
-      const res = await fetch(`${API_BASE_URL}/turnos/cola`);
-      return res.ok ? await res.json() : null;
-    } catch { return null; }
-  },
+  // Turnos
+  getCola:          () => get('/api/turnos/cola'),
+  getTurnoActual:   () => get('/api/turnos/actual'),
+  llamarSiguiente:  () => post('/api/turnos/llamar-siguiente'),
+  iniciarConsulta:  () => post('/api/turnos/iniciar-consulta'),
+  finalizarConsulta:() => post('/api/turnos/finalizar-consulta'),
+  agregarTurno:     (nombre) => post('/api/turnos', { nombrePaciente: nombre }),
 
-  async getTurnoActual() {
-    try {
-      const res = await fetch(`${API_BASE_URL}/turnos/actual`);
-      return res.ok ? await res.json() : null;
-    } catch { return null; }
-  },
+  // Usuarios
+  getUsuarios:   () => get('/api/usuarios'),
+  crearUsuario:  (dto) => post('/api/usuarios', dto),
+  toggleUsuario: (id) => patch(`/api/usuarios/${id}/toggle-activo`),
 
-  async llamarSiguiente() {
-    try {
-      const res = await fetch(`${API_BASE_URL}/turnos/llamar-siguiente`, { method: 'POST' });
-      return res.ok ? await res.json() : null;
-    } catch { return null; }
-  },
+  // Auth
+  login: (email, password) => post('/api/auth/login', { email, password }),
 
-  async iniciarConsulta() {
-    try {
-      const res = await fetch(`${API_BASE_URL}/turnos/iniciar-consulta`, { method: 'POST' });
-      return res.ok ? await res.json() : null;
-    } catch { return null; }
-  },
-
-  async finalizarConsulta() {
-    try {
-      const res = await fetch(`${API_BASE_URL}/turnos/finalizar-consulta`, { method: 'POST' });
-      return res.ok ? await res.json() : null;
-    } catch { return null; }
-  },
-
-  // --- USUARIOS ---
-  async getUsuarios() {
-    try {
-      const res = await fetch(`${API_BASE_URL}/usuarios`);
-      return res.ok ? await res.json() : null;
-    } catch { return null; }
-  },
-
-  async toggleUsuario(id) {
-    try {
-      const res = await fetch(`${API_BASE_URL}/usuarios/${id}/toggle-activo`, { method: 'PATCH' });
-      return res.ok ? await res.json() : null;
-    } catch { return null; }
-  },
-
-  async crearUsuario(usuario) {
-    try {
-      const res = await fetch(`${API_BASE_URL}/usuarios`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(usuario)
-      });
-      return res.ok ? await res.json() : null;
-    } catch { return null; }
-  },
-
-  // --- ESTADO SALA & BITACORA ---
-  async getEstadoSala() {
-    try {
-      const res = await fetch(`${API_BASE_URL}/sala/estado`);
-      return res.ok ? await res.json() : null;
-    } catch { return null; }
-  },
-
-  async actualizarPuerta(door) {
-    try {
-      const res = await fetch(`${API_BASE_URL}/sala/puerta`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ door })
-      });
-      return res.ok ? await res.json() : null;
-    } catch { return null; }
-  },
-
-  async getBitacora() {
-    try {
-      const res = await fetch(`${API_BASE_URL}/sala/bitacora`);
-      return res.ok ? await res.json() : null;
-    } catch { return null; }
-  },
-
-  async registrarAcceso(who, ok) {
-    try {
-      const res = await fetch(`${API_BASE_URL}/sala/bitacora`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ who, ok })
-      });
-      return res.ok ? await res.json() : null;
-    } catch { return null; }
-  },
-
-  // --- AUTH ---
-  async login(email, password) {
-    try {
-      const res = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-      return await res.json();
-    } catch { return null; }
-  }
+  // Sala / Bitácora
+  getEstadoSala:    () => get('/api/sala/estado'),
+  actualizarPuerta: (estado) => put('/api/sala/puerta', { estado }),
+  getBitacora:      () => get('/api/sala/bitacora'),
+  registrarAcceso:  (who, ok) => post('/api/sala/bitacora', { usuarioTag: who, concedido: ok }),
 };
