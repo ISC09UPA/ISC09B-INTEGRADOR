@@ -3,8 +3,7 @@ import { View, Text, TextInput, KeyboardAvoidingView, Platform } from 'react-nat
 import { Ionicons } from '@expo/vector-icons';
 import { C } from '../theme';
 import { S, Btn } from '../components';
-import { login } from '../api';
-import { USE_MOCK } from '../config';
+import { login, USE_MOCK } from '../api';
 
 export default function Login({ onLogin }) {
   const [email, setEmail] = useState('');
@@ -16,7 +15,7 @@ export default function Login({ onLogin }) {
     setBusy(true);
     setErr('');
     try {
-      onLogin(await login(email.trim().toLowerCase(), pass));
+      onLogin(await login(email.trim(), pass));
     } catch (e) {
       setErr(e.message);
       setBusy(false);
@@ -33,17 +32,18 @@ export default function Login({ onLogin }) {
         <Text style={{ color: '#BFE0E7', marginTop: 4 }}>Tu inventario, en tiempo real</Text>
       </View>
       <View style={{ backgroundColor: C.card, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, paddingBottom: 36 }}>
-        <Text style={S.label}>Correo</Text>
-        <TextInput style={S.input} value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" />
+        <Text style={S.label}>Usuario</Text>
+        <TextInput style={S.input} value={email} onChangeText={setEmail} autoCapitalize="none" />
         <Text style={S.label}>Contraseña</Text>
         <TextInput style={S.input} value={pass} onChangeText={setPass} secureTextEntry onSubmitEditing={entrar} />
         {!!err && <Text style={{ color: C.red, marginTop: 10 }}>{err}</Text>}
         <Btn t={busy ? 'Entrando…' : 'Iniciar sesión'} onPress={entrar} off={busy || !email || !pass} />
         {USE_MOCK && (
           <Text style={{ color: C.sub, fontSize: 12, marginTop: 14, textAlign: 'center' }}>
-            Modo demo: admin@almacen.com / admin123{'\n'}operador@almacen.com / op123
+            Demo: admin@almacen.com u operador@almacen.com,{'\n'}con cualquier contraseña
           </Text>
         )}
+        <Text style={{ color: C.primary, fontSize: 12, fontWeight: '700', marginTop: 8, textAlign: 'center' }}>Versión 8: rol exacto y errores de la API</Text>
       </View>
     </KeyboardAvoidingView>
   );

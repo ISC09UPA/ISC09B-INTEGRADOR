@@ -1,57 +1,30 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { View, Text, Pressable, TextInput, StyleSheet, Animated, Modal, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, TextInput, StyleSheet, Animated, Modal, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { C, shadow } from './theme';
-import { crearPedido } from './api';
+import { crearPedido, getEspacios, asignarEspacio, getRuta, hayRutas } from './api';
 import { avisar } from './plataforma';
 
-// Pide los datos al abrir la pantalla y los refresca solos (tiempo real por consulta periódica).
-// Devuelve [datos, recargar, error]: si la petición falla, "error" trae el mensaje para mostrarlo con <Cargando />.
-export function useData(fn, ms = 5000) {
+// Pide los datos al abrir la pantalla y los refresca solos (tiempo real por consulta periódica)
+export function useData(fn, ms = 15000) {
   const [data, setData] = useState(null);
-  const [error, setError] = useState('');
   const ref = useRef(fn);
   ref.current = fn;
-  const load = useCallback(
-    () => ref.current().then((d) => { setData(d); setError(''); }).catch((e) => setError(e.message || 'Error desconocido')),
-    []
-  );
+  const load = useCallback(() => ref.current().then(setData).catch(() => {}), []);
   useEffect(() => {
     load();
     const t = setInterval(load, ms);
     return () => clearInterval(t);
   }, [load, ms]);
-  return [data, load, error];
+  return [data, load];
 }
 
-// Pantalla de carga; si hubo un error de red o del servidor, lo muestra con un botón para reintentar
-export function Cargando({ texto, error, onReintentar }) {
-  return (
-    <View style={{ flex: 1, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center', padding: 30 }}>
-      {error ? (
-        <>
-          <Ionicons name="cloud-offline-outline" size={52} color={C.sub} />
-          <Text style={[S.h, { marginTop: 10 }]}>No se pudo cargar</Text>
-          <Text style={{ color: C.sub, textAlign: 'center', marginTop: 4 }}>{error}</Text>
-          <View style={{ alignSelf: 'stretch' }}>
-            <Btn t="Reintentar" kind="ghost" onPress={onReintentar} />
-          </View>
-        </>
-      ) : (
-        <>
-          <ActivityIndicator color={C.primary} size="large" />
-          <Text style={{ color: C.sub, marginTop: 10 }}>{texto}</Text>
-        </>
-      )}
-    </View>
-  );
-}
-
-export const estado = (p) => (p.stock <= p.reorden ? 'bajo' : p.stock <= p.reorden * 1.5 ? 'medio' : 'ok');
-export const COL = { bajo: C.red, medio: C.amber, ok: C.green };
-const SOFT = { bajo: C.redSoft, medio: C.amberSoft, ok: C.greenSoft };
-const TXTC = { bajo: C.red, medio: '#8A5A00', ok: '#1F7A52' };
-const TXT = { bajo: 'Reordenar', medio: 'Cerca del punto', ok: 'Suficiente' };
+// 'sin' = producto sin espacio asignado: no es alerta ni aviso de reorden
+export const estado = (p) => (p.anaquel === 'Sin espacio' ? 'sin' : p.stock <= p.reorden ? 'bajo' : p.stock <= p.reorden * 1.5 ? 'medio' : 'ok');
+export const COL = { bajo: C.red, medio: C.amber, ok: C.green, sin: C.sub };
+const SOFT = { bajo: C.redSoft, medio: C.amberSoft, ok: C.greenSoft, sin: C.line };
+const TXTC = { bajo: C.red, medio: '#8A5A00', ok: '#1F7A52', sin: C.sub };
+const TXT = { bajo: 'Reordenar', medio: 'Cerca del punto', ok: 'Suficiente', sin: 'Sin espacio' };
 export const hora = (t) =>
   new Date(t).toLocaleString('es-MX', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
@@ -115,9 +88,16 @@ export function ModalReorden({ p, onClose, onDone }) {
   async function pedir() {
     setBusy(true);
     try {
-      await crearPedido(p.id, +cant);
+      const r = await crearPedido(p.id, +cant, p.nombre);
       onDone();
       onClose();
+      const prov = r.proveedor ? r.proveedor.nombre : 'el proveedor';
+      avisar(
+        'Pedido de ' + r.cant + ' piezas',
+        r.correoEnviado === true ? 'Se envió el correo a ' + prov + '.'
+          : r.correoEnviado === false ? 'El pedido se creó, pero no se pudo enviar el correo. Avísale a ' + prov + ' por otro medio.'
+          : 'El pedido quedó registrado.'
+      );
     } catch (e) {
       avisar('No se pudo reordenar', e.message);
       setBusy(false);
@@ -155,10 +135,9 @@ export const MovRow = ({ m }) => {
   );
 };
 
-export function FormProducto({ inicial = {}, onSave, onCancel, cta = 'Guardar producto' }) {
-  const [f, setF] = useState({ nombre: '', anaquel: '', stock: '', reorden: '', max: '', ...inicial });
-  const [busy, setBusy] = useState(false);
-  const [errSrv, setErrSrv] = useState('');
+// simple = solo nombre, punto de reorden y peso (alta desde foto del operador)
+export function FormProducto({ inicial = {}, onSave, onCancel, simple, cta = 'Guardar producto' }) {
+  const [f, setF] = useState({ nombre: '', anaquel: '', stock: '', reorden: '', max: '', peso: '', ...inicial });
   const campo = (k, label, num) => (
     <View key={k}>
       <Text style={S.label}>{label}</Text>
@@ -170,38 +149,120 @@ export function FormProducto({ inicial = {}, onSave, onCancel, cta = 'Guardar pr
       />
     </View>
   );
-
-  // Validación de los números: el punto de reorden y las existencias no pueden superar la capacidad
-  const stock = +f.stock || 0, reorden = +f.reorden, max = +f.max;
-  const errNum =
-    stock < 0 || reorden < 0 || max < 0 ? 'Los números no pueden ser negativos'
-    : f.max !== '' && max <= 0 ? 'La capacidad debe ser mayor a 0'
-    : reorden > max && f.max !== '' ? 'El punto de reorden no puede ser mayor a la capacidad'
-    : stock > max && f.max !== '' ? 'Las existencias no pueden superar la capacidad'
-    : '';
-  const completo = !!(f.nombre.trim() && f.anaquel.trim() && f.max && f.reorden);
-
-  async function guardar() {
-    setBusy(true);
-    setErrSrv('');
-    try {
-      await onSave({ nombre: f.nombre.trim(), anaquel: f.anaquel.trim().toUpperCase(), stock, reorden, max });
-    } catch (e) {
-      setErrSrv(e.message);
-    }
-    setBusy(false);
-  }
-
   return (
     <View>
       {campo('nombre', 'Nombre del producto')}
-      {campo('anaquel', 'Anaquel (ejemplo: A1)')}
-      {campo('stock', 'Existencias iniciales', 1)}
+      {!simple && campo('anaquel', 'Anaquel (ejemplo: A1)')}
+      {!simple && campo('stock', 'Existencias iniciales', 1)}
       {campo('reorden', 'Punto de reorden', 1)}
-      {campo('max', 'Capacidad del espacio', 1)}
-      {!!(errNum || errSrv) && <Text style={{ color: C.red, marginTop: 10 }}>{errNum || errSrv}</Text>}
-      <Btn t={busy ? 'Guardando…' : cta} off={busy || !completo || !!errNum} onPress={guardar} />
+      {!simple && campo('max', 'Capacidad del espacio', 1)}
+      {campo('peso', 'Peso de una pieza (gramos)', 1)}
+      <Btn
+        t={cta}
+        off={!(f.nombre && f.reorden && f.peso && (simple || (f.anaquel && f.max)))}
+        onPress={() => onSave({ nombre: f.nombre.trim(), anaquel: f.anaquel.trim().toUpperCase(), stock: +f.stock || 0, reorden: +f.reorden, max: +f.max, peso: +f.peso })}
+      />
       {onCancel && <Btn t="Cancelar" kind="ghost" onPress={onCancel} />}
     </View>
+  );
+}
+
+const hoja = { backgroundColor: C.card, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 22, paddingBottom: 34 };
+const fondo = { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(19,34,46,.45)' };
+
+// Asignar un espacio libre de la maqueta a un producto que no tiene (por ejemplo, el que creó el operador desde la foto)
+export function ModalEspacio({ p, onClose, onDone }) {
+  const [libres, setLibres] = useState(null);
+  const [sel, setSel] = useState(null);
+  const [cap, setCap] = useState('');
+  const [ini, setIni] = useState('');
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    getEspacios()
+      .then((es) => setLibres(es.filter((e) => !e.productoId)))
+      .catch((e) => { avisar('No se pudieron cargar los espacios', e.message); setLibres([]); });
+  }, []);
+  async function asignar() {
+    setBusy(true);
+    try {
+      await asignarEspacio(sel, p.id, +cap, +ini || 0);
+      onDone();
+      onClose();
+    } catch (e) {
+      avisar('No se pudo asignar el espacio', e.message);
+      setBusy(false);
+    }
+  }
+  return (
+    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
+      <View style={fondo}>
+        <View style={hoja}>
+          <Text style={{ fontSize: 22, fontWeight: '800', color: C.ink }}>Asignar espacio a {p.nombre}</Text>
+          <Text style={S.label}>Espacios libres</Text>
+          {libres === null ? (
+            <Text style={{ color: C.sub }}>Cargando espacios…</Text>
+          ) : libres.length === 0 ? (
+            <Text style={{ color: C.sub }}>No hay espacio libre: da de baja un producto o libera un espacio.</Text>
+          ) : (
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+              {libres.map((e) => (
+                <Pressable key={e.id} onPress={() => setSel(e.id)} style={{ backgroundColor: sel === e.id ? C.primary : C.bg, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8, marginRight: 8, marginBottom: 8 }}>
+                  <Text style={{ color: sel === e.id ? '#fff' : C.ink, fontWeight: '600' }}>{e.id}</Text>
+                </Pressable>
+              ))}
+            </View>
+          )}
+          <Text style={S.label}>Capacidad del espacio (piezas)</Text>
+          <TextInput style={S.input} value={cap} onChangeText={setCap} keyboardType="numeric" />
+          <Text style={S.label}>Existencias iniciales (opcional)</Text>
+          <TextInput style={S.input} value={ini} onChangeText={setIni} keyboardType="numeric" />
+          <Btn t={busy ? 'Asignando…' : 'Asignar espacio'} onPress={asignar} off={busy || !sel || !(+cap > 0)} />
+          <Btn t="Cancelar" kind="ghost" onPress={onClose} />
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+// Botón "Ver ruta": distancia, tiempo y mapa del proveedor al almacén (el mapa lo genera el backend)
+export function VerRuta({ id }) {
+  const [abierto, setAbierto] = useState(false);
+  const [r, setR] = useState(null);
+  if (!hayRutas) return null;
+  async function abrir() {
+    setAbierto(true);
+    setR(null);
+    try {
+      setR(await getRuta(id));
+    } catch (e) {
+      setAbierto(false);
+      avisar('No se pudo obtener la ruta', e.message);
+    }
+  }
+  return (
+    <>
+      <Btn t="Ver ruta" kind="ghost" onPress={abrir} />
+      <Modal visible={abierto} transparent animationType="slide" onRequestClose={() => setAbierto(false)}>
+        <View style={fondo}>
+          <View style={hoja}>
+            <Text style={{ fontSize: 22, fontWeight: '800', color: C.ink }}>Ruta del proveedor</Text>
+            {!r ? (
+              <Text style={{ color: C.sub, marginTop: 12 }}>Calculando ruta…</Text>
+            ) : (
+              <>
+                {r.mapaPngBase64 ? (
+                  <Image source={{ uri: 'data:image/png;base64,' + r.mapaPngBase64 }} resizeMode="contain" style={{ width: '100%', aspectRatio: 1.6, borderRadius: 14, marginTop: 12, backgroundColor: C.bg }} />
+                ) : (
+                  <Text style={{ color: C.sub, marginTop: 12 }}>No hay imagen del mapa.</Text>
+                )}
+                <Text style={{ color: C.ink, marginTop: 12, fontWeight: '700' }}>Distancia: {Number(r.distanciaKm).toFixed(1)} km</Text>
+                <Text style={{ color: C.ink, marginTop: 2, fontWeight: '700' }}>Tiempo estimado: {r.minutosEstimados} minutos</Text>
+              </>
+            )}
+            <Btn t="Cerrar" kind="ghost" onPress={() => setAbierto(false)} />
+          </View>
+        </View>
+      </Modal>
+    </>
   );
 }

@@ -1,23 +1,23 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable, Modal, TextInput } from 'react-native';
+import { View, Text, ScrollView, Pressable, Modal, TextInput, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { C } from '../theme';
 import { confirmar, avisar } from '../plataforma';
 import { getUsuarios, crearUsuario, eliminarUsuario } from '../api';
-import { useData, S, Card, Btn, Cargando } from '../components';
+import { useData, S, Card, Btn } from '../components';
 
 const vacio = { nombre: '', email: '', pass: '', rol: 'operador' };
 
 export default function Usuarios({ yo }) {
-  const [us, load, error] = useData(getUsuarios, 10000);
+  const [us, load] = useData(getUsuarios, 10000);
   const [abierto, setAbierto] = useState(false);
   const [f, setF] = useState(vacio);
   const [err, setErr] = useState('');
-  if (!us) return <Cargando texto="Cargando usuarios…" error={error} onReintentar={load} />;
+  if (!us) return <Text style={{ padding: 24, color: C.sub }}>Cargando usuarios…</Text>;
 
   async function guardar() {
     try {
-      await crearUsuario({ ...f, nombre: f.nombre.trim(), email: f.email.trim().toLowerCase() });
+      await crearUsuario({ ...f, nombre: f.nombre.trim(), email: f.email.trim() });
       setAbierto(false);
       setF(vacio);
       setErr('');
@@ -28,16 +28,9 @@ export default function Usuarios({ yo }) {
   }
 
   const baja = (u) =>
-    confirmar('Dar de baja', `¿Quitar a ${u.nombre}? Ya no podrá iniciar sesión.`, 'Dar de baja', async () => {
-      try {
-        await eliminarUsuario(u.id);
-        load();
-      } catch (e) {
-        avisar('No se pudo dar de baja', e.message);
-      }
-    });
+    confirmar('Dar de baja', `¿Quitar a ${u.nombre}? Ya no podrá iniciar sesión.`, 'Dar de baja', async () => { try { await eliminarUsuario(u.id); load(); } catch (e) { avisar('No se pudo dar de baja', e.message); } });
 
-  const ok = f.nombre.trim() && f.email.includes('@') && f.pass.length >= 6;
+  const ok = f.nombre.trim() && /^[A-Za-z0-9._-]{3,50}$/.test(f.email.trim()) && f.pass.length >= 8 && f.pass.length <= 72;
   const campo = (k, label, extra = {}) => (
     <View>
       <Text style={S.label}>{label}</Text>
@@ -77,8 +70,8 @@ export default function Usuarios({ yo }) {
           <ScrollView style={{ maxHeight: '90%', backgroundColor: C.card, borderTopLeftRadius: 28, borderTopRightRadius: 28 }} contentContainerStyle={{ padding: 22, paddingBottom: 34 }} keyboardShouldPersistTaps="handled">
             <Text style={{ fontSize: 22, fontWeight: '800', color: C.ink }}>Nuevo usuario</Text>
             {campo('nombre', 'Nombre completo', { autoCapitalize: 'words' })}
-            {campo('email', 'Correo', { keyboardType: 'email-address' })}
-            {campo('pass', 'Contraseña (mínimo 6 caracteres)', { secureTextEntry: true })}
+            {campo('email', 'Usuario (3 a 50: letras sin acento, números, . - _)')}
+            {campo('pass', 'Contraseña (de 8 a 72 caracteres)', { secureTextEntry: true })}
             <Text style={S.label}>Rol</Text>
             <View style={{ flexDirection: 'row', backgroundColor: C.bg, borderRadius: 12, padding: 4 }}>
               {['operador', 'admin'].map((r) => (

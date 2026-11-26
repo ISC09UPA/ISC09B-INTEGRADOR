@@ -3,7 +3,7 @@ import { View, Text, Platform } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { Ionicons } from '@expo/vector-icons';
 import { C } from '../theme';
-import { CAMERA_URL } from '../config';
+import { CAMERA_URL } from '../api';
 import { S, Btn } from '../components';
 
 export default function Camara() {
@@ -16,7 +16,7 @@ export default function Camara() {
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20 }}>
             <Ionicons name="videocam-off-outline" size={44} color="#7F93A0" />
             <Text style={{ color: '#fff', fontWeight: '700', marginTop: 8 }}>Sin señal de la cámara</Text>
-            <Text style={{ color: '#9FB2BE', textAlign: 'center', marginTop: 4 }}>Revisa que la Raspberry esté encendida y que CAMERA_URL en api.js sea correcta.</Text>
+            <Text style={{ color: '#9FB2BE', textAlign: 'center', marginTop: 4 }}>Revisa que la Raspberry esté encendida y que CAMERA_URL en src/banderas.js sea correcta.</Text>
           </View>
         ) : (
           Platform.OS === 'web' ? (

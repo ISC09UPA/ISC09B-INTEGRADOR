@@ -1,60 +1,23 @@
-# Almacén Inteligente: app móvil (Expo Go + React Native)
-
-Frontend del proyecto integrador 5 "Almacén Inteligente". App móvil con dos roles (administrador y operador) que consume
-la API en Azure y muestra la cámara de la Raspberry Pi. Hecha con **Expo (Expo Go) y React Native**, en JavaScript.
+# Almacén Inteligente: app móvil (Expo / React Native)
 
 ## Cómo correrla
-1. Instala [Node.js LTS](https://nodejs.org) y la app **Expo Go** en tu celular (misma red Wi-Fi que la computadora).
-2. En la carpeta del proyecto (donde está `package.json`):
-   ```bash
-   npm install
-   npx expo start --clear
-   ```
-3. Escanea el QR con Expo Go (Android) o con la cámara (iPhone).
-   También puedes presionar `w` para abrirla en el navegador.
-
-## Modo demo (sin backend)
-Con `USE_MOCK = true` en `src/config.js` (valor actual) la app funciona sola con datos de ejemplo.
-
-| Rol | Correo | Contraseña |
-|---|---|---|
-| Administrador | admin@almacen.com | admin123 |
-| Operador | operador@almacen.com | op123 |
-
-## Conectar con el backend
-Todo se configura en **`src/config.js`**:
-```js
-export const USE_MOCK = false;                                   // usar la API real
-export const BASE_URL = 'https://TU-APP.azurewebsites.net/api';  // API en Azure
-export const CAMERA_URL = 'http://IP_DE_LA_RASPBERRY:8000/stream.mjpg'; // cámara de la Raspberry
 ```
-El contrato completo (rutas, cuerpos, respuestas, JWT y errores) está en [`docs/API.md`](docs/API.md).
-
-## Funciones por rol
-| Administrador | Operador |
-|---|---|
-| Inventario en tiempo real por anaquel | Inventario: existencias y ubicación de cada producto |
-| Alta y baja de productos, punto de reorden | Registrar entradas y salidas de mercancía |
-| Estadísticas: rotación, predicción de agotamiento, historial | Su propio historial de movimientos |
-| Alertas de reabastecimiento y pedidos de reorden | |
-| Cámara del almacén en vivo | |
-| Gestión de usuarios | |
-| Identificar o registrar productos con la cámara del celular (ambos roles) | |
-
-"Tiempo real" se logra consultando la API cada 5 segundos.
-
-## Estructura
+npm install
+npx expo start --clear
 ```
-App.js                  Navegación por pestañas según el rol y control de sesión
-src/config.js           USE_MOCK, BASE_URL, CAMERA_URL
-src/api.js              Todo el acceso a datos (API real o datos de ejemplo)
-src/jwt.js              Lectura y validación del JWT en el celular
-src/plataforma.js       Almacenamiento seguro y avisos (celular y navegador)
-src/components.js       Componentes compartidos y hook useData
-src/screens/            Login, Inventario, Estadisticas, Alertas, Camara, Usuarios, Movimientos, Escanear
-docs/API.md             Contrato de la API para el backend
-```
+Escanea el QR con Expo Go (celular y computadora en la misma red). Con la tecla `w` se abre en el navegador (extra, la app se presenta en el celular).
+Para entrar se usan las cuentas reales de `admin` y `operador`, que se pasan en privado y no van en el repositorio.
 
-## Notas
-- La sesión se guarda con `expo-secure-store` y se reutiliza mientras el JWT siga vigente; si el servidor responde 401, se cierra sola.
-- La cámara usa `http://` hacia la Raspberry (red local). En Expo Go funciona; en una compilación independiente habría que permitir tráfico HTTP.
+## Configuración (`src/banderas.js`)
+- `USE_MOCK`: `true` usa datos de ejemplo sin internet (en ese modo cualquier contraseña funciona con `admin@almacen.com` u `operador@almacen.com`).
+- Banderas de rutas: `USUARIOS_EN_API`, `ALERTAS_EN_API` y `PEDIDOS_EN_API` en `true` (contrato 2.4). `FOTO_EN_API` (meta 26 nov) y `PROVEEDORES_EN_API` (meta 27 nov)
+  se cambian a `true` el día que Sebastián publique su ruta. Mientras estén en `false`, la app usa un respaldo local.
+- `CAMERA_URL`: dirección del stream de la cámara (celular y Raspberry en la misma red). Pendiente.
+
+## Contrato de la API
+La única referencia es `contrato-api-almacen.md` (versión 2.4, Sebastián Román). Todo el acceso a datos está en `src/api.js`.
+
+## Sesión con JWT
+La app revisa que el JWT tenga formato válido y que no haya expirado (`exp`). La firma la valida el backend en cada petición.
+El rol debe ser exactamente `admin` u `operador`. El token se guarda con expo-secure-store (en el navegador, con localStorage).
+Si el token vence o el servidor responde 401, la app cierra la sesión.

@@ -3,10 +3,10 @@ import { View, Text, Image, ScrollView, ActivityIndicator, Platform } from 'reac
 import * as ImagePicker from 'expo-image-picker';
 import { C } from '../theme';
 import { avisar } from '../plataforma';
-import { identificarProducto, crearProducto } from '../api';
+import { identificarProducto, crearProducto, crearDesdeFoto } from '../api';
 import { estado, hora, S, Card, Btn, Chip, StockBar, FormProducto } from '../components';
 
-export default function Escanear() {
+export default function Escanear({ rol }) {
   const [img, setImg] = useState(null);
   const [res, setRes] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -67,18 +67,25 @@ export default function Escanear() {
       {res && !res.encontrado && (
         <Card style={{ marginTop: 16 }}>
           <Text style={{ fontSize: 18, fontWeight: '800', color: C.ink }}>Este producto no está en el inventario</Text>
-          <Text style={{ color: C.sub, marginTop: 4 }}>Puedes registrarlo ahora con los datos de su espacio en el anaquel.</Text>
+          <Text style={{ color: C.sub, marginTop: 4 }}>{rol === 'admin' ? 'Puedes registrarlo ahora con los datos de su espacio en el anaquel.' : 'Puedes registrarlo con su nombre y su peso. Un administrador le asignará su espacio después.'}</Text>
           {reg ? (
             <FormProducto
               cta="Registrar producto"
+              simple={rol !== 'admin'}
               inicial={{ nombre: res.etiqueta || '' }}
               onCancel={() => setReg(false)}
               onSave={async (d) => {
-                await crearProducto(d);
-                setRes(null);
-                setImg(null);
-                setReg(false);
-                avisar('Listo', 'Producto registrado en el inventario');
+                try {
+                  // El administrador usa el alta completa; el operador solo puede dar de alta desde la foto
+                  if (rol === 'admin') await crearProducto({ ...d, imagenUrl: res.imagenUrl });
+                  else await crearDesdeFoto({ ...d, imagenUrl: res.imagenUrl });
+                  setRes(null);
+                  setImg(null);
+                  setReg(false);
+                  avisar('Listo', rol === 'admin' ? 'Producto registrado en el inventario' : 'Producto registrado. Un administrador debe asignarle un espacio.');
+                } catch (e) {
+                  avisar('No se pudo registrar', e.message);
+                }
               }}
             />
           ) : (

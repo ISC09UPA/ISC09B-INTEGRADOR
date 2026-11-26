@@ -5,8 +5,8 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { C } from './src/theme';
-import { getProductos, restaurarSesion, cerrarSesion, onExpira } from './src/api';
-import { useData, estado } from './src/components';
+import { getAlertas, restaurarSesion, cerrarSesion, onExpira, despertar } from './src/api';
+import { useData } from './src/components';
 import Login from './src/screens/Login';
 import Inventario from './src/screens/Inventario';
 import Estadisticas from './src/screens/Estadisticas';
@@ -24,8 +24,8 @@ const ICON = {
 
 function Tabs({ user, salir }) {
   const admin = user.rol === 'admin';
-  const [ps] = useData(getProductos, 10000);
-  const alertas = ps ? ps.filter((p) => estado(p) === 'bajo').length : 0;
+  const [al] = useData(getAlertas, 30000);
+  const alertas = al ? al.length : 0;
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -48,7 +48,7 @@ function Tabs({ user, salir }) {
       {admin && <Tab.Screen name="Cámara" component={Camara} />}
       {admin && <Tab.Screen name="Usuarios">{() => <Usuarios yo={user.email} />}</Tab.Screen>}
       {!admin && <Tab.Screen name="Movimientos">{() => <Movimientos usuario={user.nombre} />}</Tab.Screen>}
-      <Tab.Screen name="Escanear" component={Escanear} />
+      <Tab.Screen name="Escanear">{() => <Escanear rol={user.rol} />}</Tab.Screen>
     </Tab.Navigator>
   );
 }
@@ -60,6 +60,7 @@ export default function App() {
   const salir = () => { cerrarSesion(); setUser(null); };
 
   useEffect(() => {
+    despertar();
     onExpira(salir); // si el JWT vence o el servidor responde 401, se regresa al login
     restaurarSesion().then((u) => { setUser(u); setListo(true); });
   }, []);

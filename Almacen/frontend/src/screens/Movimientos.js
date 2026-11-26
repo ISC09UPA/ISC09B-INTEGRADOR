@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable, TextInput } from 'react-native';
+import { View, Text, ScrollView, Pressable, TextInput, Alert } from 'react-native';
 import { C } from '../theme';
 import { avisar } from '../plataforma';
 import { getProductos, getMovimientos, registrarMovimiento } from '../api';
@@ -7,21 +7,24 @@ import { useData, S, Card, Btn, MovRow } from '../components';
 
 export default function Movimientos({ usuario }) {
   const [ps, loadP] = useData(getProductos);
-  const [hist, loadH] = useData(() => getMovimientos({ mios: true, usuario }));
+  const [hist, loadH] = useData(() => getMovimientos(usuario));
   const [tipo, setTipo] = useState('entrada');
   const [pid, setPid] = useState(null);
   const [cant, setCant] = useState('');
   const p = ps && ps.find((x) => x.id === pid);
 
   async function registrar() {
-    if (!Number.isInteger(+cant) || +cant <= 0) return avisar('Cantidad inválida', 'Escribe un número entero mayor a 0');
-    if (tipo === 'salida' && p && +cant > p.stock) return avisar('No hay suficientes existencias', 'Quedan ' + p.stock + ' piezas.');
     try {
-      await registrarMovimiento({ productoId: pid, tipo, cant: +cant, usuario });
+      const r = await registrarMovimiento({ productoId: pid, tipo, cant: +cant, usuario });
       setCant('');
       loadP();
       loadH();
-      avisar('Listo', tipo === 'entrada' ? 'Entrada registrada' : 'Salida registrada');
+      const a = r && r.alerta; // la alerta que se creó o se atendió con este movimiento
+      avisar(
+        'Listo',
+        (tipo === 'entrada' ? 'Entrada registrada' : 'Salida registrada') +
+          (a ? (a.estado === 'ACTIVA' ? '\nSe creó una alerta de reabastecimiento para ' + a.productoNombre + '.' : '\nLa alerta de ' + a.productoNombre + ' quedó atendida.') : '')
+      );
     } catch (e) {
       avisar('No se pudo registrar', e.message);
     }
