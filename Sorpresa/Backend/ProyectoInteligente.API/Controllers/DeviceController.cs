@@ -27,10 +27,12 @@ public class DeviceController(IAppDbContext db, IConfiguration config) : Control
         if (!KeyOk()) return Unauthorized();
 
         var tag = await db.TagsRfid.FirstOrDefaultAsync(t => t.Uid == req.UidLeido, ct);
+        var usuarioId = tag?.UsuarioId;
+
         var acceso = new Acceso
         {
             TagId = tag?.Id,
-            UsuarioId = tag?.UsuarioId,
+            UsuarioId = usuarioId,
             UidLeido = req.UidLeido,
             Presencia = req.Presencia,
             Resultado = req.Resultado,
@@ -49,8 +51,32 @@ public class DeviceController(IAppDbContext db, IConfiguration config) : Control
                 CreadoEn = acceso.CreadoEn
             });
 
+        string? codigo = null;
+        if (req.Resultado == ResultadoAcceso.Concedido && usuarioId is int pacienteId)
+        {
+            var esPaciente = await db.Usuarios.AnyAsync(u => u.Id == pacienteId && u.Rol.Nombre == "paciente", ct);
+            if (esPaciente)
+            {
+                var turno = await db.Turnos.FirstOrDefaultAsync(t => t.PacienteId == pacienteId && t.Estado != EstadoTurno.Finalizado, ct);
+                if (turno == null)
+                {
+                    turno = new Turno
+                    {
+                        Codigo = "",
+                        PacienteId = pacienteId,
+                        ConsultorioId = await db.Consultorios.OrderBy(c => c.Id).Select(c => c.Id).FirstAsync(ct),
+                        LlegadaEn = acceso.CreadoEn
+                    };
+                    db.Turnos.Add(turno);
+                    await db.SaveChangesAsync(ct);          // the identity Id is needed for the code
+                    turno.Codigo = $"T-{turno.Id:000}";
+                }
+                codigo = turno.Codigo;
+            }
+        }
+
         await db.SaveChangesAsync(ct);
-        return Ok(new { acceso.Id });
+        return Ok(new { acceso.Id, turno = codigo });
     }
 
     [HttpPost("occupancy")]
