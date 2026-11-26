@@ -1,11 +1,15 @@
 using AlmacenInteligente.Application.Common;
 using AlmacenInteligente.Application.DTOs;
 using AlmacenInteligente.Application.Interfaces;
+using AlmacenInteligente.Domain.Constantes;
 using AlmacenInteligente.Domain.Entities;
 
 namespace AlmacenInteligente.Application.Services;
 
-public class ProductoService(IProductoRepository repositorio) : IProductoService
+public class ProductoService(
+    IProductoRepository repositorio,
+    IAlertaRepository alertas,
+    IPedidoRepository pedidos) : IProductoService
 {
     private const string PrefijoId = "PROD-";
     private const int DiasSalidas = 30;
@@ -99,7 +103,29 @@ public class ProductoService(IProductoRepository repositorio) : IProductoService
         if (producto is null || !producto.Activo)
             return Resultado<bool>.Falla(TipoError.NoEncontrado, $"No existe el producto {id}.");
 
-        producto.Activo = false; // baja lógica: se conserva el historial
+        // No se da de baja con piezas en el anaquel ni con un pedido en camino: quedarían sin dueño.
+        var conPiezas = producto.Espacios.Where(e => e.Existencia > 0).ToList();
+        if (conPiezas.Count > 0)
+            return Resultado<bool>.Falla(TipoError.Conflicto,
+                $"El producto {producto.Id} todavía tiene {conPiezas.Sum(e => e.Existencia)} pieza(s) en {string.Join(", ", conPiezas.Select(e => e.Id))}. Regístralas como salida antes de darlo de baja.");
+        if (await pedidos.ExisteSolicitadoAsync(producto.Id, ct))
+            return Resultado<bool>.Falla(TipoError.Conflicto,
+                $"El producto {producto.Id} tiene un pedido en camino: recíbelo o cancélalo antes de darlo de baja.");
+
+        // Baja lógica: se conserva el historial, pero se libera lo que el producto ocupaba.
+        producto.Activo = false;
+        foreach (var espacio in producto.Espacios)
+            espacio.ProductoId = null;      // el espacio vuelve a quedar libre para otro producto
+        producto.Espacios.Clear();
+        producto.EtiquetaVision = null;     // la etiqueta de Vision se puede asignar a otro producto
+
+        var activa = await alertas.ObtenerActivaAsync(producto.Id, ct);
+        if (activa is not null)
+        {
+            activa.Estado = EstadosAlerta.Atendida; // un producto dado de baja ya no se reordena
+            activa.AtendidaEn = DateTime.UtcNow;
+        }
+
         await repositorio.GuardarCambiosAsync(ct);
         return Resultado<bool>.Exito(true);
     }
