@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using AlmacenInteligente.API.Seguridad;
 using AlmacenInteligente.Application.Interfaces;
@@ -29,6 +30,7 @@ builder.Services.AddScoped<IEspacioService, EspacioService>();
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 builder.Services.AddScoped<IAlertaService, AlertaService>();
 builder.Services.AddScoped<IPedidoService, PedidoService>();
+builder.Services.AddScoped<IFotoProductoService, FotoProductoService>();
 
 // Correo al proveedor (Azure Communication Services Email). Opcional: si falta, los pedidos se crean
 // con correoEnviado = false. Va en User Secrets (local) o en App Service como Correo__ConnectionString
@@ -36,6 +38,18 @@ builder.Services.AddScoped<IPedidoService, PedidoService>();
 builder.Services.AddCorreo(
     builder.Configuration["Correo:ConnectionString"],
     builder.Configuration["Correo:Remitente"]);
+
+// Identificar por foto: Blob Storage (Fotos:*) + Azure AI Vision (Vision:*). Opcional: si falta, /productos/identificar
+// y /productos/desde-foto responden 503. Van en User Secrets (local) o en App Service como Fotos__ConnectionString,
+// Vision__Endpoint y Vision__Key. Nunca en appsettings.json ni en el repositorio.
+builder.Services.AddFotosYVision(
+    builder.Configuration["Fotos:ConnectionString"],
+    builder.Configuration["Fotos:Contenedor"],
+    builder.Configuration["Vision:Endpoint"],
+    builder.Configuration["Vision:Key"],
+    double.TryParse(builder.Configuration["Vision:UmbralConfianza"], NumberStyles.Float, CultureInfo.InvariantCulture, out var umbral)
+        ? umbral
+        : 0.6);
 builder.Services.AddSingleton(jwt);
 builder.Services.AddSingleton<IGeneradorToken, GeneradorTokenJwt>();
 

@@ -1,8 +1,10 @@
 using AlmacenInteligente.Application.Interfaces;
 using AlmacenInteligente.Infrastructure.Correo;
+using AlmacenInteligente.Infrastructure.Fotos;
 using AlmacenInteligente.Infrastructure.Persistence;
 using AlmacenInteligente.Infrastructure.Repositories;
 using AlmacenInteligente.Infrastructure.Seguridad;
+using AlmacenInteligente.Infrastructure.Vision;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -34,6 +36,19 @@ public static class DependencyInjection
     {
         services.AddSingleton<IServicioCorreo>(sp =>
             new ServicioCorreoAcs(cadenaConexion, remitente, sp.GetRequiredService<ILogger<ServicioCorreoAcs>>()));
+        return services;
+    }
+
+    // Fotos de productos (Azure Blob Storage) e identificación (Azure AI Vision). Solo los usa la API.
+    public static IServiceCollection AddFotosYVision(
+        this IServiceCollection services,
+        string? cadenaStorage, string? contenedor,
+        string? endpointVision, string? claveVision, double umbralConfianza)
+    {
+        services.AddSingleton<IServicioFotos>(sp =>
+            new ServicioFotosBlob(cadenaStorage, contenedor, sp.GetRequiredService<ILogger<ServicioFotosBlob>>()));
+        services.AddSingleton<IServicioVision>(sp =>
+            new ServicioVisionAzure(endpointVision, claveVision, umbralConfianza, sp.GetRequiredService<ILogger<ServicioVisionAzure>>()));
         return services;
     }
 }

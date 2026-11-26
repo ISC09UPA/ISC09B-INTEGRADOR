@@ -13,6 +13,7 @@ public interface IProductoRepository
     Task<List<string>> ObtenerIdsConPrefijoAsync(string prefijo, CancellationToken ct = default);
     Task<bool> ExisteAsync(string id, CancellationToken ct = default);
     Task<bool> EtiquetaEnUsoAsync(string etiquetaVision, CancellationToken ct = default);
+    Task<List<Producto>> ObtenerActivosPorEtiquetasAsync(IReadOnlyCollection<string> etiquetas, CancellationToken ct = default);
     Task AgregarAsync(Producto producto, CancellationToken ct = default);
     Task GuardarCambiosAsync(CancellationToken ct = default);
 }

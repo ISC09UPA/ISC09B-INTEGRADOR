@@ -13,3 +13,6 @@ Simulador/pendientes.jsonl
 **/Properties/PublishProfiles/
 **/Properties/ServiceDependencies/
 **/Properties/serviceDependencies*.json
+
+# Fotos de prueba para el .http (identificar por foto)
+foto-prueba.*

@@ -6,7 +6,8 @@ public enum TipoError
     Validacion,
     NoEncontrado,
     Conflicto,
-    NoAutorizado
+    NoAutorizado,
+    ServicioNoDisponible // falló un servicio de Azure (Vision, Storage, Maps): 503, se puede reintentar
 }
 
 // Resultado de una operación: el valor si salió bien, o el tipo de error y su mensaje.

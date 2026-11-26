@@ -132,3 +132,26 @@ Content-Type: application/json
 ### Cancelar un pedido — crear otro antes con el primer bloque; si ya se recibió, responde 409
 PUT {{host}}/api/pedidos/{{pedido.response.body.$.id}}/cancelar
 Authorization: Bearer {{login.response.body.$.token}}
+
+### ── Identificar por foto (contrato 3.5)
+### El cliente .http de Visual Studio arma mal el multipart, así que esta prueba se hace desde la terminal (PowerShell),
+### con una foto JPG o PNG (máx. 4 MB) llamada foto-prueba.jpg en esta carpeta (está en el .gitignore, no se sube):
+###   $r = Invoke-RestMethod -Method Post -Uri https://localhost:7276/api/auth/login -ContentType 'application/json' -Body (@{ usuario = 'admin'; contrasena = (Read-Host 'Contraseña de admin') } | ConvertTo-Json)
+###   $token = $r.token
+###   curl.exe -k -s -X POST https://localhost:7276/api/productos/identificar -H "Authorization: Bearer $token" -F "foto=@foto-prueba.jpg;type=image/jpeg"
+### Copia la "imagenUrl" de la respuesta en @imagenUrl para probar desde-foto.
+@imagenUrl = PEGAR_AQUI_LA_IMAGENURL_DE_IDENTIFICAR
+
+### Registrar el producto desde la foto (cuando "encontrado" es false). Queda sin espacio.
+POST {{host}}/api/productos/desde-foto
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{ "imagenUrl": "{{imagenUrl}}", "nombre": "Producto desde foto", "pesoUnitarioGramos": 10, "puntoReorden": 2 }
+
+### desde-foto con una URL que no salió de identificar (debe responder 400)
+POST {{host}}/api/productos/desde-foto
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{ "imagenUrl": "https://ejemplo.com/foto.jpg", "nombre": "No debe crearse", "pesoUnitarioGramos": 10, "puntoReorden": 2 }

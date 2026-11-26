@@ -16,6 +16,7 @@ public abstract class ApiControllerBase : ControllerBase
             TipoError.NoEncontrado => NotFound(cuerpo),
             TipoError.Conflicto => Conflict(cuerpo),
             TipoError.NoAutorizado => Unauthorized(cuerpo),
+            TipoError.ServicioNoDisponible => StatusCode(StatusCodes.Status503ServiceUnavailable, cuerpo),
             _ => StatusCode(StatusCodes.Status500InternalServerError, cuerpo)
         };
     }

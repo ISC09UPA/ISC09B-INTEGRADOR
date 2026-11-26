@@ -67,6 +67,13 @@ public class ProductoRepository(AlmacenDbContext db) : IProductoRepository
     public Task<bool> EtiquetaEnUsoAsync(string etiquetaVision, CancellationToken ct = default) =>
         db.Productos.AnyAsync(p => p.EtiquetaVision == etiquetaVision, ct);
 
+    // Productos activos cuya etiquetaVision está en la lista (la base compara sin distinguir mayúsculas).
+    public Task<List<Producto>> ObtenerActivosPorEtiquetasAsync(IReadOnlyCollection<string> etiquetas, CancellationToken ct = default) =>
+        db.Productos
+            .AsNoTracking()
+            .Where(p => p.Activo && p.EtiquetaVision != null && etiquetas.Contains(p.EtiquetaVision))
+            .ToListAsync(ct);
+
     public async Task AgregarAsync(Producto producto, CancellationToken ct = default) =>
         await db.Productos.AddAsync(producto, ct);
 
