@@ -60,11 +60,19 @@ public class DeviceController(IAppDbContext db, IConfiguration config) : Control
                 var turno = await db.Turnos.FirstOrDefaultAsync(t => t.PacienteId == pacienteId && t.Estado != EstadoTurno.Finalizado, ct);
                 if (turno == null)
                 {
+                    var desde = acceso.CreadoEn.AddHours(-2);
+                    var hasta = acceso.CreadoEn.AddHours(4);
+                    var cita = await db.Citas
+                        .Where(c => c.PacienteId == pacienteId && c.Estado == EstadoCita.Agendada
+                            && c.FechaHora >= desde && c.FechaHora <= hasta)
+                        .OrderBy(c => c.FechaHora).FirstOrDefaultAsync(ct);
+
                     turno = new Turno
                     {
                         Codigo = "",
                         PacienteId = pacienteId,
-                        ConsultorioId = await db.Consultorios.OrderBy(c => c.Id).Select(c => c.Id).FirstAsync(ct),
+                        CitaId = cita?.Id,
+                        ConsultorioId = cita?.ConsultorioId ?? await db.Consultorios.OrderBy(c => c.Id).Select(c => c.Id).FirstAsync(ct),
                         LlegadaEn = acceso.CreadoEn
                     };
                     db.Turnos.Add(turno);

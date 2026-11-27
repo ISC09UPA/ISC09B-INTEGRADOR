@@ -89,8 +89,19 @@ public class TurnosController(IAppDbContext db) : ControllerBase
         if (turno.Estado != desde) return Conflict(new { message = $"El turno esta en {turno.Estado}" });
 
         turno.Estado = hacia;
-        if (hacia == EstadoTurno.EnConsulta) turno.InicioConsulta = DateTime.UtcNow;
-        else turno.FinConsulta = DateTime.UtcNow;
+        if (hacia == EstadoTurno.EnConsulta)
+        {
+            turno.InicioConsulta = DateTime.UtcNow;
+        }
+        else
+        {
+            turno.FinConsulta = DateTime.UtcNow;
+            if (turno.CitaId != null)
+            {
+                var cita = await db.Citas.FirstOrDefaultAsync(c => c.Id == turno.CitaId, ct);
+                if (cita != null) cita.Estado = EstadoCita.Atendida;
+            }
+        }
         await db.SaveChangesAsync(ct);
         return Ok(new { turno.Id, turno.Codigo, turno.Estado });
     }
