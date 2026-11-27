@@ -3,14 +3,15 @@ import { View, Text, Image, ScrollView, ActivityIndicator, Platform } from 'reac
 import * as ImagePicker from 'expo-image-picker';
 import { C } from '../theme';
 import { avisar } from '../plataforma';
-import { identificarProducto, crearProducto, crearDesdeFoto } from '../api';
-import { estado, hora, S, Card, Btn, Chip, StockBar, FormProducto } from '../components';
+import { identificarProducto, crearDesdeFoto } from '../api';
+import { estado, hora, S, Card, Btn, Chip, StockBar, FormProducto, ModalEspacio } from '../components';
 
 export default function Escanear({ rol }) {
   const [img, setImg] = useState(null);
   const [res, setRes] = useState(null);
   const [busy, setBusy] = useState(false);
   const [reg, setReg] = useState(false);
+  const [espacio, setEspacio] = useState(null); // producto recién registrado al que el administrador le asigna espacio
 
   async function tomar() {
     const web = Platform.OS === 'web';
@@ -18,8 +19,11 @@ export default function Escanear({ rol }) {
       const perm = await ImagePicker.requestCameraPermissionsAsync();
       if (!perm.granted) return avisar('Permiso de cámara', 'Activa el permiso de cámara para identificar productos.');
     }
-    const r = web ? await ImagePicker.launchImageLibraryAsync({ quality: 0.6 }) : await ImagePicker.launchCameraAsync({ quality: 0.6 });
+    const r = web ? await ImagePicker.launchImageLibraryAsync({ quality: 0.5 }) : await ImagePicker.launchCameraAsync({ quality: 0.5 });
     if (r.canceled) return;
+    // La API rechaza (400) las fotos de más de 4 MB: se avisa antes de enviarla
+    const peso = r.assets[0].fileSize;
+    if (peso && peso > 4 * 1024 * 1024) return avisar('La foto pesa demasiado', 'Pesa ' + (peso / 1048576).toFixed(1) + ' MB y el límite es 4 MB. Tómala de nuevo, más cerca del producto.');
     setImg(r.assets[0].uri);
     setRes(null);
     setReg(false);
@@ -67,22 +71,22 @@ export default function Escanear({ rol }) {
       {res && !res.encontrado && (
         <Card style={{ marginTop: 16 }}>
           <Text style={{ fontSize: 18, fontWeight: '800', color: C.ink }}>Este producto no está en el inventario</Text>
-          <Text style={{ color: C.sub, marginTop: 4 }}>{rol === 'admin' ? 'Puedes registrarlo ahora con los datos de su espacio en el anaquel.' : 'Puedes registrarlo con su nombre y su peso. Un administrador le asignará su espacio después.'}</Text>
+          {!!res.etiqueta && <Text style={{ color: C.ink, marginTop: 6, fontWeight: '600' }}>Vision lo detectó como: {res.etiqueta}</Text>}
+          <Text style={{ color: C.sub, marginTop: 4 }}>{rol === 'admin' ? 'Escribe su nombre y su peso. Después elegirás su espacio en el anaquel.' : 'Escribe su nombre y su peso. Un administrador le asignará su espacio después.'}</Text>
           {reg ? (
             <FormProducto
               cta="Registrar producto"
-              simple={rol !== 'admin'}
-              inicial={{ nombre: res.etiqueta || '' }}
+              simple
               onCancel={() => setReg(false)}
               onSave={async (d) => {
                 try {
-                  // El administrador usa el alta completa; el operador solo puede dar de alta desde la foto
-                  if (rol === 'admin') await crearProducto({ ...d, imagenUrl: res.imagenUrl });
-                  else await crearDesdeFoto({ ...d, imagenUrl: res.imagenUrl });
+                  // Operador y administrador registran con desde-foto, para que la siguiente foto ya lo reconozca
+                  const nuevo = await crearDesdeFoto({ ...d, imagenUrl: res.imagenUrl });
                   setRes(null);
                   setImg(null);
                   setReg(false);
-                  avisar('Listo', rol === 'admin' ? 'Producto registrado en el inventario' : 'Producto registrado. Un administrador debe asignarle un espacio.');
+                  if (rol === 'admin') setEspacio(nuevo);
+                  else avisar('Listo', 'Producto registrado. Un administrador debe asignarle un espacio.');
                 } catch (e) {
                   avisar('No se pudo registrar', e.message);
                 }
@@ -92,6 +96,9 @@ export default function Escanear({ rol }) {
             <Btn t="Registrar como nuevo producto" onPress={() => setReg(true)} />
           )}
         </Card>
+      )}
+      {espacio && (
+        <ModalEspacio p={espacio} onClose={() => setEspacio(null)} onDone={() => avisar('Listo', 'Producto registrado y con espacio asignado.')} />
       )}
     </ScrollView>
   );

@@ -10,12 +10,12 @@ Para entrar se usan las cuentas reales de `admin` y `operador`, que se pasan en 
 
 ## Configuración (`src/banderas.js`)
 - `USE_MOCK`: `true` usa datos de ejemplo sin internet (en ese modo cualquier contraseña funciona con `admin@almacen.com` u `operador@almacen.com`).
-- Banderas de rutas: `USUARIOS_EN_API`, `ALERTAS_EN_API` y `PEDIDOS_EN_API` en `true` (contrato 2.4). `FOTO_EN_API` (meta 26 nov) y `PROVEEDORES_EN_API` (meta 27 nov)
-  se cambian a `true` el día que Sebastián publique su ruta. Mientras estén en `false`, la app usa un respaldo local.
+- Banderas de rutas: `USUARIOS_EN_API`, `ALERTAS_EN_API`, `PEDIDOS_EN_API` y `FOTO_EN_API` en `true` (contrato 2.6). `PROVEEDORES_EN_API` (meta 27 nov)
+  se cambia a `true` el día que Sebastián publique su ruta. Mientras esté en `false`, la app usa un respaldo local.
 - `CAMERA_URL`: dirección del stream de la cámara (celular y Raspberry en la misma red). Pendiente.
 
 ## Contrato de la API
-La única referencia es `contrato-api-almacen.md` (versión 2.4, Sebastián Román). Todo el acceso a datos está en `src/api.js`.
+La única referencia es `contrato-api-almacen.md` (versión 2.6, Sebastián Román). Todo el acceso a datos está en `src/api.js`.
 
 ## Sesión con JWT
 La app revisa que el JWT tenga formato válido y que no haya expirado (`exp`). La firma la valida el backend en cada petición.

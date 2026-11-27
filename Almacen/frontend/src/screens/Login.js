@@ -43,7 +43,7 @@ export default function Login({ onLogin }) {
             Demo: admin@almacen.com u operador@almacen.com,{'\n'}con cualquier contraseña
           </Text>
         )}
-        <Text style={{ color: C.primary, fontSize: 12, fontWeight: '700', marginTop: 8, textAlign: 'center' }}>Versión 8: rol exacto y errores de la API</Text>
+        <Text style={{ color: C.primary, fontSize: 12, fontWeight: '700', marginTop: 8, textAlign: 'center' }}>Versión 9.1: fotos de menos de 4 MB</Text>
       </View>
     </KeyboardAvoidingView>
   );

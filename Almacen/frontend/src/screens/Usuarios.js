@@ -9,7 +9,7 @@ import { useData, S, Card, Btn } from '../components';
 const vacio = { nombre: '', email: '', pass: '', rol: 'operador' };
 
 export default function Usuarios({ yo }) {
-  const [us, load] = useData(getUsuarios, 10000);
+  const [us, load] = useData(getUsuarios, 30000);
   const [abierto, setAbierto] = useState(false);
   const [f, setF] = useState(vacio);
   const [err, setErr] = useState('');

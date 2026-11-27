@@ -3,7 +3,7 @@ PROYECTO COMPLETO, CONECTADO A LA API DE AZURE (contrato v2)
 2. npm install
 3. npx expo start --clear
 4. Presiona la tecla w para abrirlo en el navegador, o escanea el QR con Expo Go.
-En el login debe decir "Versión 8".
+En el login debe decir "Versión 9.1".
 Entra con el usuario y la contraseña que te dé Sebastián (admin y operador).
 Configuración (banderas y CAMERA_URL): src/banderas.js
 Para usar datos de ejemplo sin internet: src/banderas.js -> USE_MOCK = true (cualquier contraseña)

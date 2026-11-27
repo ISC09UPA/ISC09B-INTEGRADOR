@@ -210,10 +210,17 @@ export const registrarMovimiento = async ({ productoId, tipo, cant, usuario }) =
 // Con FOTO_EN_API = true envía la foto a Azure. Respuesta esperada: { encontrado, confianza, etiqueta, producto? }
 export const identificarProducto = async (uri) => {
   if (FOTO_EN_API) {
+    try { leerJwt(token); } catch (e) { alExpirar(); throw e; }
     const fd = new FormData();
     if (Platform.OS === 'web') fd.append('foto', await (await fetch(uri)).blob(), 'foto.jpg');
     else fd.append('foto', { uri, name: 'foto.jpg', type: 'image/jpeg' });
-    const r = await fetch(BASE_URL + '/productos/identificar', { method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: fd });
+    let r;
+    try {
+      r = await fetch(BASE_URL + '/productos/identificar', { method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: fd });
+    } catch {
+      throw new Error('No se pudo conectar con el servidor');
+    }
+    if (r.status === 401) { alExpirar(); throw new Error('Sesión no autorizada'); }
     if (!r.ok) {
       let m = 'El servidor no pudo analizar la foto';
       try { m = (await r.json()).error || m; } catch {}
@@ -233,11 +240,12 @@ export const identificarProducto = async (uri) => {
 // p = { imagenUrl, nombre, peso, reorden }
 export const crearDesdeFoto = async (p) => {
   if (USE_MOCK) {
-    productos.push({ id: Date.now(), nombre: p.nombre, anaquel: 'Sin espacio', stock: 0, reorden: p.reorden, max: 1, salidas30: 0 });
-    return wait(true);
+    const n = { id: Date.now(), nombre: p.nombre, anaquel: 'Sin espacio', stock: 0, reorden: p.reorden, max: 1, salidas30: 0 };
+    productos.push(n);
+    return wait(n);
   }
   if (!FOTO_EN_API) throw new Error('El alta desde foto todavía no está disponible en el servidor.');
-  return http('/productos/desde-foto', { method: 'POST', body: { imagenUrl: p.imagenUrl, nombre: p.nombre, pesoUnitarioGramos: p.peso, puntoReorden: p.reorden } });
+  return productoDeApi(await http('/productos/desde-foto', { method: 'POST', body: { imagenUrl: p.imagenUrl, nombre: p.nombre, pesoUnitarioGramos: p.peso, puntoReorden: p.reorden } }));
 };
 
 // ---------- espacios (para asignar un espacio a los productos creados desde foto) ----------
