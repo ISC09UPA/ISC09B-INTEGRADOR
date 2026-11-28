@@ -1,3 +1,5 @@
+using InvernaderoInteligente.Application.Interfaces;
+using InvernaderoInteligente.Infrastructure.ExternalServices;
 using InvernaderoInteligente.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -11,6 +13,7 @@ namespace InvernaderoInteligente.Infrastructure
         {
             services.AddDbContext<AppDbContext>(options =>
                 options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
+            services.AddScoped<IEmailService, EmailService>();
 
             return services;
         }

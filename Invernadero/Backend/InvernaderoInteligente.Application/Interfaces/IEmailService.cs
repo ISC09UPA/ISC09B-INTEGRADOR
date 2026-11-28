@@ -1,11 +1,9 @@
 
-namespace Practica1.Application.Interfaces;
+using InvernaderoInteligente.Application.DTOs.Emails;
+
+namespace InvernaderoInteligente.Application.Interfaces;
 
 public interface IEmailService
 {
-    Task EnviarCorreoAsync(
-        string destinatario,
-        string asunto,
-        string mensaje,
-        CancellationToken cancellationToken = default);
+    Task EnviarCorreoAsync(EnviarCorreoDto request, CancellationToken cancellationToken = default);
 }

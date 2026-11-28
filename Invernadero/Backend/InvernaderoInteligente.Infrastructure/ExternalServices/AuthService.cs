@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using InvernaderoInteligente.Application.DTOs;
+using InvernaderoInteligente.Application.DTOs.Emails;
 using InvernaderoInteligente.Application.Interfaces;
 using InvernaderoInteligente.Domain.Entities;
 using InvernaderoInteligente.Infrastructure.Persistence;
@@ -15,11 +16,13 @@ namespace InvernaderoInteligente.Infrastructure.ExternalServices
     {
         private readonly AppDbContext _context;
         private readonly IConfiguration _config;
+        private readonly IEmailService _emailService;
 
-        public AuthService(AppDbContext context, IConfiguration config)
+        public AuthService(AppDbContext context, IConfiguration config, IEmailService emailService)
         {
             _context = context;
             _config = config;
+            _emailService = emailService;
         }
 
         public async Task<LoginResponseDto?> LoginAsync(LoginRequestDto request)
@@ -35,10 +38,12 @@ namespace InvernaderoInteligente.Infrastructure.ExternalServices
             return GenerarRespuesta(usuario);
         }
 
-        public async Task<LoginResponseDto?> RegisterAsync(RegisterRequestDto request)
+        public async Task<LoginResponseDto?> RegisterAsync(
+            RegisterRequestDto request,
+            CancellationToken cancellationToken = default)
         {
             var existe = await _context.Usuarios
-                .AnyAsync(u => u.correo == request.correo);
+                .AnyAsync(u => u.correo == request.correo, cancellationToken);
 
             if (existe)
             {
@@ -52,8 +57,20 @@ namespace InvernaderoInteligente.Infrastructure.ExternalServices
                 contrasena = BCrypt.Net.BCrypt.HashPassword(request.contrasena)
             };
 
+            await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
             _context.Usuarios.Add(usuario);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
+
+            await _emailService.EnviarCorreoAsync(
+                new EnviarCorreoDto
+                {
+                    Destinatario = usuario.correo,
+                    Asunto = "Bienvenido a Invernadero Inteligente",
+                    Mensaje = $"Hola {usuario.nombre}, tu cuenta fue creada correctamente. Ya puedes iniciar sesión en Invernadero Inteligente."
+                },
+                cancellationToken);
+
+            await transaction.CommitAsync(cancellationToken);
 
             return GenerarRespuesta(usuario);
         }

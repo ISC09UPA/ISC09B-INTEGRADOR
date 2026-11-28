@@ -18,7 +18,9 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("registro")]
-    public async Task<IActionResult> Registrar([FromBody] RegisterRequestDto request)
+    public async Task<IActionResult> Registrar(
+        [FromBody] RegisterRequestDto request,
+        CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.nombre) ||
             string.IsNullOrWhiteSpace(request.correo) ||
@@ -32,7 +34,7 @@ public class AuthController : ControllerBase
             return BadRequest(new { mensaje = "El correo no tiene un formato válido." });
         }
 
-        var resultado = await _authService.RegisterAsync(request);
+        var resultado = await _authService.RegisterAsync(request, cancellationToken);
 
         if (resultado == null)
         {

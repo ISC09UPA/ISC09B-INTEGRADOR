@@ -1,7 +1,7 @@
 
 using System.ComponentModel.DataAnnotations;
 
-namespace Practica1.Application.DTOs.Emails;
+namespace InvernaderoInteligente.Application.DTOs.Emails;
 
 public class EnviarCorreoDto
 {

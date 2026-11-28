@@ -1,4 +1,5 @@
 using System.Text;
+using Azure.Messaging.ServiceBus;
 using InvernaderoInteligente.Application.Interfaces;
 using InvernaderoInteligente.Infrastructure;
 using InvernaderoInteligente.Infrastructure.ExternalServices;
@@ -10,6 +11,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("PermitirTodo", policy =>
+        policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
+});
 
 builder.Services.AddInfrastructure(builder.Configuration);
 
@@ -54,18 +60,13 @@ var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-app.UseHttpsRedirection();
-
-if (app.Environment.IsDevelopment())
-{
+    app.MapOpenApi();
     app.UseSwaggerUi(settings =>
     {
         settings.SwaggerRoutes.Add(new SwaggerUiRoute("Invernadero API", "/openapi/v1.json"));
     });
 }
+app.UseHttpsRedirection();
 
 app.UseCors("PermitirTodo");
 
