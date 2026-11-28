@@ -1,12 +1,13 @@
 import os
-import re
+import threading
 import time
-from datetime import datetime
+import unicodedata
 from gpiozero import DigitalInputDevice, DigitalOutputDevice
 from luma.core.interface.serial import i2c as luma_i2c
 from luma.oled.device import ssd1306
 from PIL import Image, ImageDraw, ImageFont
 from smbus2 import SMBus, i2c_msg
+import nube
 
 try:
     from picamera2 import Picamera2
@@ -19,13 +20,9 @@ CARPETA_FOTOS = os.path.expanduser("~/capturas")
 CALENTAMIENTO_S = 30
 VENTANA_PIR_MS = 5000
 LED_VERDE_MS = 3000
-
-USUARIOS = {"leonardo"}
-
-TARJETAS = {
-    "A9A308E6": "tarjeta-1",
-    "BB73D275": "tarjeta-2",
-}
+FOTO_SALA_S = 60
+ROLES_CON_ORDEN = {"paciente"}
+LARGO_TEXTO = 32
 
 SELECT_APDU = bytes([0x00, 0xA4, 0x04, 0x00, 0x07, 0xF0, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06])
 
@@ -106,7 +103,7 @@ class PN532:
         if not self._listo(timeout_ms):
             self._escribir(b"\x00\x00\xff\x00\xff\x00")
             return None
-        buf = self._leer(40)
+        buf = self._leer(64)
         return self._extraer(buf[1:], cmd)
 
     def iniciar(self):
@@ -130,6 +127,7 @@ class PN532:
         r = self._comando(0x4A, b"\x01\x00", 500)
         if r is None or len(r) < 7 or r[0] < 1:
             return None
+        self.sak = r[4]
         n = r[5]
         return bytes(r[6:6 + n])
 
@@ -138,6 +136,45 @@ class PN532:
         if r is None or len(r) < 1 or r[0] != 0:
             return None
         return bytes(r[1:])
+
+    def _autenticar(self, uid, bloque):
+        orden = bytes([0x60, bloque]) + b"\xff" * 6 + uid[-4:]
+        return self.intercambiar(orden) is not None
+
+    def leer_texto(self, uid):
+        datos = b""
+        if self.sak in (0x08, 0x18):
+            if not self._autenticar(uid, 4):
+                return None
+            ordenes = (4, 5)
+        elif self.sak == 0x00:
+            ordenes = (4, 8)
+        else:
+            return None
+        for bloque in ordenes:
+            r = self.intercambiar(bytes([0x30, bloque]))
+            if r is None or len(r) < 16:
+                return None
+            datos += r[:16]
+        try:
+            return datos.split(b"\x00")[0].decode().strip()
+        except UnicodeDecodeError:
+            return ""
+
+    def escribir_texto(self, uid, texto):
+        datos = texto.encode()
+        if len(datos) > LARGO_TEXTO:
+            return False
+        datos = datos.ljust(LARGO_TEXTO, b"\x00")
+        if self.sak in (0x08, 0x18):
+            if not self._autenticar(uid, 4):
+                return False
+            ordenes = [bytes([0xA0, 4 + i]) + datos[i * 16:(i + 1) * 16] for i in range(2)]
+        elif self.sak == 0x00:
+            ordenes = [bytes([0xA2, 4 + i]) + datos[i * 4:(i + 1) * 4] for i in range(8)]
+        else:
+            return False
+        return all(self.intercambiar(o) is not None for o in ordenes)
 
     def liberar(self):
         self._comando(0x52, b"\x00", 200)
@@ -159,7 +196,7 @@ def iniciar_camara():
         camara.configure(config)
         camara.start()
         time.sleep(2)
-        print("Camara lista. Fotos en:", CARPETA_FOTOS)
+        print("Camara lista")
         return True
     except Exception as e:
         print("No se pudo iniciar la camara:", e)
@@ -167,22 +204,26 @@ def iniciar_camara():
         return False
 
 
-def capturar(etiqueta):
-    if camara is None:
-        return None
-    seguro = re.sub(r"[^A-Za-z0-9_-]", "_", etiqueta)
-    nombre = datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + seguro + ".jpg"
-    ruta = os.path.join(CARPETA_FOTOS, nombre)
-    try:
-        camara.capture_file(ruta)
-        print("Foto guardada:", ruta)
-        return ruta
-    except Exception as e:
-        print("Error al capturar la foto:", e)
-        return None
+def fotos_de_sala():
+    ruta = os.path.join(CARPETA_FOTOS, "sala.jpg")
+    while True:
+        try:
+            camara.capture_file(ruta)
+            nube.contar_personas(ruta)
+        except Exception as e:
+            print("Error en la foto de sala:", e)
+        finally:
+            if os.path.exists(ruta):
+                os.remove(ruta)
+        time.sleep(FOTO_SALA_S)
+
+
+def sin_acentos(s):
+    return unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode()
 
 
 def texto(s, x, y, escala=1):
+    s = sin_acentos(s)
     if not s:
         return
     if escala == 1:
@@ -197,6 +238,7 @@ def texto(s, x, y, escala=1):
 
 
 def ancho(s, escala):
+    s = sin_acentos(s)
     x0, y0, x1, y1 = draw.textbbox((0, 0), s, font=fuente)
     return (x1 - x0) * escala
 
@@ -216,6 +258,8 @@ def mostrar(l1, l2="", l3=""):
 def pantalla_turno(n):
     s = str(n)
     escala = 5 if len(s) <= 3 else 3
+    if ancho(s, escala) > 128:
+        escala = 2
     limpiar()
     texto("TURNO", (128 - ancho("TURNO", 2)) // 2, 0, 2)
     texto(s, (128 - ancho(s, escala)) // 2, 22, escala)
@@ -223,7 +267,19 @@ def pantalla_turno(n):
 
 
 def pantalla_inicio():
-    mostrar("Acerque su tag", "OK:%d Neg:%d" % (accesos_ok, accesos_denegados))
+    t = nube.siguiente_turno()
+    if t is None:
+        mostrar("Acerque su tag", "OK:%d Neg:%d" % (accesos_ok, accesos_denegados))
+        return t
+    limpiar()
+    titulo = "PASE" if t["estado"] == "Llamado" else "SIGUE"
+    texto("%s  OK:%d Neg:%d" % (titulo, accesos_ok, accesos_denegados), 0, 0)
+    escala = 3 if ancho(t["codigo"], 3) <= 128 else 2
+    texto(t["codigo"], max(0, (128 - ancho(t["codigo"], escala)) // 2), 14, escala)
+    texto(t["paciente"], 0, 40)
+    texto(t["consultorio"], 0, 52)
+    oled.display(img)
+    return t
 
 
 def pitidos(veces, t):
@@ -234,13 +290,14 @@ def pitidos(veces, t):
         sleep_ms(t)
 
 
-def acceso_concedido(quien):
+def acceso_concedido(quien, uid):
     global accesos_ok
+    nube.registrar_acceso(uid, True, "Concedido")
     accesos_ok += 1
     print("ACCESO CONCEDIDO:", quien, "turno", accesos_ok)
     led_verde.on()
-    pantalla_turno(accesos_ok)
-    capturar("concedido_" + quien)
+    turno = nube.turno_de(quien)
+    pantalla_turno(turno["codigo"] if turno else accesos_ok)
     pitidos(1, 300)
     inicio = ms()
     while ms() - inicio < LED_VERDE_MS:
@@ -252,47 +309,54 @@ def acceso_concedido(quien):
     led_verde.off()
 
 
-def acceso_denegado(motivo, extra=""):
+def acceso_denegado(motivo, extra, uid, presencia):
     global accesos_denegados
+    nube.registrar_acceso(uid, presencia, "Denegado", motivo)
     accesos_denegados += 1
     print("ACCESO DENEGADO:", motivo, extra)
     led_rojo.on()
     mostrar("ACCESO DENEGADO", motivo, extra)
-    capturar("denegado")
     pitidos(3, 150)
     sleep_ms(1000)
     led_rojo.off()
 
 
-def esperar_presencia(quien):
+def esperar_presencia(quien, uid):
     mostrar("Tag leido", "Esperando PIR...")
     inicio = ms()
     while ms() - inicio < VENTANA_PIR_MS:
         if hay_persona():
-            acceso_concedido(quien)
+            acceso_concedido(quien, uid)
             return
         sleep_ms(10)
-    acceso_denegado("Sin presencia", quien)
+    acceso_denegado("Sin presencia", quien, uid, False)
 
 
 def identificar(nfc, uid):
     uid = uid[:7]
-    resp = nfc.intercambiar(SELECT_APDU)
-    if resp is not None and len(resp) >= 2 and resp[-2:] == b"\x90\x00":
-        try:
-            usuario = resp[:-2][:24].decode()
-        except UnicodeDecodeError:
-            usuario = ""
-        print("Telefono, usuario:", usuario)
-        if len(usuario) > 0 and usuario in USUARIOS:
-            return True, usuario, ""
-        return False, usuario, "Usuario no registrado"
-    uid_hex = "".join("%02X" % b for b in uid)
-    print("Tarjeta UID", uid_hex)
-    nombre = TARJETAS.get(uid_hex)
-    if nombre:
-        return True, nombre, ""
-    return False, "UID " + uid_hex, "Tarjeta no registrada"
+    clave = ""
+    if nfc.sak & 0x20:
+        resp = nfc.intercambiar(SELECT_APDU)
+        if resp is not None and len(resp) >= 2 and resp[-2:] == b"\x90\x00":
+            try:
+                clave = resp[:-2][:LARGO_TEXTO].decode().strip()
+            except UnicodeDecodeError:
+                clave = ""
+        print("Telefono, usuario:", clave)
+    else:
+        clave = nfc.leer_texto(uid) or ""
+        print("Tarjeta, usuario:", clave)
+    if not clave:
+        uid_texto = ":".join("%02X" % b for b in uid)
+        return False, uid_texto, "Sin usuario", uid_texto
+    encontrado = nube.buscar_usuario(clave)
+    if encontrado:
+        if encontrado["rol"].casefold() in ROLES_CON_ORDEN:
+            permitido, motivo = nube.es_su_turno(encontrado["nombre"])
+            if not permitido:
+                return False, encontrado["nombre"], motivo, clave
+        return True, encontrado["nombre"], "", clave
+    return False, clave, "Usuario no registrado", clave
 
 
 def main():
@@ -313,12 +377,20 @@ def main():
         mostrar("PN532", "no responde")
         return
 
-    iniciar_camara()
+    if not nube.KEY:
+        print("AVISO: falta DEVICE_KEY, los eventos no se enviaran")
+
+    nube.iniciar_sincronizacion()
+    print("Usuarios guardados en el Pi:", nube.total_usuarios())
+
+    if iniciar_camara():
+        threading.Thread(target=fotos_de_sala, daemon=True).start()
 
     for s in range(CALENTAMIENTO_S, 0, -1):
         mostrar("Calentando PIR", "%d s" % s)
         time.sleep(1)
-    pantalla_inicio()
+    en_pantalla = pantalla_inicio()
+    revisado = ms()
     print("Listo. Acerca telefono o tarjeta.")
 
     try:
@@ -326,19 +398,23 @@ def main():
             try:
                 uid = nfc.leer_objetivo()
                 if uid is None:
+                    if ms() - revisado >= 1000:
+                        revisado = ms()
+                        if nube.siguiente_turno() != en_pantalla:
+                            en_pantalla = pantalla_inicio()
                     sleep_ms(50)
                     continue
-                autorizado, quien, motivo = identificar(nfc, uid)
+                autorizado, quien, motivo, uid_envio = identificar(nfc, uid)
                 nfc.liberar()
             except OSError as e:
                 print("Error I2C:", e)
                 sleep_ms(300)
                 continue
             if autorizado:
-                esperar_presencia(quien)
+                esperar_presencia(quien, uid_envio)
             else:
-                acceso_denegado(motivo, quien)
-            pantalla_inicio()
+                acceso_denegado(motivo, quien, uid_envio, hay_persona())
+            en_pantalla = pantalla_inicio()
             sleep_ms(1000)
     except KeyboardInterrupt:
         pass
