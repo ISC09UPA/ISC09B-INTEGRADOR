@@ -1,56 +1,104 @@
-# Welcome to your Expo app 👋
+# Invernadero Inteligente — Aplicación móvil
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Aplicación móvil para monitorear y controlar un invernadero inteligente: lectura de
+sensores, riego manual, historial, gestión de plantas y dispositivos, alertas,
+galería de fotos y perfil de usuario.
 
-## Get started
+> Nota: actualmente la app funciona con **servicios mock en memoria** (carpeta
+> `src/services/`). No se conecta a una API real; está diseñada para cambiarla
+> por el backend sin tocar las pantallas.
 
-1. Install dependencies
+## Stack
 
-   ```bash
-   npm install
-   ```
+- [Expo](https://docs.expo.dev/) SDK 58 + React Native 0.88
+- JavaScript (sin TypeScript)
+- [React Navigation](https://reactnavigation.org/) (bottom tabs + stacks)
+- Context API para el estado global (`src/context/AppContext.js`)
 
-2. Start the app
+## Requisitos
 
-   ```bash
-   npx expo start
-   ```
+- **Node.js** LTS (20 o superior) y npm
+- [Expo Go](https://expo.dev/go) en tu teléfono, **o** un emulador
+  (Android Studio / Xcode) con el dispositivo ya configurado
+- Git
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Instalación
 
 ```bash
-npm run reset-project
+# 1. Clonar el repositorio
+git clone https://github.com/ISC09UPA/ISC09B-INTEGRADOR.git
+cd ISC09B-INTEGRADOR/Invernadero/Frontend/mobile
+
+# 2. Instalar dependencias
+npm install
+
+# 3. Iniciar el servidor de desarrollo
+npx expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Ejecutar la app
 
-### Other setup steps
+Con el servidor de desarrollo corriendo (`npx expo start`):
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+- **Teléfono físico:** instala Expo Go y escanea el código QR con la cámara
+  (Android) o con la app de cámara (iOS). El teléfono y la computadora deben
+  estar en la misma red Wi-Fi.
+- **Emulador Android:** presiona `a` en la terminal (o ejecuta
+  `npx expo start --android`).
+- **Simulador iOS (solo macOS):** presiona `i` (o `npx expo start --ios`).
 
-## Learn more
+Otras variantes:
 
-To learn more about developing your project with Expo, look at the following resources:
+```bash
+npm start          # igual que npx expo start
+npm run android    # inicia y abre en emulador Android
+npm run ios        # inicia y abre en simulador iOS
+npm run web        # inicia la versión web
+npm run lint       # ejecuta el linter (ESLint + eslint-config-expo)
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Credenciales de prueba
 
-## Join the community
+Como la autenticación usa datos mock, inicia sesión con:
 
-Join our community of developers creating universal apps.
+| Campo             | Valor                    |
+| ----------------- | ------------------------ |
+| Correo            | `mariana@invernadero.app` |
+| Contraseña        | `invernadero123`          |
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+También puedes crear una cuenta nueva desde la pantalla «Crear cuenta»; solo
+persiste durante la sesión.
+
+## Estructura del proyecto
+
+```
+src/
+├── components/   # componentes reutilizables (ui, charts, TabBar)
+├── context/      # estado global (AppContext)
+├── data/         # datos mock (plantas, alertas, galería…)
+├── navigation/   # AuthStack, MainTabs, MoreStack, RootNavigator
+├── screens/      # pantallas (auth/, tabs/, more/)
+├── services/     # servicios mock (se reemplazarán por la API real)
+├── theme/        # tokens de diseño (colores, tipografía, espaciado…)
+└── utils/        # formateadores y helpers
+```
+
+## Validar el proyecto
+
+```bash
+npx expo-doctor          # revisa dependencias y configuración
+npx expo lint            # linter
+```
+
+## Builds con EAS (opcional)
+
+El proyecto usa [EAS](https://docs.expo.dev/eas/) para compilar y firmar en la
+nube sin necesidad de Android Studio ni Xcode:
+
+```bash
+npx eas-cli@latest build --profile development   # build de desarrollo
+npx eas-cli@latest build --profile production    # build de producción
+```
+
+> Las carpetas `ios/` y `android/` se generan automáticamente (CNG); no deben
+> editarse a mano.

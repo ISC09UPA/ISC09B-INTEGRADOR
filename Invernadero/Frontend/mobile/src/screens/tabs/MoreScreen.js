@@ -1,4 +1,8 @@
-
+/**
+ * Pantalla 7: Más (menú, pestaña «Más»).
+ * Acceso a las secciones secundarias de la app con subtítulos dinámicos
+ * y bloque de ayuda con acceso a la guía de soporte.
+ */
 import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';

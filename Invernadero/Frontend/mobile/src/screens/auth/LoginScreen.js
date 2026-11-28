@@ -1,9 +1,7 @@
 /**
- * Pantalla de Iniciar sesión (avance 2, solo interfaz).
- * Validaciones visuales en vivo (correo válido, contraseña presente),
- * botón deshabilitado hasta que el formulario sea válido, spinner al
- * «entrar», estado de error en recuadro rosa y enlace para ir a
- * «Crear cuenta». Sin backend.
+ * Pantalla 13: Login.
+ * Estados: normal, error de credenciales (recuadro rosa), cargando
+ * (spinner en el botón) y campos con foco resaltado.
  */
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
@@ -12,50 +10,69 @@ import AuthLayout from './AuthLayout';
 import ErrorBanner from '../../components/ui/ErrorBanner';
 import PrimaryButton from '../../components/ui/PrimaryButton';
 import TextField from '../../components/ui/TextField';
+import { useApp } from '../../context/AppContext';
 import { colors, spacing, typography } from '../../theme';
 
 const esCorreoValido = (correo) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo);
 
-export default function LoginScreen({ navigation, onIrACrearCuenta }) {
+export default function LoginScreen({ navigation }) {
+  const { iniciarSesion, mostrarToast } = useApp();
+
   const [email, setEmail] = useState('');
   const [contrasena, setContrasena] = useState('');
-  const [visitados, setVisitados] = useState({}); // Campos que ya se tocaron
+  const [errores, setErrores] = useState({}); // Errores por campo
   const [errorGeneral, setErrorGeneral] = useState(null); // Banner rosa
   const [enviando, setEnviando] = useState(false);
 
-  /** Errores calculados en vivo para cada campo. */
-  const validaciones = {
-    email: !email.trim()
-      ? 'Ingresa tu correo electrónico.'
-      : !esCorreoValido(email.trim())
-        ? 'Ingresa un correo electrónico válido.'
-        : null,
-    contrasena: !contrasena ? 'Ingresa tu contraseña.' : null,
+  /** Valida ambos campos y devuelve un objeto con los errores. */
+  const validar = () => {
+    const resultado = {};
+    if (!email.trim()) resultado.email = 'Ingresa tu correo electrónico.';
+    else if (!esCorreoValido(email.trim())) resultado.email = 'Ingresa un correo electrónico válido.';
+    if (!contrasena) resultado.contrasena = 'Ingresa tu contraseña.';
+    return resultado;
   };
 
-  const formularioValido = !validaciones.email && !validaciones.contrasena;
+  /** Limpia el error del campo y el banner al escribir. */
+  const cambiarEmail = (valor) => {
+    setEmail(valor);
+    setErrores((prev) => ({ ...prev, email: null }));
+    setErrorGeneral(null);
+  };
+  const cambiarContrasena = (valor) => {
+    setContrasena(valor);
+    setErrores((prev) => ({ ...prev, contrasena: null }));
+    setErrorGeneral(null);
+  };
 
-  /** El error de un campo solo se muestra después de tocarlo. */
-  const errorDe = (campo) => (visitados[campo] ? validaciones[campo] : null);
+  /** Valida el campo correo al salir de él. */
+  const validarEmailAlSalir = () => {
+    setErrores((prev) => ({
+      ...prev,
+      email: !email.trim()
+        ? 'Ingresa tu correo electrónico.'
+        : !esCorreoValido(email.trim())
+          ? 'Ingresa un correo electrónico válido.'
+          : null,
+    }));
+  };
 
-  const marcarVisitado = (campo) =>
-    setVisitados((prev) => (prev[campo] ? prev : { ...prev, [campo]: true }));
+  const onSubmit = async () => {
+    const resultado = validar();
+    setErrores(resultado);
+    setErrorGeneral(null);
+    if (Object.keys(resultado).length > 0) return;
 
-  const limpiarBanner = () => setErrorGeneral(null);
-
-  /** Origen del enlace «Crea una»: prop directa o navegación de stack. */
-  const irACrearCuenta =
-    onIrACrearCuenta || (navigation ? () => navigation.navigate('Registro') : null);
-
-  const onSubmit = () => {
-    if (!formularioValido) return;
-    // DEMO: no hay backend. Se simula el envío con el spinner y se
-    // muestra el estado de error «credenciales incorrectas» del mockup.
     setEnviando(true);
-    setTimeout(() => {
+    try {
+      // Al iniciar sesión, RootNavigator muestra automáticamente las pestañas.
+      await iniciarSesion(email.trim(), contrasena);
+    } catch (error) {
+      // Credenciales incorrectas u otros fallos del servicio.
+      setErrorGeneral(error.message);
+    } finally {
       setEnviando(false);
-      setErrorGeneral('Correo o contraseña incorrectos.');
-    }, 900);
+    }
   };
 
   return (
@@ -63,8 +80,8 @@ export default function LoginScreen({ navigation, onIrACrearCuenta }) {
       {/* Cabecera verde oscuro: la barra de estado debe ser clara */}
       <StatusBar style="light" />
 
-      <Text style={styles.titulo}>Bienvenido de nuevo</Text>
-      <Text style={styles.subtitulo}>Inicia sesión en tu invernadero.</Text>
+      <Text style={styles.titulo}>Bienvenida de nuevo</Text>
+      <Text style={styles.subtitulo}>Ingresa para ver cómo están tus plantas.</Text>
 
       {errorGeneral ? <ErrorBanner mensaje={errorGeneral} style={styles.banner} /> : null}
 
@@ -72,15 +89,13 @@ export default function LoginScreen({ navigation, onIrACrearCuenta }) {
         label="Correo electrónico"
         placeholder="mariana@invernadero.app"
         value={email}
-        onChangeText={(v) => {
-          setEmail(v);
-          limpiarBanner();
-        }}
-        onBlur={() => marcarVisitado('email')}
+        onChangeText={cambiarEmail}
+        onBlur={validarEmailAlSalir}
         keyboardType="email-address"
         autoCapitalize="none"
         autoComplete="email"
-        error={errorDe('email')}
+        textContentType="emailAddress"
+        error={errores.email}
         returnKeyType="next"
       />
 
@@ -88,48 +103,41 @@ export default function LoginScreen({ navigation, onIrACrearCuenta }) {
         label="Contraseña"
         placeholder="••••••••••"
         value={contrasena}
-        onChangeText={(v) => {
-          setContrasena(v);
-          limpiarBanner();
-        }}
-        onBlur={() => marcarVisitado('contrasena')}
+        onChangeText={cambiarContrasena}
         secureTextEntry
         autoCapitalize="none"
         autoComplete="password"
-        error={errorDe('contrasena')}
+        textContentType="password"
+        error={errores.contrasena}
         returnKeyType="done"
         onSubmitEditing={onSubmit}
       />
 
-      {/* Enlace de recuperación (solo visual por ahora) */}
+      {/* Enlace sugerido (no aparece en el mockup) */}
       <Pressable
         accessibilityRole="button"
-        onPress={() => setErrorGeneral('Recuperación de contraseña próximamente.')}
-        style={styles.olvidaste}
+        onPress={() => mostrarToast('info', 'Próximamente podrás restablecer tu contraseña.')}
+        style={styles.olvidada}
       >
-        <Text style={styles.olvidasteTexto}>¿Olvidaste tu contraseña?</Text>
+        <Text style={styles.olvidadaTexto}>¿Olvidaste tu contraseña?</Text>
       </Pressable>
 
       <PrimaryButton
         label="Iniciar sesión"
         onPress={onSubmit}
         loading={enviando}
-        disabled={!formularioValido}
         style={styles.boton}
       />
 
-      {irACrearCuenta ? (
-        <Pressable
-          accessibilityRole="button"
-          onPress={irACrearCuenta}
-          style={styles.pie}
-        >
-          <Text style={styles.pieTexto}>
-            ¿No tienes una cuenta?{' '}
-            <Text style={styles.pieEnlace}>Crea una</Text>
-          </Text>
-        </Pressable>
-      ) : null}
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => navigation.navigate('CrearCuenta')}
+        style={styles.crearCuenta}
+      >
+        <Text style={styles.crearCuentaTexto}>
+          ¿No tienes cuenta? <Text style={styles.crearCuentaEnlace}>Crear cuenta</Text>
+        </Text>
+      </Pressable>
     </AuthLayout>
   );
 }
@@ -148,27 +156,28 @@ const styles = StyleSheet.create({
   banner: {
     marginBottom: spacing.lg,
   },
-  olvidaste: {
+  olvidada: {
     alignSelf: 'flex-end',
-    marginTop: spacing.md,
+    marginTop: spacing.sm,
+    marginBottom: spacing.lg,
   },
-  olvidasteTexto: {
+  olvidadaTexto: {
     ...typography.captionBold,
     color: colors.primary,
   },
   boton: {
+    marginTop: spacing.xs,
+  },
+  crearCuenta: {
+    alignItems: 'center',
     marginTop: spacing.xl,
   },
-  pie: {
-    marginTop: spacing.xxl,
-    alignItems: 'center',
-  },
-  pieTexto: {
+  crearCuentaTexto: {
     ...typography.body,
     color: colors.textSecondary,
   },
-  pieEnlace: {
-    fontWeight: '700',
+  crearCuentaEnlace: {
     color: colors.primary,
+    fontWeight: '700',
   },
 });

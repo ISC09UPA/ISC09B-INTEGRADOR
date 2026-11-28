@@ -1,4 +1,10 @@
-
+/**
+ * Pantalla 1: Inicio (pestaña «Inicio»).
+ * Saludo según la hora + avatar, banner de modo sin conexión, tarjeta hero
+ * del estado de la planta, cuadrícula 2×2 de lecturas actuales, tarjeta de
+ * alerta activa, botón «Regar ahora» y estado de la Raspberry Pi con la
+ * última sincronización. Pull-to-refresh para forzar la sincronización.
+ */
 import React, { useEffect, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
