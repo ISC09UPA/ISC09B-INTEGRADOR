@@ -6,5 +6,6 @@ public class TipoSensor
     public DateTime fecha_Despliegue { get; set; }
     public string nombre { get; set; } = string.Empty;
     public string unidad_Medida { get; set; } = string.Empty;
+
     public ICollection<Sensor> Sensores { get; set; } = new List<Sensor>();
 }

@@ -36,4 +36,29 @@ public sealed class BlobStorageService : IBlobStorageService
 
     public async Task<Stream> OpenReadAsync(string blobName, CancellationToken ct = default) =>
         await _container.GetBlobClient(blobName).OpenReadAsync(cancellationToken: ct);
+
+    public async Task<BlobPhotoInfo?> GetLatestPhotoAsync(CancellationToken ct = default)
+    {
+        BlobPhotoInfo? latest = null;
+
+        await foreach (var item in _container.GetBlobsAsync(
+            traits: BlobTraits.None,
+            states: BlobStates.None,
+            prefix: "foto_",
+            cancellationToken: ct))
+        {
+            ct.ThrowIfCancellationRequested();
+
+            var modified = item.Properties.LastModified;
+            if (modified is null)
+                continue;
+
+            if (latest is null || modified.Value > latest.LastModified)
+            {
+                latest = new BlobPhotoInfo(item.Name, modified.Value);
+            }
+        }
+
+        return latest;
+    }
 }
